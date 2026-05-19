@@ -1,2 +1,52 @@
+@host = http://localhost:4000/api
+
 ### Health
-GET http://localhost:4000/api/health
+GET {{host}}/health
+
+### Overview (default range Apr 2025 → Feb 2026)
+GET {{host}}/finance/overview
+
+### Overview narrowed to a single month
+GET {{host}}/finance/overview?dateRange=2025-09-01:2025-09-30
+
+### KPIs only
+GET {{host}}/finance/kpis
+
+### Forex — last week (default)
+GET {{host}}/finance/forex
+
+### Forex — month view
+GET {{host}}/finance/forex?range=month
+
+### Revenue — all ports
+GET {{host}}/finance/revenue
+
+### Revenue — single port + date range
+GET {{host}}/finance/revenue?port=Hazira&dateRange=2025-10-01:2025-12-31
+
+### Working capital
+GET {{host}}/finance/working-capital
+
+### Profitability — port wise (default mode)
+GET {{host}}/finance/profitability
+
+### Profitability — segment wise
+GET {{host}}/finance/profitability?mode=segment
+
+### Profitability — segment wise, filtered
+GET {{host}}/finance/profitability?mode=segment&segment=SNS&dateRange=2025-06-01:2025-08-31
+
+### Sales overview
+GET {{host}}/finance/sales
+
+### Filters
+GET {{host}}/filters/ports
+
+###
+GET {{host}}/filters/segments
+
+###
+GET {{host}}/filters/zones
+
+### Validation error example (malformed dateRange)
+GET {{host}}/finance/overview?dateRange=garbage
