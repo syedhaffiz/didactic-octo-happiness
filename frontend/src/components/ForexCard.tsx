@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Chart } from "./Chart";
 import { financeApi } from "../api/finance";
-import { brand } from "../theme/tokens";
+import { useBrandTokens } from "../theme/useBrandTokens";
 import type { ForexRange } from "../types/finance";
 
 const rangeOptions: { value: ForexRange; label: string }[] = [
@@ -14,6 +14,7 @@ const rangeOptions: { value: ForexRange; label: string }[] = [
 ];
 
 export const ForexCard = () => {
+  const t = useBrandTokens();
   const [range, setRange] = useState<ForexRange>("week");
   const { data, isLoading, error } = useQuery({
     queryKey: ["forex", range],
@@ -24,7 +25,7 @@ export const ForexCard = () => {
     <Card
       title={
         <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-          <LineChartOutlined style={{ color: brand.purple }} /> Forex Movement
+          <LineChartOutlined style={{ color: t.accentText }} /> Forex Movement
         </span>
       }
       extra={
@@ -40,7 +41,7 @@ export const ForexCard = () => {
       styles={{ body: { paddingTop: 12 } }}
     >
       {error ? (
-        <span style={{ color: "#D14343" }}>Could not load forex data.</span>
+        <span style={{ color: t.deltaDown }}>Could not load forex data.</span>
       ) : (
         <>
           <Chart
@@ -49,7 +50,8 @@ export const ForexCard = () => {
               xAxis: { categories: data?.points.map((p) => p.day) ?? [] },
               yAxis: { tickAmount: 5 },
               tooltip: {
-                pointFormat: '<span style="color:{point.color}">●</span> Rate: <b>{point.y:.4f}</b>',
+                pointFormat:
+                  '<span style="color:{point.color}">●</span> Rate: <b>{point.y:.4f}</b>',
               },
               legend: { enabled: false },
               series: [
@@ -57,7 +59,7 @@ export const ForexCard = () => {
                   type: "spline",
                   name: "USD/INR",
                   data: data?.points.map((p) => p.rate) ?? [],
-                  color: brand.purple,
+                  color: t.accentText,
                   marker: { enabled: false },
                   lineWidth: 2.5,
                 },
@@ -66,10 +68,24 @@ export const ForexCard = () => {
           />
           <Space size={12} style={{ marginTop: 14, width: "100%", justifyContent: "space-around" }}>
             <Tooltip title="Latest spot rate">
-              <Stat label="Exchange Rate" value={data?.exchangeRate} loading={isLoading} />
+              <Stat
+                label="Exchange Rate"
+                value={data?.exchangeRate}
+                loading={isLoading}
+                bg={t.accentBg}
+                color={t.accentText}
+                muted={t.textSecondary}
+              />
             </Tooltip>
             <Tooltip title="Average across the selected period">
-              <Stat label="Month Average" value={data?.monthAverage} loading={isLoading} />
+              <Stat
+                label="Month Average"
+                value={data?.monthAverage}
+                loading={isLoading}
+                bg={t.accentBg}
+                color={t.accentText}
+                muted={t.textSecondary}
+              />
             </Tooltip>
           </Space>
         </>
@@ -78,19 +94,28 @@ export const ForexCard = () => {
   );
 };
 
-const Stat = ({ label, value, loading }: { label: string; value?: number; loading: boolean }) => (
+interface StatProps {
+  label: string;
+  value?: number;
+  loading: boolean;
+  bg: string;
+  color: string;
+  muted: string;
+}
+
+const Stat = ({ label, value, loading, bg, color, muted }: StatProps) => (
   <div
     style={{
       flex: 1,
-      background: brand.purpleSoft,
+      background: bg,
       borderRadius: 10,
       padding: "10px 14px",
       textAlign: "center",
       minWidth: 110,
     }}
   >
-    <div style={{ fontSize: 11, color: brand.textMuted }}>{label}</div>
-    <div style={{ fontSize: 16, fontWeight: 600, color: brand.purple, marginTop: 2 }}>
+    <div style={{ fontSize: 11, color: muted }}>{label}</div>
+    <div style={{ fontSize: 16, fontWeight: 600, color, marginTop: 2 }}>
       {loading || value === undefined ? "—" : value.toFixed(value < 100 ? 4 : 2)}
     </div>
   </div>

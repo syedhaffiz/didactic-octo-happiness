@@ -72,7 +72,7 @@ Six Figma exports were provided in `Design Reference/`, plus 4 brand-guideline p
   - `--brand-white: #FFFFFF`
   - Secondary (used sparingly to break monotony): `--brand-green`, `--brand-blue`, `--brand-orange`
   - `--font-brand: "Poppins", system-ui, sans-serif;` (swap to the official font later by editing this one declaration)
-  - For Sales chart series we'll use **purple + grey** (or purple + secondary blue) for Budget/Actual rather than Figma's light-blue/navy pairing, since the navy reads as a non-brand colour. To be confirmed during build — I'll show the first chart and let you sign off on the series colours before propagating.
+  - For Sales chart series, follow Figma exactly: Budget = `#7FB3FF` (light blue), Actual = `#1F2A6B` (navy). Pinned as `chartSeries.budget` / `chartSeries.actual` in `frontend/src/theme/tokens.ts`.
   - Page background: light grey/white; body text: near-black; header bar: solid `--brand-purple` with white text and icons.
 
 ## 2. Routes (frontend)

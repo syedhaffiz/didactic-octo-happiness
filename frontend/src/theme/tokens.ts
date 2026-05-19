@@ -33,5 +33,12 @@ export const chartPalette = [
   brand.purpleDark,
 ] as const;
 
+// Sales "Budget vs Actual" series colors — pinned to the Figma exports
+// (light blue + navy). These are chart-only and don't appear elsewhere.
+export const chartSeries = {
+  budget: "#7FB3FF",
+  actual: "#1F2A6B",
+} as const;
+
 export const fontFamily =
   '"Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';

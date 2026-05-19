@@ -35,12 +35,14 @@ export const lightTheme: ThemeConfig = {
   },
 };
 
+// Dark mode: keep brand purple as the accent, but page chrome (sider, body,
+// menu surfaces) follow antd's dark algorithm so text contrast stays high.
 export const darkTheme: ThemeConfig = {
   algorithm: antdTheme.darkAlgorithm,
   token: {
     colorPrimary: brand.purple,
     colorInfo: brand.purple,
-    colorLink: brand.purple,
+    colorLink: "#C9A6E5",
     fontFamily,
     borderRadius: 10,
   },
@@ -48,6 +50,16 @@ export const darkTheme: ThemeConfig = {
     Layout: {
       headerBg: brand.purpleDark,
       headerColor: brand.white,
+      siderBg: "#141414",
+      bodyBg: "#0F0F0F",
+      headerHeight: 56,
+    },
+    Menu: {
+      darkItemSelectedBg: "rgba(149, 95, 197, 0.22)",
+      darkItemSelectedColor: "#C9A6E5",
+    },
+    Card: {
+      borderRadiusLG: 12,
     },
   },
 };

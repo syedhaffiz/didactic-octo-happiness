@@ -2,7 +2,7 @@ import { Breadcrumb, Space, Typography } from "antd";
 import { HomeOutlined } from "@ant-design/icons";
 import { Link, useLocation } from "react-router-dom";
 import type { ReactNode } from "react";
-import { brand } from "../theme/tokens";
+import { useBrandTokens } from "../theme/useBrandTokens";
 
 const { Title } = Typography;
 
@@ -34,11 +34,18 @@ interface PageHeaderProps {
 }
 
 export const PageHeader = ({ title, subtitle, filters }: PageHeaderProps) => {
+  const t = useBrandTokens();
   const location = useLocation();
   const parts = location.pathname.split("/").filter(Boolean);
 
   const items = [
-    { title: <Link to="/finance/overview"><HomeOutlined /></Link> },
+    {
+      title: (
+        <Link to="/finance/overview">
+          <HomeOutlined />
+        </Link>
+      ),
+    },
     ...parts.slice(0, -1).map((seg, idx) => ({
       title: <Link to={`/${parts.slice(0, idx + 1).join("/")}`}>{pretty(seg)}</Link>,
     })),
@@ -61,7 +68,7 @@ export const PageHeader = ({ title, subtitle, filters }: PageHeaderProps) => {
             {title}
           </Title>
           {subtitle ? (
-            <span style={{ color: brand.textMuted, fontSize: 13 }}>{subtitle}</span>
+            <span style={{ color: t.textSecondary, fontSize: 13 }}>{subtitle}</span>
           ) : null}
         </div>
         {filters ? <Space size="middle">{filters}</Space> : null}

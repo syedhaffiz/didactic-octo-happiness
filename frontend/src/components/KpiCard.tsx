@@ -13,7 +13,7 @@ import {
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import { Chart } from "./Chart";
-import { brand } from "../theme/tokens";
+import { useBrandTokens } from "../theme/useBrandTokens";
 import { formatRawWithCommas, formatSigned } from "../utils/format";
 import type { IconKey, KPI } from "../types/finance";
 
@@ -27,8 +27,9 @@ const iconMap: Record<IconKey, ReactElement> = {
 };
 
 export const KpiCard = ({ kpi }: { kpi: KPI }) => {
+  const t = useBrandTokens();
   const isUp = kpi.trend === "up";
-  const deltaColor = isUp ? brand.green : "#D14343";
+  const deltaColor = isUp ? t.deltaUp : t.deltaDown;
 
   const sparkOptions: Highcharts.Options = {
     chart: { type: "areaspline", height: 56, margin: [4, 0, 4, 0] },
@@ -41,26 +42,22 @@ export const KpiCard = ({ kpi }: { kpi: KPI }) => {
         marker: { enabled: false },
         lineWidth: 2,
         fillOpacity: 0.18,
-        color: isUp ? brand.green : "#D14343",
+        color: deltaColor,
       },
     },
     series: [{ type: "areaspline", data: kpi.spark, name: kpi.label }],
   };
 
   return (
-    <Card
-      style={{ height: "100%" }}
-      styles={{ body: { padding: 18 } }}
-      hoverable
-    >
+    <Card style={{ height: "100%" }} styles={{ body: { padding: 18 } }} hoverable>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div
           style={{
             width: 36,
             height: 36,
             borderRadius: 10,
-            background: brand.purpleSoft,
-            color: brand.purple,
+            background: t.accentBg,
+            color: t.accentText,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -72,21 +69,29 @@ export const KpiCard = ({ kpi }: { kpi: KPI }) => {
         <Link
           to={kpi.href}
           aria-label={`Open ${kpi.label}`}
-          style={{ color: brand.textMuted, fontSize: 14 }}
+          style={{ color: t.textSecondary, fontSize: 14 }}
         >
           <ExportOutlined />
         </Link>
       </div>
 
-      <div style={{ marginTop: 14, color: brand.textMuted, fontSize: 13 }}>{kpi.label}</div>
+      <div style={{ marginTop: 14, color: t.textSecondary, fontSize: 13 }}>{kpi.label}</div>
 
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 8, marginTop: 4 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "space-between",
+          gap: 8,
+          marginTop: 4,
+        }}
+      >
         <Tooltip title={formatRawWithCommas(kpi.value, kpi.unit)}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-            <span style={{ fontSize: 28, fontWeight: 600, color: brand.black, lineHeight: 1.1 }}>
+            <span style={{ fontSize: 28, fontWeight: 600, color: t.text, lineHeight: 1.1 }}>
               {kpi.value}
             </span>
-            <span style={{ fontSize: 13, color: brand.textMuted }}>{kpi.unit}</span>
+            <span style={{ fontSize: 13, color: t.textSecondary }}>{kpi.unit}</span>
           </div>
         </Tooltip>
         <div style={{ flex: 1, minWidth: 80, maxWidth: 110 }}>
@@ -95,11 +100,19 @@ export const KpiCard = ({ kpi }: { kpi: KPI }) => {
       </div>
 
       <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
-        <span style={{ color: deltaColor, display: "inline-flex", alignItems: "center", gap: 2, fontWeight: 600 }}>
+        <span
+          style={{
+            color: deltaColor,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 2,
+            fontWeight: 600,
+          }}
+        >
           {isUp ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
           {formatSigned(kpi.deltaPct)}
         </span>
-        <span style={{ color: brand.textMuted }}>vs last week</span>
+        <span style={{ color: t.textSecondary }}>vs last week</span>
       </div>
     </Card>
   );
