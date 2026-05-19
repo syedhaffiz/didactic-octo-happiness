@@ -1,0 +1,14 @@
+/* Brand font fallback: Poppins via Google Fonts. */
+/* Replace with @font-face for the licensed brand WOFF2 files when available — */
+/* nothing else in the codebase needs to change as long as the family name stays "Poppins". */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+
+:root {
+  --font-brand:
+    "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+html,
+body {
+  font-family: var(--font-brand);
+}
