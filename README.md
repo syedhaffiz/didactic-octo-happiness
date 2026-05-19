@@ -108,9 +108,24 @@ State strategy:
 - Typography uses **Poppins** (Google Fonts) as a close fallback for the licensed corporate typeface. Swap in the official WOFF2 files by editing only `frontend/src/theme/fonts.css` — every other file already references `--font-brand` / the `Poppins` family name.
 - The header bar is solid brand purple (no gradients — the brand gradient is reserved for the logo only).
 
+## Pages
+
+All Finance pages share the AppShell (sidebar + page header + filters slot) and react to a `Date Range` filter that maps to `dateRange=YYYY-MM-DD:YYYY-MM-DD` on the API.
+
+| Route | What it shows |
+|---|---|
+| `/finance/overview` | Six KPI cards (Revenue, Sales, Profitability, Working Capital, Dispatch, Inventory Days) with inline sparklines + a Forex Movement spline with Exchange Rate / Month Average tiles |
+| `/finance/sales` | Portwise horizontal bar + Zonewise and Segmentwise grouped columns, Budget vs Actual |
+| `/finance/revenue` | 4 segment breakdown cards + donut chart with center total + searchable ledger table (Port + Date filters) |
+| `/finance/working-capital` | Same layout as Revenue, different underlying data |
+| `/finance/profitability` | Port wise / Segment wise tabs, each with a column chart + vessel-level profit table (Port or Segment + Date filters) |
+| `/finance/approved-budget`, `/finance/dispatch`, `/finance/inventory-days` | "Coming soon" placeholders |
+| `/logistics`, `/marketing`, … | "Coming soon" placeholders |
+
+Light and dark themes both work — toggle from the bulb icon in the top bar. The brand purple is the dominant colour in both modes; chart series for Sales follow the Figma's light-blue / navy pairing.
+
+Hover any large currency or tonnage value to see the full underlying number with thousands separators.
+
 ## Roadmap
 
-- **Phase 2** — Mock API endpoints with realistic fixtures across Apr 2025 → Feb 2026.
-- **Phase 3** — Build out Finance pages (Overview, Sales, Revenue, Working Capital, Profitability) per `PLAN.md` and the Figma references.
-- **Phase 4** — Lint / typecheck / polish.
 - **Phase 5 — Databricks integration** — implement `repositories/` against `@databricks/sql`, gated by `DATA_SOURCE=databricks`. Service principal + SQL warehouse setup walkthrough lives here when we get to it.

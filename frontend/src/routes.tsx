@@ -1,6 +1,10 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { AppShell } from "./components/AppShell";
 import { FinanceOverview } from "./pages/finance/Overview";
+import { Sales } from "./pages/finance/Sales";
+import { Revenue } from "./pages/finance/Revenue";
+import { WorkingCapital } from "./pages/finance/WorkingCapital";
+import { Profitability } from "./pages/finance/Profitability";
 import { Placeholder } from "./pages/Placeholder";
 
 export const router = createBrowserRouter([
@@ -10,10 +14,10 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/finance/overview" replace /> },
       { path: "finance/overview", element: <FinanceOverview /> },
-      { path: "finance/sales", element: <Placeholder title="Sales Overview" /> },
-      { path: "finance/revenue", element: <Placeholder title="Revenue" /> },
-      { path: "finance/working-capital", element: <Placeholder title="Working Capital" /> },
-      { path: "finance/profitability", element: <Placeholder title="Gross Margin Profitability" /> },
+      { path: "finance/sales", element: <Sales /> },
+      { path: "finance/revenue", element: <Revenue /> },
+      { path: "finance/working-capital", element: <WorkingCapital /> },
+      { path: "finance/profitability", element: <Profitability /> },
       { path: "finance/approved-budget", element: <Placeholder title="Approved Budget" /> },
       { path: "finance/dispatch", element: <Placeholder title="Dispatch" /> },
       { path: "finance/inventory-days", element: <Placeholder title="Inventory Days" /> },
