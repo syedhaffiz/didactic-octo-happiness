@@ -1,8 +1,15 @@
-// Brand design tokens — colors recovered from the Figma PNG exports.
-// The exports are uniformly darkened (max channel value 229), so sampled
-// values were scaled by 255/229 to recover the true design colors.
+// Single source of truth for every color in the app.
+// Colors are recovered from the Figma PNG exports — those exports are uniformly
+// darkened (max channel value 229), so sampled values were scaled by 255/229.
+//
+// RULE: no color literal (#hex / rgb / rgba) may appear anywhere else in the
+// codebase. Components read colors from `useBrandTokens()`; the antd theme and
+// chart helpers read them from the exports below.
 // The brand name itself is intentionally never used as an identifier.
 
+// ---------------------------------------------------------------------------
+// Light palette — the default theme.
+// ---------------------------------------------------------------------------
 export const brand = {
   // Primary purple (brand identity / chart accents)
   purple: "#5E267F",
@@ -12,7 +19,9 @@ export const brand = {
 
   // Interactive accent — the Figma uses blue for nav, badges and controls
   accent: "#0D66CA",
-  accentSoft: "#CFDFFC",
+  accentSoft: "#CFDFFC", // icon badge / selected nav fill
+  accentHover: "#EAF1FF", // menu + table row hover
+  accentTrack: "#E6ECF6", // segmented control track
 
   // Neutrals
   grey: "#6B6B6B",
@@ -20,28 +29,56 @@ export const brand = {
   black: "#1B2333", // body text
   headline: "#0E275B", // navy — large KPI / breakdown values
   white: "#FFFFFF",
+  textMuted: "#7A8194",
+  textSubtle: "#5A6172", // menu item text
+  textTableHead: "#4A5168", // table header text
 
   // Secondary
   green: "#1BA05A",
   blue: "#0D66CA",
   orange: "#F36C2A",
+  danger: "#D14343",
 
   // App surfaces
   bg: "#F3F6FB", // page background (cool light blue-grey)
   cardBg: "#FFFFFF",
   border: "#E3E7EF",
-  textMuted: "#7A8194",
 
   // Tinted surfaces
   panelBlue: "#DFEAF9", // "Breakdown" section panel
   tableHeader: "#DCDAF7", // lavender table header row
   forexTile: "#E7EFFE", // forex stat tiles
+  breakdownValue: "#1F5BA8", // breakdown sub-card value
+  headerSolid: "#5B5890", // gradient midpoint — solid fallback
 
   // Header gradient — left blue → right crimson; the midpoint is the
-  // purple seen in the screenshot. Reserved for the app header bar.
+  // purple seen in the screenshot.
   gradient: "linear-gradient(90deg, #0D73B3 0%, #AE3C6D 100%)",
   gradientDark: "linear-gradient(90deg, #0A557F 0%, #7C2D4F 100%)",
 } as const;
+
+// ---------------------------------------------------------------------------
+// Dark palette — surface + accent values used only when the dark theme is on.
+// ---------------------------------------------------------------------------
+export const brandDark = {
+  header: "#3A2E52",
+  sider: "#141414",
+  body: "#0F0F0F",
+  tableHeader: "#211E2A",
+  accentText: "#7FB0E8",
+  value: "#9DC0F0",
+  deltaUp: "#46C97A",
+  deltaDown: "#FF6B6B",
+  menuSelectedBg: "rgba(63, 130, 230, 0.22)",
+  accentBg: "rgba(63, 130, 230, 0.20)",
+  headline: "rgba(255, 255, 255, 0.92)",
+  panelBg: "rgba(255, 255, 255, 0.03)",
+  forexTileBg: "rgba(126, 179, 255, 0.14)",
+} as const;
+
+// ---------------------------------------------------------------------------
+// Chart palettes.
+// ---------------------------------------------------------------------------
 
 // Highcharts generic series palette.
 export const chartPalette = [

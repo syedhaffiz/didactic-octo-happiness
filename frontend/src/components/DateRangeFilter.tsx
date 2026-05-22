@@ -1,5 +1,6 @@
 import { DatePicker } from "antd";
 import type { Dayjs } from "dayjs";
+import { FilterField } from "./filters/FilterField";
 
 const { RangePicker } = DatePicker;
 
@@ -9,8 +10,7 @@ export interface DateRangeFilterProps {
 }
 
 export const DateRangeFilter = ({ value, onChange }: DateRangeFilterProps) => (
-  <div style={{ minWidth: 220 }}>
-    <div style={{ fontSize: 11, color: "#6B7280", marginBottom: 2 }}>Date Range</div>
+  <FilterField label="Date Range" width={220}>
     <RangePicker
       value={value ?? null}
       onChange={(v) => onChange(v as [Dayjs | null, Dayjs | null] | null)}
@@ -19,6 +19,5 @@ export const DateRangeFilter = ({ value, onChange }: DateRangeFilterProps) => (
       allowEmpty={[true, true]}
       style={{ width: "100%" }}
     />
-  </div>
+  </FilterField>
 );
-

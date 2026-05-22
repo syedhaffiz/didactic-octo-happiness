@@ -1,6 +1,6 @@
 import type { ThemeConfig } from "antd";
 import { theme as antdTheme } from "antd";
-import { brand, fontFamily } from "./tokens";
+import { brand, brandDark, fontFamily } from "./tokens";
 
 export const lightTheme: ThemeConfig = {
   algorithm: antdTheme.defaultAlgorithm,
@@ -21,7 +21,7 @@ export const lightTheme: ThemeConfig = {
     Layout: {
       // Header bar uses a gradient applied directly on the element;
       // this solid value is only a fallback.
-      headerBg: "#5B5890",
+      headerBg: brand.headerSolid,
       headerColor: brand.white,
       siderBg: brand.white,
       bodyBg: brand.bg,
@@ -30,8 +30,8 @@ export const lightTheme: ThemeConfig = {
     Menu: {
       itemSelectedBg: brand.accentSoft,
       itemSelectedColor: brand.accent,
-      itemHoverBg: "#EAF1FF",
-      itemColor: "#5A6172",
+      itemHoverBg: brand.accentHover,
+      itemColor: brand.textSubtle,
       itemHeight: 38,
       subMenuItemBg: "transparent",
       itemBorderRadius: 8,
@@ -43,17 +43,17 @@ export const lightTheme: ThemeConfig = {
     },
     Table: {
       headerBg: brand.tableHeader,
-      headerColor: "#4A5168",
+      headerColor: brand.textTableHead,
       headerSplitColor: "transparent",
       borderColor: brand.border,
-      rowHoverBg: "#EAF1FF",
+      rowHoverBg: brand.accentHover,
       cellPaddingBlock: 12,
     },
     Segmented: {
       itemSelectedBg: brand.accent,
       itemSelectedColor: brand.white,
-      trackBg: "#E6ECF6",
-      itemColor: "#5A6172",
+      trackBg: brand.accentTrack,
+      itemColor: brand.textSubtle,
     },
   },
 };
@@ -65,21 +65,21 @@ export const darkTheme: ThemeConfig = {
   token: {
     colorPrimary: brand.accent,
     colorInfo: brand.accent,
-    colorLink: "#7FB0E8",
+    colorLink: brandDark.accentText,
     fontFamily,
     borderRadius: 10,
   },
   components: {
     Layout: {
-      headerBg: "#3A2E52",
+      headerBg: brandDark.header,
       headerColor: brand.white,
-      siderBg: "#141414",
-      bodyBg: "#0F0F0F",
+      siderBg: brandDark.sider,
+      bodyBg: brandDark.body,
       headerHeight: 60,
     },
     Menu: {
-      darkItemSelectedBg: "rgba(63, 130, 230, 0.22)",
-      darkItemSelectedColor: "#7FB0E8",
+      darkItemSelectedBg: brandDark.menuSelectedBg,
+      darkItemSelectedColor: brandDark.accentText,
       itemHeight: 38,
       itemBorderRadius: 8,
     },
@@ -87,7 +87,7 @@ export const darkTheme: ThemeConfig = {
       borderRadiusLG: 14,
     },
     Table: {
-      headerBg: "#211E2A",
+      headerBg: brandDark.tableHeader,
       cellPaddingBlock: 12,
     },
     Segmented: {

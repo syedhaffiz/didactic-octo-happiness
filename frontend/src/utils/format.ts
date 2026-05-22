@@ -24,18 +24,7 @@ export const formatRawWithCommas = (value: number, unit: Unit): string => {
   return `${withCommas} days`;
 };
 
-export const formatValueWithUnit = (value: number, unit: Unit): string => {
-  if (unit === "Days") return String(Math.round(value));
-  return `${value}`;
-};
-
 export const formatSigned = (n: number): string => (n >= 0 ? `+${n}%` : `${n}%`);
-
-export const formatNumberCompact = (n: number): string => {
-  if (Math.abs(n) >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (Math.abs(n) >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
-  return `${n}`;
-};
 
 // e.g. -2,500 -> "(2,500)" like the Figma's Profit column.
 export const formatAccounting = (n: number): string => {

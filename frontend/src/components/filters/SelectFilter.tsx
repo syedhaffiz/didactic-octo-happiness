@@ -1,6 +1,8 @@
 import { Select } from "antd";
 import { useQuery } from "@tanstack/react-query";
-import { useBrandTokens } from "../../theme/useBrandTokens";
+import { FilterField } from "./FilterField";
+
+const ALL = "__all__";
 
 interface SelectFilterProps {
   label: string;
@@ -19,24 +21,22 @@ export const SelectFilter = ({
   fetcher,
   width = 160,
 }: SelectFilterProps) => {
-  const t = useBrandTokens();
   const { data } = useQuery({ queryKey, queryFn: fetcher, staleTime: 5 * 60_000 });
 
   const options = [
-    { value: "__all__", label: "All" },
+    { value: ALL, label: "All" },
     ...(data ?? []).map((v) => ({ value: v, label: v })),
   ];
 
   return (
-    <div style={{ minWidth: width }}>
-      <div style={{ fontSize: 11, color: t.textSecondary, marginBottom: 2 }}>{label}</div>
+    <FilterField label={label} width={width}>
       <Select
-        value={value ?? "__all__"}
-        onChange={(v) => onChange(v === "__all__" ? undefined : v)}
+        value={value ?? ALL}
+        onChange={(v) => onChange(v === ALL ? undefined : v)}
         options={options}
         style={{ width: "100%" }}
         placeholder="All"
       />
-    </div>
+    </FilterField>
   );
 };
