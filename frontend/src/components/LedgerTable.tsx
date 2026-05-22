@@ -28,7 +28,13 @@ export const LedgerTable = ({ rows }: { rows: LedgerRow[] }) => {
 
   const columns: ColumnsType<LedgerRow> = [
     { title: "Company Code", dataIndex: "companyCode", key: "companyCode", width: 130 },
-    { title: "Account Number", dataIndex: "accountNumber", key: "accountNumber", width: 170 },
+    {
+      title: "Account Number",
+      dataIndex: "accountNumber",
+      key: "accountNumber",
+      width: 170,
+      render: (v: string) => <span style={{ color: t.linkBlue, fontWeight: 500 }}>{v}</span>,
+    },
     { title: "Profit Centre", dataIndex: "profitCentre", key: "profitCentre" },
     { title: "Segment", dataIndex: "segment", key: "segment", width: 110 },
     { title: "Grouping", dataIndex: "grouping", key: "grouping", width: 140 },

@@ -31,7 +31,7 @@ export const FinanceOverview = () => {
     <>
       <PageHeader
         title="Finance"
-        subtitle={subtitleFor(range)}
+        datePill={subtitleFor(range)}
         filters={<DateRangeFilter value={range} onChange={setRange} />}
       />
 

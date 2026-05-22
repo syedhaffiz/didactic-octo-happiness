@@ -1,10 +1,10 @@
 import { Chart } from "./Chart";
 import type { DonutResponse } from "../types/finance";
-import { chartPalette } from "../theme/tokens";
+import { donutColors } from "../theme/tokens";
 import { useBrandTokens } from "../theme/useBrandTokens";
 import { formatRawWithCommas } from "../utils/format";
 
-const palette = [chartPalette[0], chartPalette[2], chartPalette[3], chartPalette[1], chartPalette[4]];
+const palette = donutColors;
 
 export const DonutChart = ({ donut, height = 260 }: { donut: DonutResponse; height?: number }) => {
   const t = useBrandTokens();

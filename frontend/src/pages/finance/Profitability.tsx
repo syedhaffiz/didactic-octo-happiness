@@ -11,7 +11,7 @@ import { SegmentFilter } from "../../components/filters/SegmentFilter";
 import { financeApi } from "../../api/finance";
 import { formatDateRangeParam } from "../../utils/dateRangeParam";
 import { formatAccounting } from "../../utils/format";
-import { brand } from "../../theme/tokens";
+import { profitColumn } from "../../theme/tokens";
 import { useBrandTokens } from "../../theme/useBrandTokens";
 import type { ProfitabilityBar, VesselRow } from "../../types/finance";
 
@@ -28,14 +28,18 @@ const chartOptions = (data: ProfitabilityBar[], mode: Mode): Highcharts.Options 
   legend: { enabled: false },
   tooltip: { valueDecimals: 0 },
   plotOptions: {
-    column: { dataLabels: { enabled: true, format: "{y}" }, groupPadding: 0.1 },
+    column: {
+      dataLabels: { enabled: true, format: "{y}", style: { fontWeight: "600" } },
+      groupPadding: 0.08,
+      pointWidth: 30,
+    },
   },
   series: [
     {
       type: "column",
       name: mode === "port" ? "Port" : "Segment",
       data: data.map((d) => d.value),
-      color: brand.purpleDark,
+      color: profitColumn,
     },
   ],
 });

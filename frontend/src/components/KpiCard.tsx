@@ -14,6 +14,7 @@ import {
 import { Link } from "react-router-dom";
 import { Chart } from "./Chart";
 import { useBrandTokens } from "../theme/useBrandTokens";
+import { brand, kpiSparkColors } from "../theme/tokens";
 import { formatRawWithCommas, formatSigned } from "../utils/format";
 import type { IconKey, KPI } from "../types/finance";
 
@@ -30,9 +31,10 @@ export const KpiCard = ({ kpi }: { kpi: KPI }) => {
   const t = useBrandTokens();
   const isUp = kpi.trend === "up";
   const deltaColor = isUp ? t.deltaUp : t.deltaDown;
+  const sparkColor = kpiSparkColors[kpi.id] ?? brand.purple;
 
   const sparkOptions: Highcharts.Options = {
-    chart: { type: "areaspline", height: 56, margin: [4, 0, 4, 0] },
+    chart: { type: "areaspline", height: 48, margin: [4, 0, 4, 0] },
     xAxis: { visible: false },
     yAxis: { visible: false, gridLineWidth: 0 },
     legend: { enabled: false },
@@ -41,8 +43,8 @@ export const KpiCard = ({ kpi }: { kpi: KPI }) => {
       areaspline: {
         marker: { enabled: false },
         lineWidth: 2,
-        fillOpacity: 0.18,
-        color: deltaColor,
+        fillOpacity: 0.16,
+        color: sparkColor,
       },
     },
     series: [{ type: "areaspline", data: kpi.spark, name: kpi.label }],
@@ -53,8 +55,8 @@ export const KpiCard = ({ kpi }: { kpi: KPI }) => {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div
           style={{
-            width: 36,
-            height: 36,
+            width: 38,
+            height: 38,
             borderRadius: 10,
             background: t.accentBg,
             color: t.accentText,
@@ -69,7 +71,17 @@ export const KpiCard = ({ kpi }: { kpi: KPI }) => {
         <Link
           to={kpi.href}
           aria-label={`Open ${kpi.label}`}
-          style={{ color: t.textSecondary, fontSize: 14 }}
+          style={{
+            width: 26,
+            height: 26,
+            borderRadius: 7,
+            background: brand.purple,
+            color: brand.white,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 12,
+          }}
         >
           <ExportOutlined />
         </Link>
@@ -83,18 +95,20 @@ export const KpiCard = ({ kpi }: { kpi: KPI }) => {
           alignItems: "flex-end",
           justifyContent: "space-between",
           gap: 8,
-          marginTop: 4,
+          marginTop: 2,
         }}
       >
         <Tooltip title={formatRawWithCommas(kpi.value, kpi.unit)}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-            <span style={{ fontSize: 28, fontWeight: 600, color: t.text, lineHeight: 1.1 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
+            <span style={{ fontSize: 30, fontWeight: 700, color: t.headline, lineHeight: 1.1 }}>
               {kpi.value}
             </span>
-            <span style={{ fontSize: 13, color: t.textSecondary }}>{kpi.unit}</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: t.textSecondary }}>
+              {kpi.unit}
+            </span>
           </div>
         </Tooltip>
-        <div style={{ flex: 1, minWidth: 80, maxWidth: 110 }}>
+        <div style={{ flex: 1, minWidth: 80, maxWidth: 116 }}>
           <Chart options={sparkOptions} />
         </div>
       </div>

@@ -9,6 +9,7 @@ import { LedgerTable } from "../../components/LedgerTable";
 import { DateRangeFilter } from "../../components/DateRangeFilter";
 import { PortFilter } from "../../components/filters/PortFilter";
 import { formatDateRangeParam } from "../../utils/dateRangeParam";
+import { useBrandTokens } from "../../theme/useBrandTokens";
 import type { PortRangeParams } from "../../api/finance";
 import type { BreakdownResponse } from "../../types/finance";
 
@@ -22,6 +23,7 @@ interface BreakdownPageProps {
 }
 
 export const BreakdownPage = ({ title, sectionTitle, fetch, queryKey }: BreakdownPageProps) => {
+  const t = useBrandTokens();
   const [port, setPort] = useState<string | undefined>(undefined);
   const [range, setRange] = useState<RangeValue>(null);
   const dateRange = formatDateRangeParam(range);
@@ -53,11 +55,15 @@ export const BreakdownPage = ({ title, sectionTitle, fetch, queryKey }: Breakdow
         />
       ) : (
         <>
-          <Card title={sectionTitle} style={{ marginBottom: 16 }}>
+          <Card
+            title={sectionTitle}
+            style={{ marginBottom: 16, background: t.panelBg }}
+            styles={{ header: { borderBottom: "none" }, body: { paddingTop: 4 } }}
+          >
             {isLoading || !data ? (
               <Skeleton active paragraph={{ rows: 6 }} />
             ) : (
-              <Row gutter={[16, 16]} align="middle">
+              <Row gutter={[20, 20]} align="middle">
                 <Col xs={24} md={14}>
                   <Row gutter={[16, 16]}>
                     {data.breakdown.map((b) => (

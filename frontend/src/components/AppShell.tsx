@@ -13,8 +13,10 @@ import {
   SafetyOutlined,
   UserOutlined,
   ShopOutlined,
-  ApartmentOutlined,
   MoonOutlined,
+  DownOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { Logo } from "./Logo";
@@ -50,7 +52,7 @@ export const AppShell = () => {
   const { mode, toggle } = useThemeMode();
 
   const selectedKeys = [location.pathname];
-  const openKeys = location.pathname.startsWith("/finance") ? ["finance"] : [];
+  const [openKeys, setOpenKeys] = useState<string[]>(["finance"]);
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -80,9 +82,14 @@ export const AppShell = () => {
               onClick={toggle}
             />
           </Tooltip>
-          <Space size={8}>
-            <Avatar size={28} icon={<UserOutlined />} style={{ background: brand.white, color: brand.purple }} />
+          <Space size={8} style={{ cursor: "pointer" }}>
+            <Avatar
+              size={28}
+              icon={<UserOutlined />}
+              style={{ background: brand.white, color: brand.purple }}
+            />
             <span style={{ color: brand.white, fontSize: 13 }}>Hemil Mistry</span>
+            <DownOutlined style={{ color: brand.white, fontSize: 10 }} />
           </Space>
         </Space>
       </Header>
@@ -91,24 +98,38 @@ export const AppShell = () => {
           collapsible
           collapsed={collapsed}
           onCollapse={setCollapsed}
-          width={220}
+          width={224}
+          collapsedWidth={72}
           breakpoint="lg"
           theme="light"
-          trigger={
-            <div style={{ textAlign: "center", color: brand.textMuted }}>
-              <ApartmentOutlined />
-            </div>
-          }
+          trigger={null}
         >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: collapsed ? "center" : "flex-end",
+              padding: "10px 12px",
+            }}
+          >
+            <Button
+              type="text"
+              size="small"
+              aria-label="Toggle sidebar"
+              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              onClick={() => setCollapsed((v) => !v)}
+              style={{ color: brand.textMuted }}
+            />
+          </div>
           <Menu
             mode="inline"
             selectedKeys={selectedKeys}
-            defaultOpenKeys={openKeys}
+            openKeys={openKeys}
+            onOpenChange={(keys) => setOpenKeys(keys as string[])}
             items={menuItems}
             onClick={({ key }) => {
               if (key.startsWith("/")) navigate(key);
             }}
-            style={{ borderInlineEnd: "none", paddingTop: 12 }}
+            style={{ borderInlineEnd: "none", padding: "0 10px" }}
           />
         </Sider>
         <Content style={{ padding: 24 }}>

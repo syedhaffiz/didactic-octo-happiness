@@ -29,11 +29,12 @@ const pretty = (seg: string) => labels[seg] ?? seg;
 
 interface PageHeaderProps {
   title: string;
-  subtitle?: string;
+  /** Small pill rendered inline to the right of the title (e.g. a date range). */
+  datePill?: string;
   filters?: ReactNode;
 }
 
-export const PageHeader = ({ title, subtitle, filters }: PageHeaderProps) => {
+export const PageHeader = ({ title, datePill, filters }: PageHeaderProps) => {
   const t = useBrandTokens();
   const location = useLocation();
   const parts = location.pathname.split("/").filter(Boolean);
@@ -63,12 +64,23 @@ export const PageHeader = ({ title, subtitle, filters }: PageHeaderProps) => {
           flexWrap: "wrap",
         }}
       >
-        <div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
           <Title level={3} style={{ margin: 0 }}>
             {title}
           </Title>
-          {subtitle ? (
-            <span style={{ color: t.textSecondary, fontSize: 13 }}>{subtitle}</span>
+          {datePill ? (
+            <span
+              style={{
+                fontSize: 12,
+                color: t.textSecondary,
+                background: t.accentBg,
+                borderRadius: 6,
+                padding: "2px 8px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {datePill}
+            </span>
           ) : null}
         </div>
         {filters ? <Space size="middle">{filters}</Space> : null}

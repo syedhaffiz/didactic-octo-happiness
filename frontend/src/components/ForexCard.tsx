@@ -8,14 +8,14 @@ import { useBrandTokens } from "../theme/useBrandTokens";
 import type { ForexRange } from "../types/finance";
 
 const rangeOptions: { value: ForexRange; label: string }[] = [
+  { value: "all", label: "All" },
   { value: "week", label: "Week" },
   { value: "month", label: "Month" },
-  { value: "all", label: "All" },
 ];
 
 export const ForexCard = () => {
   const t = useBrandTokens();
-  const [range, setRange] = useState<ForexRange>("week");
+  const [range, setRange] = useState<ForexRange>("all");
   const { data, isLoading, error } = useQuery({
     queryKey: ["forex", range],
     queryFn: () => financeApi.forex(range),
@@ -34,11 +34,11 @@ export const ForexCard = () => {
           value={range}
           onChange={(v: ForexRange) => setRange(v)}
           options={rangeOptions}
-          style={{ width: 96 }}
+          style={{ width: 90 }}
         />
       }
-      style={{ height: "100%" }}
-      styles={{ body: { paddingTop: 12 } }}
+      style={{ height: "100%", background: t.forexCardBg }}
+      styles={{ header: { borderBottom: "none" }, body: { paddingTop: 4 } }}
     >
       {error ? (
         <span style={{ color: t.deltaDown }}>Could not load forex data.</span>
@@ -46,7 +46,7 @@ export const ForexCard = () => {
         <>
           <Chart
             options={{
-              chart: { type: "spline", height: 220 },
+              chart: { type: "spline", height: 230, backgroundColor: "transparent" },
               xAxis: { categories: data?.points.map((p) => p.day) ?? [] },
               yAxis: { tickAmount: 5 },
               tooltip: {
@@ -66,15 +66,14 @@ export const ForexCard = () => {
               ],
             }}
           />
-          <Space size={12} style={{ marginTop: 14, width: "100%", justifyContent: "space-around" }}>
+          <Space size={12} style={{ marginTop: 6, width: "100%", justifyContent: "space-around" }}>
             <Tooltip title="Latest spot rate">
               <Stat
                 label="Exchange Rate"
                 value={data?.exchangeRate}
                 loading={isLoading}
-                bg={t.accentBg}
-                color={t.accentText}
-                muted={t.textSecondary}
+                bg={t.forexTileBg}
+                color={t.forexTileText}
               />
             </Tooltip>
             <Tooltip title="Average across the selected period">
@@ -82,9 +81,8 @@ export const ForexCard = () => {
                 label="Month Average"
                 value={data?.monthAverage}
                 loading={isLoading}
-                bg={t.accentBg}
-                color={t.accentText}
-                muted={t.textSecondary}
+                bg={t.forexTileBg}
+                color={t.forexTileText}
               />
             </Tooltip>
           </Space>
@@ -100,10 +98,9 @@ interface StatProps {
   loading: boolean;
   bg: string;
   color: string;
-  muted: string;
 }
 
-const Stat = ({ label, value, loading, bg, color, muted }: StatProps) => (
+const Stat = ({ label, value, loading, bg, color }: StatProps) => (
   <div
     style={{
       flex: 1,
@@ -114,8 +111,8 @@ const Stat = ({ label, value, loading, bg, color, muted }: StatProps) => (
       minWidth: 110,
     }}
   >
-    <div style={{ fontSize: 11, color: muted }}>{label}</div>
-    <div style={{ fontSize: 16, fontWeight: 600, color, marginTop: 2 }}>
+    <div style={{ fontSize: 11, color, opacity: 0.8 }}>{label}</div>
+    <div style={{ fontSize: 17, fontWeight: 700, color, marginTop: 2 }}>
       {loading || value === undefined ? "—" : value.toFixed(value < 100 ? 4 : 2)}
     </div>
   </div>

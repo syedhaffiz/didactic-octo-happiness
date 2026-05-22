@@ -11,6 +11,7 @@ export const lightTheme: ThemeConfig = {
     colorBgLayout: brand.bg,
     colorBgContainer: brand.cardBg,
     colorBorder: brand.border,
+    colorBorderSecondary: brand.border,
     colorText: brand.black,
     colorTextSecondary: brand.textMuted,
     fontFamily,
@@ -27,16 +28,36 @@ export const lightTheme: ThemeConfig = {
     Menu: {
       itemSelectedBg: brand.purpleSoft,
       itemSelectedColor: brand.purple,
-      itemHoverBg: brand.purpleSoft,
+      itemHoverBg: "#F6F3FB",
+      itemColor: "#5A6172",
+      itemHeight: 38,
+      subMenuItemBg: "transparent",
+      itemBorderRadius: 8,
+      iconSize: 15,
     },
     Card: {
-      borderRadiusLG: 12,
+      borderRadiusLG: 14,
+      colorBorderSecondary: brand.border,
+    },
+    Table: {
+      headerBg: "#ECE8F4",
+      headerColor: "#5A6172",
+      headerSplitColor: "transparent",
+      borderColor: brand.border,
+      rowHoverBg: "#F6F3FB",
+      cellPaddingBlock: 12,
+    },
+    Segmented: {
+      itemSelectedBg: brand.purple,
+      itemSelectedColor: brand.white,
+      trackBg: "#EFEBF6",
+      itemColor: "#5A6172",
     },
   },
 };
 
-// Dark mode: keep brand purple as the accent, but page chrome (sider, body,
-// menu surfaces) follow antd's dark algorithm so text contrast stays high.
+// Dark mode: keep brand purple as the accent, but page chrome follows antd's
+// dark algorithm so text contrast stays high.
 export const darkTheme: ThemeConfig = {
   algorithm: antdTheme.darkAlgorithm,
   token: {
@@ -57,9 +78,19 @@ export const darkTheme: ThemeConfig = {
     Menu: {
       darkItemSelectedBg: "rgba(149, 95, 197, 0.22)",
       darkItemSelectedColor: "#C9A6E5",
+      itemHeight: 38,
+      itemBorderRadius: 8,
     },
     Card: {
-      borderRadiusLG: 12,
+      borderRadiusLG: 14,
+    },
+    Table: {
+      headerBg: "#211E2A",
+      cellPaddingBlock: 12,
+    },
+    Segmented: {
+      itemSelectedBg: brand.purple,
+      itemSelectedColor: brand.white,
     },
   },
 };
