@@ -35,7 +35,11 @@ const portwiseOptions = (rows: BudgetActualRow[]): Highcharts.Options => ({
   ],
 });
 
-const columnOptions = (rows: BudgetActualRow[], yTitle: string): Highcharts.Options => ({
+const columnOptions = (
+  rows: BudgetActualRow[],
+  yTitle: string,
+  actualColor: string = chartSeries.actual,
+): Highcharts.Options => ({
   chart: { type: "column", height: 280 },
   xAxis: { categories: rows.map((r) => r.category) },
   yAxis: {
@@ -50,7 +54,7 @@ const columnOptions = (rows: BudgetActualRow[], yTitle: string): Highcharts.Opti
   },
   series: [
     { type: "column", name: "Budget", data: rows.map((r) => r.budget), color: chartSeries.budget },
-    { type: "column", name: "Actual", data: rows.map((r) => r.actual), color: chartSeries.actual },
+    { type: "column", name: "Actual", data: rows.map((r) => r.actual), color: actualColor },
   ],
 });
 
@@ -105,7 +109,13 @@ export const Sales = () => {
                   {isLoading || !data ? (
                     <Skeleton active paragraph={{ rows: 6 }} />
                   ) : (
-                    <Chart options={columnOptions(data.zonewise, "1000 metric tons (MT)")} />
+                    <Chart
+                      options={columnOptions(
+                        data.zonewise,
+                        "1000 metric tons (MT)",
+                        chartSeries.actualAlt,
+                      )}
+                    />
                   )}
                 </Card>
               </Col>

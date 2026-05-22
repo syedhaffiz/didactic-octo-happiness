@@ -75,7 +75,7 @@ export const KpiCard = ({ kpi }: { kpi: KPI }) => {
             width: 26,
             height: 26,
             borderRadius: 7,
-            background: brand.purple,
+            background: brand.accent,
             color: brand.white,
             display: "flex",
             alignItems: "center",

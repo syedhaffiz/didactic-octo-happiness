@@ -62,6 +62,7 @@ export const AppShell = () => {
           alignItems: "center",
           justifyContent: "space-between",
           padding: "0 24px",
+          background: mode === "light" ? brand.gradient : brand.gradientDark,
         }}
       >
         <Logo />

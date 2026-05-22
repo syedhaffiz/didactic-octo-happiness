@@ -16,26 +16,26 @@ export const useBrandTokens = () => {
     border: token.colorBorder,
     pageBg: token.colorBgLayout,
 
-    // Brand-purple-tinted surfaces (KPI icon chip, Forex stat tiles).
-    accentBg: isDark ? "rgba(149, 95, 197, 0.18)" : "#F1ECF9",
-    accentText: isDark ? "#C9A6E5" : "#5E267F",
+    // Accent-tinted surfaces (KPI icon chip). The Figma uses light blue.
+    accentBg: isDark ? "rgba(63, 130, 230, 0.20)" : "#CFDFFC",
+    accentText: isDark ? "#7FB0E8" : "#0D66CA",
 
     // Headline value color (dark navy in light, near-white in dark).
-    headline: isDark ? "rgba(255,255,255,0.92)" : "#1B2333",
+    headline: isDark ? "rgba(255,255,255,0.92)" : "#0E275B",
 
     // Panels — the tinted "Breakdown" section container.
-    panelBg: isDark ? "rgba(255,255,255,0.03)" : "#E9ECF3",
+    panelBg: isDark ? "rgba(255,255,255,0.03)" : "#DFEAF9",
 
-    // Forex card surface + stat tiles.
-    forexCardBg: isDark ? token.colorBgContainer : "#EEF1FA",
-    forexTileBg: isDark ? "rgba(126, 179, 255, 0.14)" : "#DCE5F5",
-    forexTileText: isDark ? "#9DC0F0" : "#2B3F6B",
+    // Forex card surface (white like other cards) + light-blue stat tiles.
+    forexCardBg: token.colorBgContainer,
+    forexTileBg: isDark ? "rgba(126, 179, 255, 0.14)" : "#E7EFFE",
+    forexTileText: isDark ? "#9DC0F0" : "#1E3A5F",
 
     // Account-number links in ledger tables.
-    linkBlue: isDark ? "#7FB0E8" : "#1E60AA",
+    linkBlue: isDark ? "#7FB0E8" : "#0D66CA",
 
     // Breakdown sub-card headline value (navy blue).
-    breakdownValue: isDark ? "#9DC0F0" : "#23457E",
+    breakdownValue: isDark ? "#9DC0F0" : "#1F5BA8",
 
     // Delta colors (green up, red down) — brightened slightly in dark.
     deltaUp: isDark ? "#46C97A" : "#1BA05A",
