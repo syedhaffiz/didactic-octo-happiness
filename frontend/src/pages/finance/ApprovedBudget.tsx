@@ -71,78 +71,95 @@ const pbdOptions = (rows: PbdRow[]): Highcharts.Options => ({
   ],
 });
 
-// Multi-pane solid-gauge — one dial per segment, side by side, modelled on
+// Multiple KPI gauge — concentric rings sharing one center, modelled on
 // https://www.highcharts.com/demo/highcharts/gauge-multiple-kpi.
+// Per design: SEB is the outer ring; SNS sits inside SEB.
+const RING_RADII = [
+  { outer: "100%", inner: "82%" },
+  { outer: "78%", inner: "60%" },
+] as const;
+
+const RING_ORDER = ["SEB", "SNS"] as const;
+
 const inventoryOptions = (
   g: InventoryGauge,
-  tokens: {
-    text: string;
-    textSecondary: string;
-    border: string;
-  },
+  tokens: { text: string; textSecondary: string; border: string },
 ): Highcharts.Options => {
   const colorFor: Record<string, string> = {
     SEB: inventoryColors.seb,
     SNS: inventoryColors.sns,
   };
-  const stepPct = 100 / g.slices.length;
+
+  // Use a canonical SEB → SNS order so the outer / inner ring assignment is stable.
+  const ordered = RING_ORDER.map((name) =>
+    g.slices.find((s) => s.segment === name),
+  ).filter((s): s is NonNullable<typeof s> => Boolean(s));
 
   return {
-    chart: { type: "solidgauge", height: 260, backgroundColor: "transparent" },
+    chart: { type: "solidgauge", height: 280, backgroundColor: "transparent" },
     title: { text: undefined },
-    tooltip: { enabled: false },
-    pane: g.slices.map((_, i) => ({
-      startAngle: -120,
-      endAngle: 120,
-      center: [`${stepPct * (i + 0.5)}%`, "60%"],
-      size: "100%",
-      background: [
-        {
-          outerRadius: "100%",
-          innerRadius: "72%",
-          backgroundColor: tokens.border,
-          borderWidth: 0,
-          shape: "arc",
-        },
-      ],
-    })),
-    yAxis: g.slices.map((_, i) => ({
+    tooltip: {
+      borderWidth: 0,
+      backgroundColor: "transparent",
+      shadow: false,
+      useHTML: true,
+      headerFormat: "",
+      pointFormat:
+        `<span style="color:{point.color};font-size:12px;font-weight:600">` +
+        `{series.name}: {point.y} days</span>`,
+    },
+    pane: {
+      startAngle: 0,
+      endAngle: 360,
+      background: RING_RADII.map((r) => ({
+        outerRadius: r.outer,
+        innerRadius: r.inner,
+        backgroundColor: tokens.border,
+        borderWidth: 0,
+      })),
+    },
+    yAxis: {
       min: 0,
       max: g.max,
-      pane: i,
       lineWidth: 0,
       tickPositions: [],
       labels: { enabled: false },
-    })),
+    },
     plotOptions: {
       solidgauge: {
+        dataLabels: { enabled: false },
         rounded: true,
-        dataLabels: { enabled: true, useHTML: true, y: -22, borderWidth: 0 },
+        showInLegend: true,
       },
     },
-    series: g.slices.map(
-      (s, i) =>
-        ({
-          type: "solidgauge",
-          name: s.segment,
-          yAxis: i,
-          data: [
-            {
-              y: s.days,
-              color: colorFor[s.segment] ?? inventoryColors.sns,
-              radius: "100%",
-              innerRadius: "72%",
-            },
-          ],
-          dataLabels: {
-            format:
-              `<div style="text-align:center">` +
-              `<div style="font-size:22px;font-weight:700;color:${tokens.text}">{y}</div>` +
-              `<div style="font-size:11px;color:${tokens.textSecondary};margin-top:2px;letter-spacing:0.4px">${s.segment}</div>` +
-              `</div>`,
+    legend: {
+      enabled: true,
+      align: "center",
+      verticalAlign: "bottom",
+      symbolRadius: 6,
+      itemStyle: { color: tokens.text, fontWeight: "500", fontSize: "12px" },
+      labelFormatter: function () {
+        const series = this as unknown as { name: string; points?: { y: number }[] };
+        const y = series.points?.[0]?.y ?? 0;
+        return `${series.name}: ${y}`;
+      },
+    },
+    series: ordered.map((s, i) => {
+      const color = colorFor[s.segment] ?? inventoryColors.sns;
+      return {
+        type: "solidgauge",
+        name: s.segment,
+        color,
+        data: [
+          {
+            y: s.days,
+            color,
+            radius: RING_RADII[i].outer,
+            innerRadius: RING_RADII[i].inner,
           },
-        }) as unknown as Highcharts.SeriesOptionsType,
-    ),
+        ],
+      } as unknown as Highcharts.SeriesOptionsType;
+    }),
   };
 };
 
