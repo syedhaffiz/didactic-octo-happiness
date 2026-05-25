@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Avatar, Badge, Button, Layout, Menu, Space, Tooltip } from "antd";
+import { Avatar, Badge, Button, Layout, Menu, Skeleton, Space, Tooltip } from "antd";
 import {
   BellOutlined,
   BulbOutlined,
@@ -142,7 +142,9 @@ export const AppShell = () => {
           />
         </Sider>
         <Content style={{ padding: 24 }}>
-          <Outlet />
+          <Suspense fallback={<Skeleton active paragraph={{ rows: 8 }} />}>
+            <Outlet />
+          </Suspense>
         </Content>
       </Layout>
     </Layout>

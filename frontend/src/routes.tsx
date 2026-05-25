@@ -1,15 +1,40 @@
+import { lazy } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { AppShell } from "./components/AppShell";
-import { FinanceOverview } from "./pages/finance/Overview";
-import { Sales } from "./pages/finance/Sales";
-import { Revenue } from "./pages/finance/Revenue";
-import { WorkingCapital } from "./pages/finance/WorkingCapital";
-import { Profitability } from "./pages/finance/Profitability";
-import { ApprovedBudget } from "./pages/finance/ApprovedBudget";
-import { InventoryShell } from "./pages/inventory/InventoryShell";
-import { IndexPage } from "./pages/inventory/IndexPage";
-import { OverviewPage as InventoryOverviewPage } from "./pages/inventory/OverviewPage";
-import { Placeholder } from "./pages/Placeholder";
+
+// Route-level code splitting: each page becomes its own chunk and is fetched
+// on demand. The Suspense boundary lives in AppShell so the chrome (header,
+// sidebar) renders immediately while the page chunk loads.
+const FinanceOverview = lazy(() =>
+  import("./pages/finance/Overview").then((m) => ({ default: m.FinanceOverview })),
+);
+const Sales = lazy(() =>
+  import("./pages/finance/Sales").then((m) => ({ default: m.Sales })),
+);
+const Revenue = lazy(() =>
+  import("./pages/finance/Revenue").then((m) => ({ default: m.Revenue })),
+);
+const WorkingCapital = lazy(() =>
+  import("./pages/finance/WorkingCapital").then((m) => ({ default: m.WorkingCapital })),
+);
+const Profitability = lazy(() =>
+  import("./pages/finance/Profitability").then((m) => ({ default: m.Profitability })),
+);
+const ApprovedBudget = lazy(() =>
+  import("./pages/finance/ApprovedBudget").then((m) => ({ default: m.ApprovedBudget })),
+);
+const InventoryShell = lazy(() =>
+  import("./pages/inventory/InventoryShell").then((m) => ({ default: m.InventoryShell })),
+);
+const IndexPage = lazy(() =>
+  import("./pages/inventory/IndexPage").then((m) => ({ default: m.IndexPage })),
+);
+const InventoryOverviewPage = lazy(() =>
+  import("./pages/inventory/OverviewPage").then((m) => ({ default: m.OverviewPage })),
+);
+const Placeholder = lazy(() =>
+  import("./pages/Placeholder").then((m) => ({ default: m.Placeholder })),
+);
 
 export const router = createBrowserRouter([
   {
