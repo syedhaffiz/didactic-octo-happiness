@@ -22,6 +22,14 @@ const forexSchema = z.object({
   range: z.enum(["all", "week", "month"]).optional(),
 });
 
+const approvedBudgetSchema = z.object({
+  port: z.string().optional(),
+  grade: z.string().optional(),
+  zone: z.string().optional(),
+  origin: z.string().optional(),
+  fy: z.string().optional(),
+});
+
 const parse = <T>(schema: z.ZodSchema<T>, query: unknown): T => {
   const result = schema.safeParse(query);
   if (!result.success) throw result.error;
@@ -94,6 +102,15 @@ export const getSales: RequestHandler = async (req, res, next) => {
     const q = parse(dateRangeSchema, req.query);
     const { from, to } = parseDateRange(q.dateRange);
     res.json(ok(await financeService.sales(from, to)));
+  } catch (e) {
+    next(e);
+  }
+};
+
+export const getApprovedBudget: RequestHandler = async (req, res, next) => {
+  try {
+    const q = parse(approvedBudgetSchema, req.query);
+    res.json(ok(await financeService.approvedBudget(q)));
   } catch (e) {
     next(e);
   }

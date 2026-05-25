@@ -39,6 +39,12 @@ GET {{host}}/finance/profitability?mode=segment&segment=SNS&dateRange=2025-06-01
 ### Sales overview
 GET {{host}}/finance/sales
 
+### Approved Budget (default FY26, no filters)
+GET {{host}}/finance/approved-budget
+
+### Approved Budget filtered
+GET {{host}}/finance/approved-budget?port=Hazira&grade=INDO-4200 GAR&zone=Zone 1&origin=INDO
+
 ### Filters
 GET {{host}}/filters/ports
 
@@ -47,6 +53,12 @@ GET {{host}}/filters/segments
 
 ###
 GET {{host}}/filters/zones
+
+###
+GET {{host}}/filters/grades
+
+###
+GET {{host}}/filters/origins
 
 ### Validation error example (malformed dateRange)
 GET {{host}}/finance/overview?dateRange=garbage

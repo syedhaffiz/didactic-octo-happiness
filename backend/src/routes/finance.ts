@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  getApprovedBudget,
   getForex,
   getKpis,
   getOverview,
@@ -18,5 +19,6 @@ router.get("/revenue", getRevenue);
 router.get("/working-capital", getWorkingCapital);
 router.get("/profitability", getProfitability);
 router.get("/sales", getSales);
+router.get("/approved-budget", getApprovedBudget);
 
 export default router;

@@ -1,6 +1,8 @@
 import { apiClient, unwrap } from "./client";
 import type { ApiEnvelope } from "../types/api";
 import type {
+  ApprovedBudgetParams,
+  ApprovedBudgetResponse,
   BreakdownResponse,
   ForexRange,
   ForexResponse,
@@ -49,4 +51,6 @@ export const financeApi = {
   profitability: (p: ProfitabilityParams) =>
     get<ProfitabilityResponse>("/finance/profitability", p),
   sales: (p: RangeParams = {}) => get<SalesResponse>("/finance/sales", p),
+  approvedBudget: (p: ApprovedBudgetParams = {}) =>
+    get<ApprovedBudgetResponse>("/finance/approved-budget", p),
 };

@@ -25,3 +25,19 @@ export const getZones: RequestHandler = async (_req, res, next) => {
     next(e);
   }
 };
+
+export const getGrades: RequestHandler = async (_req, res, next) => {
+  try {
+    res.json(ok(await filtersService.grades()));
+  } catch (e) {
+    next(e);
+  }
+};
+
+export const getOrigins: RequestHandler = async (_req, res, next) => {
+  try {
+    res.json(ok(await filtersService.origins()));
+  } catch (e) {
+    next(e);
+  }
+};

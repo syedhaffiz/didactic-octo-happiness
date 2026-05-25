@@ -1,5 +1,5 @@
 import { financeRepository } from "../repositories/financeRepository.js";
-import type { ForexRange } from "../types/finance.js";
+import type { ApprovedBudgetFilters, ForexRange } from "../types/finance.js";
 
 export const financeService = {
   overview: (from: Date, to: Date) => financeRepository.getOverview(from, to),
@@ -16,4 +16,6 @@ export const financeService = {
     to: Date,
   ) => financeRepository.getProfitability(mode, filter, from, to),
   sales: (from: Date, to: Date) => financeRepository.getSales(from, to),
+  approvedBudget: (filters: ApprovedBudgetFilters) =>
+    financeRepository.getApprovedBudget(filters),
 };

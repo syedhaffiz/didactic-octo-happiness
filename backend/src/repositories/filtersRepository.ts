@@ -1,9 +1,11 @@
-import { PORTS, SEGMENTS, ZONES } from "../mocks/catalog.js";
+import { GRADES, ORIGINS, PORTS, SEGMENTS, ZONES } from "../mocks/catalog.js";
 
 export interface FiltersRepository {
   getPorts(): Promise<string[]>;
   getSegments(): Promise<string[]>;
   getZones(): Promise<string[]>;
+  getGrades(): Promise<string[]>;
+  getOrigins(): Promise<string[]>;
 }
 
 class MockFiltersRepository implements FiltersRepository {
@@ -15,6 +17,12 @@ class MockFiltersRepository implements FiltersRepository {
   }
   async getZones() {
     return [...ZONES];
+  }
+  async getGrades() {
+    return [...GRADES];
+  }
+  async getOrigins() {
+    return [...ORIGINS];
   }
 }
 

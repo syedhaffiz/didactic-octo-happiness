@@ -5,6 +5,7 @@ import { Sales } from "./pages/finance/Sales";
 import { Revenue } from "./pages/finance/Revenue";
 import { WorkingCapital } from "./pages/finance/WorkingCapital";
 import { Profitability } from "./pages/finance/Profitability";
+import { ApprovedBudget } from "./pages/finance/ApprovedBudget";
 import { Placeholder } from "./pages/Placeholder";
 
 export const router = createBrowserRouter([
@@ -18,7 +19,7 @@ export const router = createBrowserRouter([
       { path: "finance/revenue", element: <Revenue /> },
       { path: "finance/working-capital", element: <WorkingCapital /> },
       { path: "finance/profitability", element: <Profitability /> },
-      { path: "finance/approved-budget", element: <Placeholder title="Approved Budget" /> },
+      { path: "finance/approved-budget", element: <ApprovedBudget /> },
       { path: "finance/dispatch", element: <Placeholder title="Dispatch" /> },
       { path: "finance/inventory-days", element: <Placeholder title="Inventory Days" /> },
       { path: "logistics", element: <Placeholder title="Logistics" /> },
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
       { path: "sourcing", element: <Placeholder title="Sourcing" /> },
       { path: "customs", element: <Placeholder title="Customs" /> },
       { path: "commercial", element: <Placeholder title="Commercial" /> },
+      { path: "settings", element: <Placeholder title="Settings" /> },
       { path: "*", element: <Placeholder title="Not found" /> },
     ],
   },

@@ -17,6 +17,7 @@ import {
   DownOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { Logo } from "./Logo";
@@ -43,6 +44,8 @@ const menuItems: MenuProps["items"] = [
   { key: "/sourcing", icon: <ShoppingCartOutlined />, label: "Sourcing" },
   { key: "/customs", icon: <SafetyOutlined />, label: "Customs" },
   { key: "/commercial", icon: <ShopOutlined />, label: "Commercial" },
+  { type: "divider" },
+  { key: "/settings", icon: <SettingOutlined />, label: "Settings" },
 ];
 
 export const AppShell = () => {

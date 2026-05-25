@@ -10,4 +10,6 @@ export const filtersApi = {
   ports: () => get<string[]>("/filters/ports"),
   segments: () => get<string[]>("/filters/segments"),
   zones: () => get<string[]>("/filters/zones"),
+  grades: () => get<string[]>("/filters/grades"),
+  origins: () => get<string[]>("/filters/origins"),
 };

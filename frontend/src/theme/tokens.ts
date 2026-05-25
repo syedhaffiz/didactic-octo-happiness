@@ -113,4 +113,18 @@ export const kpiSparkColors: Record<string, string> = {
 // Profitability column chart color.
 export const profitColumn = brand.purpleDeep;
 
+// Approved Budget chart colors.
+export const approvedBudgetSeries = {
+  budget: "#7FC4FD", // light blue line — matches Sales Budget
+  actual: "#1B2333", // near-black line — matches body ink
+} as const;
+
+export const inventoryColors = {
+  seb: "#A678D6", // lighter purple slice
+  sns: brand.purpleDeep, // deep purple slice
+} as const;
+
+// PBD column chart color (dark navy bars).
+export const pbdColumn = "#1F2A6B";
+
 export const fontFamily = '"Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';

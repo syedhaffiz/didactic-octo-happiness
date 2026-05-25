@@ -109,3 +109,41 @@ export interface OverviewResponse {
   kpis: KPI[];
   forex: ForexResponse;
 }
+
+export interface BudgetSeries {
+  months: string[];
+  budget: (number | null)[];
+  actual: (number | null)[];
+  unit: "MT" | "Cr";
+}
+
+export interface PbdRow {
+  port: string;
+  days: number;
+}
+
+export interface InventorySlice {
+  segment: string;
+  days: number;
+}
+
+export interface InventoryGauge {
+  max: number;
+  slices: InventorySlice[];
+}
+
+export interface ApprovedBudgetResponse {
+  fy: string;
+  volume: BudgetSeries;
+  margin: BudgetSeries;
+  pbd: PbdRow[];
+  inventory: InventoryGauge;
+}
+
+export interface ApprovedBudgetParams {
+  port?: string;
+  grade?: string;
+  zone?: string;
+  origin?: string;
+  fy?: string;
+}

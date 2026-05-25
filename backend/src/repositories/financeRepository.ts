@@ -1,4 +1,6 @@
 import type {
+  ApprovedBudgetFilters,
+  ApprovedBudgetResponse,
   BreakdownResponse,
   ForexRange,
   ForexResponse,
@@ -12,6 +14,7 @@ import { buildForex } from "../mocks/forex.js";
 import { buildBreakdown } from "../mocks/breakdown.js";
 import { buildProfitability } from "../mocks/profitability.js";
 import { buildSales } from "../mocks/sales.js";
+import { buildApprovedBudget } from "../mocks/approvedBudget.js";
 
 export interface FinanceRepository {
   getKpis(from: Date, to: Date): Promise<KPI[]>;
@@ -26,6 +29,7 @@ export interface FinanceRepository {
     to: Date,
   ): Promise<ProfitabilityResponse>;
   getSales(from: Date, to: Date): Promise<SalesResponse>;
+  getApprovedBudget(filters: ApprovedBudgetFilters): Promise<ApprovedBudgetResponse>;
 }
 
 class MockFinanceRepository implements FinanceRepository {
@@ -57,6 +61,9 @@ class MockFinanceRepository implements FinanceRepository {
   }
   async getSales(from: Date, to: Date) {
     return buildSales(from, to);
+  }
+  async getApprovedBudget(filters: ApprovedBudgetFilters) {
+    return buildApprovedBudget(filters);
   }
 }
 
