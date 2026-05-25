@@ -12,7 +12,7 @@ export const PortFilter = ({
     label="Port"
     value={value}
     onChange={onChange}
-    queryKey={["filters", "ports"]}
+    cacheKey="filters:ports"
     fetcher={filtersApi.ports}
   />
 );

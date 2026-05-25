@@ -12,7 +12,7 @@ export const OriginFilter = ({
     label="Origin"
     value={value}
     onChange={onChange}
-    queryKey={["filters", "origins"]}
+    cacheKey="filters:origins"
     fetcher={filtersApi.origins}
   />
 );

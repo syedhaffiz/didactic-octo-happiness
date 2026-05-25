@@ -6,6 +6,6 @@ export const Revenue = () => (
     title="Revenue"
     sectionTitle="Revenue Breakdown"
     fetch={financeApi.revenue}
-    queryKey="revenue"
+    cacheKey="revenue"
   />
 );

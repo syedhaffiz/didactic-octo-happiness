@@ -1,11 +1,14 @@
 import { Alert, Card, Col, Row, Select, Skeleton } from "antd";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Chart } from "../../components/Chart";
 import { inventoryApi } from "../../api/inventory";
+import { useApi } from "../../api/useApi";
+import { useUrlParam } from "../../utils/useUrlParam";
 import { brand } from "../../theme/tokens";
 import { useBrandTokens } from "../../theme/useBrandTokens";
 import type { IndexRange, PriceIndex } from "../../types/inventory";
+
+const isRange = (v: string | undefined): v is IndexRange =>
+  v === "1W" || v === "1M" || v === "3M" || v === "1Y";
 
 const RANGE_OPTIONS: { value: IndexRange; label: string }[] = [
   { value: "1W", label: "1 Week" },
@@ -98,11 +101,15 @@ const PriceIndexCard = ({
 };
 
 export const IndexPage = () => {
-  const [range, setRange] = useState<IndexRange>("1M");
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["inventory", "index", range],
-    queryFn: () => inventoryApi.index(range),
-  });
+  const [rawRange, setRawRange] = useUrlParam("range");
+  const range: IndexRange = isRange(rawRange) ? rawRange : "1M";
+  const setRange = (next: IndexRange) =>
+    setRawRange(next === "1M" ? undefined : next);
+
+  const { data, isLoading, isError, error, refetch } = useApi(
+    ["inventory", "index", range],
+    () => inventoryApi.index(range),
+  );
 
   if (isError) {
     return (

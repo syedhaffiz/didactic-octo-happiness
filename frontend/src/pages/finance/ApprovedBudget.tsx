@@ -4,8 +4,6 @@ import {
   BarChartOutlined,
   PieChartOutlined,
 } from "@ant-design/icons";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "../../components/PageHeader";
 import { Chart } from "../../components/Chart";
 import { PortFilter } from "../../components/filters/PortFilter";
@@ -13,6 +11,8 @@ import { GradeFilter } from "../../components/filters/GradeFilter";
 import { ZoneFilter } from "../../components/filters/ZoneFilter";
 import { OriginFilter } from "../../components/filters/OriginFilter";
 import { financeApi } from "../../api/finance";
+import { useApi } from "../../api/useApi";
+import { useUrlParam } from "../../utils/useUrlParam";
 import {
   approvedBudgetSeries,
   inventoryColors,
@@ -172,15 +172,15 @@ const cardTitle = (icon: React.ReactNode, text: string, accent: string) => (
 
 export const ApprovedBudget = () => {
   const t = useBrandTokens();
-  const [port, setPort] = useState<string | undefined>();
-  const [grade, setGrade] = useState<string | undefined>();
-  const [zone, setZone] = useState<string | undefined>();
-  const [origin, setOrigin] = useState<string | undefined>();
+  const [port, setPort] = useUrlParam("port");
+  const [grade, setGrade] = useUrlParam("grade");
+  const [zone, setZone] = useUrlParam("zone");
+  const [origin, setOrigin] = useUrlParam("origin");
 
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["approved-budget", port, grade, zone, origin],
-    queryFn: () => financeApi.approvedBudget({ port, grade, zone, origin }),
-  });
+  const { data, isLoading, isError, error, refetch } = useApi(
+    ["approved-budget", port, grade, zone, origin],
+    () => financeApi.approvedBudget({ port, grade, zone, origin }),
+  );
 
   const title = data ? `Budget ${data.fy}` : "Budget FY26";
 

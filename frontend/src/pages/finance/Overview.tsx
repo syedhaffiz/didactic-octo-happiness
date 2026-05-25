@@ -1,17 +1,13 @@
 import { Alert, Col, Row, Skeleton } from "antd";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import type { Dayjs } from "dayjs";
 import { PageHeader } from "../../components/PageHeader";
 import { KpiCard } from "../../components/KpiCard";
 import { ForexCard } from "../../components/ForexCard";
 import { DateRangeFilter } from "../../components/DateRangeFilter";
-import { formatDateRangeParam } from "../../utils/dateRangeParam";
+import { useUrlDateRange } from "../../utils/useUrlParam";
 import { financeApi } from "../../api/finance";
+import { useApi } from "../../api/useApi";
 
-type RangeValue = [Dayjs | null, Dayjs | null] | null;
-
-const subtitleFor = (range: RangeValue): string => {
+const subtitleFor = (range: ReturnType<typeof useUrlDateRange>[0]): string => {
   if (range && range[0] && range[1]) {
     return `${range[0].format("DD MMM YY")} – ${range[1].format("DD MMM YY")}`;
   }
@@ -19,13 +15,12 @@ const subtitleFor = (range: RangeValue): string => {
 };
 
 export const FinanceOverview = () => {
-  const [range, setRange] = useState<RangeValue>(null);
-  const dateRange = formatDateRangeParam(range);
+  const [range, setRange, dateRange] = useUrlDateRange();
 
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["overview", dateRange],
-    queryFn: () => financeApi.overview({ dateRange }),
-  });
+  const { data, isLoading, isError, error, refetch } = useApi(
+    ["overview", dateRange],
+    () => financeApi.overview({ dateRange }),
+  );
 
   return (
     <>

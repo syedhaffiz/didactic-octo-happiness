@@ -12,7 +12,7 @@ export const SegmentFilter = ({
     label="Segment"
     value={value}
     onChange={onChange}
-    queryKey={["filters", "segments"]}
+    cacheKey="filters:segments"
     fetcher={filtersApi.segments}
   />
 );

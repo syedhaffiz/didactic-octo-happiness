@@ -1,7 +1,4 @@
 import { Alert, Card, Segmented, Skeleton, Table, Tooltip } from "antd";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import type { Dayjs } from "dayjs";
 import type { ColumnsType } from "antd/es/table";
 import { PageHeader } from "../../components/PageHeader";
 import { Chart } from "../../components/Chart";
@@ -9,14 +6,15 @@ import { DateRangeFilter } from "../../components/DateRangeFilter";
 import { PortFilter } from "../../components/filters/PortFilter";
 import { SegmentFilter } from "../../components/filters/SegmentFilter";
 import { financeApi } from "../../api/finance";
-import { formatDateRangeParam } from "../../utils/dateRangeParam";
+import { useApi } from "../../api/useApi";
+import { useUrlDateRange, useUrlParam } from "../../utils/useUrlParam";
 import { formatAccounting } from "../../utils/format";
 import { profitColumn } from "../../theme/tokens";
 import { useBrandTokens } from "../../theme/useBrandTokens";
 import type { ProfitabilityBar, VesselRow } from "../../types/finance";
 
-type RangeValue = [Dayjs | null, Dayjs | null] | null;
 type Mode = "port" | "segment";
+const isMode = (v: string | undefined): v is Mode => v === "port" || v === "segment";
 
 const chartOptions = (data: ProfitabilityBar[], mode: Mode): Highcharts.Options => ({
   chart: { type: "column", height: 320 },
@@ -46,17 +44,18 @@ const chartOptions = (data: ProfitabilityBar[], mode: Mode): Highcharts.Options 
 
 export const Profitability = () => {
   const t = useBrandTokens();
-  const [mode, setMode] = useState<Mode>("port");
-  const [port, setPort] = useState<string | undefined>(undefined);
-  const [segment, setSegment] = useState<string | undefined>(undefined);
-  const [range, setRange] = useState<RangeValue>(null);
-  const dateRange = formatDateRangeParam(range);
+  const [rawMode, setRawMode] = useUrlParam("mode");
+  const mode: Mode = isMode(rawMode) ? rawMode : "port";
+  const setMode = (next: Mode) => setRawMode(next === "port" ? undefined : next);
+  const [port, setPort] = useUrlParam("port");
+  const [segment, setSegment] = useUrlParam("segment");
+  const [range, setRange, dateRange] = useUrlDateRange();
 
   const filter = mode === "port" ? port : segment;
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["profitability", mode, filter, dateRange],
-    queryFn: () => financeApi.profitability({ mode, port, segment, dateRange }),
-  });
+  const { data, isLoading, isError, error, refetch } = useApi(
+    ["profitability", mode, filter, dateRange],
+    () => financeApi.profitability({ mode, port, segment, dateRange }),
+  );
 
   const vesselColumns: ColumnsType<VesselRow> = [
     { title: "Batch ID", dataIndex: "batchId", key: "batchId", width: 140 },

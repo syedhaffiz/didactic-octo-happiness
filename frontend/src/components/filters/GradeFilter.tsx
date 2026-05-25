@@ -12,7 +12,7 @@ export const GradeFilter = ({
     label="Grade"
     value={value}
     onChange={onChange}
-    queryKey={["filters", "grades"]}
+    cacheKey="filters:grades"
     fetcher={filtersApi.grades}
   />
 );

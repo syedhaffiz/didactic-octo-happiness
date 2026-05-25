@@ -12,7 +12,7 @@ export const ZoneFilter = ({
     label="Zone"
     value={value}
     onChange={onChange}
-    queryKey={["filters", "zones"]}
+    cacheKey="filters:zones"
     fetcher={filtersApi.zones}
   />
 );

@@ -6,6 +6,6 @@ export const WorkingCapital = () => (
     title="Working Capital"
     sectionTitle="Working Capital Breakdown"
     fetch={financeApi.workingCapital}
-    queryKey="working-capital"
+    cacheKey="working-capital"
   />
 );

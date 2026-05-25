@@ -19,14 +19,14 @@ import {
   TruckOutlined,
 } from "@ant-design/icons";
 import type { ReactElement } from "react";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import type { ColumnsType } from "antd/es/table";
 import { Chart } from "../../components/Chart";
 import { PortFilter } from "../../components/filters/PortFilter";
 import { OriginFilter } from "../../components/filters/OriginFilter";
 import { GradeFilter } from "../../components/filters/GradeFilter";
 import { inventoryApi } from "../../api/inventory";
+import { useApi } from "../../api/useApi";
+import { useUrlParams } from "../../utils/useUrlParam";
 import { brand, chartSeries } from "../../theme/tokens";
 import { useBrandTokens } from "../../theme/useBrandTokens";
 import { formatSigned } from "../../utils/format";
@@ -208,21 +208,19 @@ const vesselColumns = (linkBlue: string): ColumnsType<VesselRow> => [
 
 // --- Page ------------------------------------------------------------------
 
+const FILTER_KEYS = ["port", "origin", "grade"] as const;
+
 export const OverviewPage = () => {
   const t = useBrandTokens();
-  const [port, setPort] = useState<string | undefined>();
-  const [origin, setOrigin] = useState<string | undefined>();
-  const [grade, setGrade] = useState<string | undefined>();
-  const reset = () => {
-    setPort(undefined);
-    setOrigin(undefined);
-    setGrade(undefined);
-  };
+  const { values, set, reset } = useUrlParams(FILTER_KEYS);
+  const port = values.port;
+  const origin = values.origin;
+  const grade = values.grade;
 
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["inventory", "overview", port, origin, grade],
-    queryFn: () => inventoryApi.overview({ port, origin, grade }),
-  });
+  const { data, isLoading, isError, error, refetch } = useApi(
+    ["inventory", "overview", port, origin, grade],
+    () => inventoryApi.overview({ port, origin, grade }),
+  );
 
   if (isError) {
     return (
@@ -248,9 +246,9 @@ export const OverviewPage = () => {
           flexWrap: "wrap",
         }}
       >
-        <PortFilter value={port} onChange={setPort} />
-        <OriginFilter value={origin} onChange={setOrigin} />
-        <GradeFilter value={grade} onChange={setGrade} />
+        <PortFilter value={port} onChange={(v) => set("port", v)} />
+        <OriginFilter value={origin} onChange={(v) => set("origin", v)} />
+        <GradeFilter value={grade} onChange={(v) => set("grade", v)} />
         <div style={{ display: "flex", alignItems: "flex-end" }}>
           <Button onClick={reset}>Reset Filters</Button>
         </div>

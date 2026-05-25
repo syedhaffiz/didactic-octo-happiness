@@ -1,37 +1,37 @@
 import { Alert, Card, Col, Row, Skeleton } from "antd";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import type { Dayjs } from "dayjs";
 import { PageHeader } from "../../components/PageHeader";
 import { BreakdownCard } from "../../components/BreakdownCard";
 import { DonutChart } from "../../components/DonutChart";
 import { LedgerTable } from "../../components/LedgerTable";
 import { DateRangeFilter } from "../../components/DateRangeFilter";
 import { PortFilter } from "../../components/filters/PortFilter";
-import { formatDateRangeParam } from "../../utils/dateRangeParam";
+import { useApi } from "../../api/useApi";
+import { useUrlDateRange, useUrlParam } from "../../utils/useUrlParam";
 import { useBrandTokens } from "../../theme/useBrandTokens";
 import type { PortRangeParams } from "../../api/finance";
 import type { BreakdownResponse } from "../../types/finance";
-
-type RangeValue = [Dayjs | null, Dayjs | null] | null;
 
 interface BreakdownPageProps {
   title: string;
   sectionTitle: string;
   fetch: (params: PortRangeParams) => Promise<BreakdownResponse>;
-  queryKey: string;
+  cacheKey: string;
 }
 
-export const BreakdownPage = ({ title, sectionTitle, fetch, queryKey }: BreakdownPageProps) => {
+export const BreakdownPage = ({
+  title,
+  sectionTitle,
+  fetch,
+  cacheKey,
+}: BreakdownPageProps) => {
   const t = useBrandTokens();
-  const [port, setPort] = useState<string | undefined>(undefined);
-  const [range, setRange] = useState<RangeValue>(null);
-  const dateRange = formatDateRangeParam(range);
+  const [port, setPort] = useUrlParam("port");
+  const [range, setRange, dateRange] = useUrlDateRange();
 
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: [queryKey, port, dateRange],
-    queryFn: () => fetch({ port, dateRange }),
-  });
+  const { data, isLoading, isError, error, refetch } = useApi(
+    [cacheKey, port, dateRange],
+    () => fetch({ port, dateRange }),
+  );
 
   return (
     <>
@@ -81,7 +81,11 @@ export const BreakdownPage = ({ title, sectionTitle, fetch, queryKey }: Breakdow
           </Card>
 
           <Card>
-            {isLoading || !data ? <Skeleton active paragraph={{ rows: 8 }} /> : <LedgerTable rows={data.ledger} />}
+            {isLoading || !data ? (
+              <Skeleton active paragraph={{ rows: 8 }} />
+            ) : (
+              <LedgerTable rows={data.ledger} />
+            )}
           </Card>
         </>
       )}

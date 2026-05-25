@@ -1,18 +1,14 @@
 import { Alert, Card, Col, Row, Skeleton } from "antd";
 import { BarChartOutlined } from "@ant-design/icons";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import type { Dayjs } from "dayjs";
 import { PageHeader } from "../../components/PageHeader";
 import { Chart } from "../../components/Chart";
 import { DateRangeFilter } from "../../components/DateRangeFilter";
 import { financeApi } from "../../api/finance";
-import { formatDateRangeParam } from "../../utils/dateRangeParam";
+import { useApi } from "../../api/useApi";
+import { useUrlDateRange } from "../../utils/useUrlParam";
 import { chartSeries } from "../../theme/tokens";
 import { useBrandTokens } from "../../theme/useBrandTokens";
 import type { BudgetActualRow } from "../../types/finance";
-
-type RangeValue = [Dayjs | null, Dayjs | null] | null;
 
 const sectionTitle = (icon: React.ReactNode, text: string) => (
   <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
@@ -60,13 +56,12 @@ const columnOptions = (
 
 export const Sales = () => {
   const t = useBrandTokens();
-  const [range, setRange] = useState<RangeValue>(null);
-  const dateRange = formatDateRangeParam(range);
+  const [range, setRange, dateRange] = useUrlDateRange();
 
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["sales", dateRange],
-    queryFn: () => financeApi.sales({ dateRange }),
-  });
+  const { data, isLoading, isError, error, refetch } = useApi(
+    ["sales", dateRange],
+    () => financeApi.sales({ dateRange }),
+  );
 
   return (
     <>

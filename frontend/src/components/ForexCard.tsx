@@ -1,9 +1,9 @@
 import { Card, Select, Space, Tooltip } from "antd";
 import { LineChartOutlined } from "@ant-design/icons";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Chart } from "./Chart";
 import { financeApi } from "../api/finance";
+import { useApi } from "../api/useApi";
+import { useUrlParam } from "../utils/useUrlParam";
 import { useBrandTokens } from "../theme/useBrandTokens";
 import type { ForexRange } from "../types/finance";
 
@@ -13,13 +13,16 @@ const rangeOptions: { value: ForexRange; label: string }[] = [
   { value: "month", label: "Month" },
 ];
 
+const isForexRange = (v: string | undefined): v is ForexRange =>
+  v === "all" || v === "week" || v === "month";
+
 export const ForexCard = () => {
   const t = useBrandTokens();
-  const [range, setRange] = useState<ForexRange>("all");
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["forex", range],
-    queryFn: () => financeApi.forex(range),
-  });
+  const [rawRange, setRange] = useUrlParam("forexRange");
+  const range: ForexRange = isForexRange(rawRange) ? rawRange : "all";
+  const { data, isLoading, error } = useApi(["forex", range], () =>
+    financeApi.forex(range),
+  );
 
   return (
     <Card
@@ -32,7 +35,7 @@ export const ForexCard = () => {
         <Select
           size="small"
           value={range}
-          onChange={(v: ForexRange) => setRange(v)}
+          onChange={(v: ForexRange) => setRange(v === "all" ? undefined : v)}
           options={rangeOptions}
           style={{ width: 90 }}
         />
