@@ -46,6 +46,42 @@ export const VESSELS = [
   "MV EMERALD ISLE",
 ] as const;
 
+// Vessels used in the Inventory module — mostly matches the Figma rows so
+// the table looks familiar; padded out with realistic-sounding names.
+export const INVENTORY_VESSELS = [
+  "MV APOLLON",
+  "MV BAHRI HAYA",
+  "MV CRIMSON GLORY",
+  "MV ES BROAD SEA",
+  "MV GASTONE",
+  "MV HARMONY",
+  "MV INDIGO STAR",
+  "MV JADE COAST",
+  "MV KESTREL",
+  "MV LIBERTY",
+  "MV MERIDIAN",
+  "MV NOBLE EAGLE",
+  "MV OASIS",
+  "MV PHOENIX",
+  "MV QUEEN ANNE",
+  "MV ROYAL FLAG",
+  "MV SEA HAWK",
+  "MV TITAN",
+  "MV ULTRA SKY",
+  "MV VANGUARD",
+  "MV WIND SONG",
+  "MV XENA",
+  "MV YONDER",
+  "MV ZENITH",
+  "MV ASIAN GLORY",
+  "MV BLUE OCEAN",
+  "MV CORAL DAWN",
+  "MV DELTA RIVER",
+] as const;
+
+// Coal calorific grades used in inventory reporting.
+export const COAL_GRADES = ["INDO LCV", "INDO MCV", "INDO HCV", "AUS HCV", "SA MCV"] as const;
+
 export const GRADES = [
   "INDO-4200 GAR",
   "INDO-3400 GAR",

@@ -18,6 +18,7 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   SettingOutlined,
+  InboxOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { Logo } from "./Logo";
@@ -37,6 +38,7 @@ const menuItems: MenuProps["items"] = [
       { key: "/finance/approved-budget", label: "Approved Budget" },
     ],
   },
+  { key: "/inventory/index", icon: <InboxOutlined />, label: "Inventory" },
   { key: "/logistics", icon: <TruckOutlined />, label: "Logistics" },
   { key: "/marketing", icon: <RiseOutlined />, label: "Marketing" },
   { key: "/legal", icon: <AuditOutlined />, label: "Legal" },
@@ -54,7 +56,10 @@ export const AppShell = () => {
   const navigate = useNavigate();
   const { mode, toggle } = useThemeMode();
 
-  const selectedKeys = [location.pathname];
+  // Normalise inventory paths to the parent menu key so any tab highlights the item.
+  const selectedKeys = [
+    location.pathname.startsWith("/inventory") ? "/inventory/index" : location.pathname,
+  ];
   const [openKeys, setOpenKeys] = useState<string[]>(["finance"]);
 
   return (

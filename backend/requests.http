@@ -45,6 +45,18 @@ GET {{host}}/finance/approved-budget
 ### Approved Budget filtered
 GET {{host}}/finance/approved-budget?port=Hazira&grade=INDO-4200 GAR&zone=Zone 1&origin=INDO
 
+### Inventory: price indices (default 1M)
+GET {{host}}/inventory/index
+
+### Inventory: price indices, 3 months
+GET {{host}}/inventory/index?range=3M
+
+### Inventory: overview (no filters)
+GET {{host}}/inventory/overview
+
+### Inventory: overview filtered
+GET {{host}}/inventory/overview?port=Mundra&origin=INDO&grade=INDO LCV
+
 ### Filters
 GET {{host}}/filters/ports
 

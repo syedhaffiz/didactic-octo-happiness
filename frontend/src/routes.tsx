@@ -6,6 +6,9 @@ import { Revenue } from "./pages/finance/Revenue";
 import { WorkingCapital } from "./pages/finance/WorkingCapital";
 import { Profitability } from "./pages/finance/Profitability";
 import { ApprovedBudget } from "./pages/finance/ApprovedBudget";
+import { InventoryShell } from "./pages/inventory/InventoryShell";
+import { IndexPage } from "./pages/inventory/IndexPage";
+import { OverviewPage as InventoryOverviewPage } from "./pages/inventory/OverviewPage";
 import { Placeholder } from "./pages/Placeholder";
 
 export const router = createBrowserRouter([
@@ -22,6 +25,15 @@ export const router = createBrowserRouter([
       { path: "finance/approved-budget", element: <ApprovedBudget /> },
       { path: "finance/dispatch", element: <Placeholder title="Dispatch" /> },
       { path: "finance/inventory-days", element: <Placeholder title="Inventory Days" /> },
+      {
+        path: "inventory",
+        element: <InventoryShell />,
+        children: [
+          { index: true, element: <Navigate to="/inventory/index" replace /> },
+          { path: "index", element: <IndexPage /> },
+          { path: "inventory", element: <InventoryOverviewPage /> },
+        ],
+      },
       { path: "logistics", element: <Placeholder title="Logistics" /> },
       { path: "marketing", element: <Placeholder title="Marketing" /> },
       { path: "legal", element: <Placeholder title="Legal" /> },
