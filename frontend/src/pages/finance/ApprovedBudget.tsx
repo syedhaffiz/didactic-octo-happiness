@@ -71,50 +71,78 @@ const pbdOptions = (rows: PbdRow[]): Highcharts.Options => ({
   ],
 });
 
-const inventoryOptions = (g: InventoryGauge): Highcharts.Options => {
-  const totalUsed = g.slices.reduce((s, x) => s + x.days, 0);
-  const remaining = Math.max(0, g.max - totalUsed);
+// Multi-pane solid-gauge — one dial per segment, side by side, modelled on
+// https://www.highcharts.com/demo/highcharts/gauge-multiple-kpi.
+const inventoryOptions = (
+  g: InventoryGauge,
+  tokens: {
+    text: string;
+    textSecondary: string;
+    border: string;
+  },
+): Highcharts.Options => {
   const colorFor: Record<string, string> = {
     SEB: inventoryColors.seb,
     SNS: inventoryColors.sns,
   };
+  const stepPct = 100 / g.slices.length;
+
   return {
-    chart: { type: "pie", height: 260 },
-    tooltip: {
-      pointFormat: "<b>{point.y} days</b>",
-      style: { fontSize: "12px" },
-    },
+    chart: { type: "solidgauge", height: 260, backgroundColor: "transparent" },
+    title: { text: undefined },
+    tooltip: { enabled: false },
+    pane: g.slices.map((_, i) => ({
+      startAngle: -120,
+      endAngle: 120,
+      center: [`${stepPct * (i + 0.5)}%`, "60%"],
+      size: "100%",
+      background: [
+        {
+          outerRadius: "100%",
+          innerRadius: "72%",
+          backgroundColor: tokens.border,
+          borderWidth: 0,
+          shape: "arc",
+        },
+      ],
+    })),
+    yAxis: g.slices.map((_, i) => ({
+      min: 0,
+      max: g.max,
+      pane: i,
+      lineWidth: 0,
+      tickPositions: [],
+      labels: { enabled: false },
+    })),
     plotOptions: {
-      pie: {
-        innerSize: "72%",
-        startAngle: -135,
-        endAngle: 135,
-        borderWidth: 0,
-        dataLabels: { enabled: false },
-        showInLegend: true,
+      solidgauge: {
+        rounded: true,
+        dataLabels: { enabled: true, useHTML: true, y: -22, borderWidth: 0 },
       },
     },
-    legend: { enabled: true, align: "center", verticalAlign: "bottom" },
-    series: [
-      {
-        type: "pie",
-        name: "Inventory Days",
-        data: [
-          ...g.slices.map((s) => ({
-            name: s.segment,
-            y: s.days,
-            color: colorFor[s.segment] ?? inventoryColors.sns,
-          })),
-          {
-            name: "Remaining",
-            y: remaining,
-            color: "rgba(0,0,0,0.05)",
-            dataLabels: { enabled: false },
-            enableMouseTracking: false,
+    series: g.slices.map(
+      (s, i) =>
+        ({
+          type: "solidgauge",
+          name: s.segment,
+          yAxis: i,
+          data: [
+            {
+              y: s.days,
+              color: colorFor[s.segment] ?? inventoryColors.sns,
+              radius: "100%",
+              innerRadius: "72%",
+            },
+          ],
+          dataLabels: {
+            format:
+              `<div style="text-align:center">` +
+              `<div style="font-size:22px;font-weight:700;color:${tokens.text}">{y}</div>` +
+              `<div style="font-size:11px;color:${tokens.textSecondary};margin-top:2px;letter-spacing:0.4px">${s.segment}</div>` +
+              `</div>`,
           },
-        ],
-      } as unknown as Highcharts.SeriesOptionsType,
-    ],
+        }) as unknown as Highcharts.SeriesOptionsType,
+    ),
   };
 };
 
@@ -199,7 +227,13 @@ export const ApprovedBudget = () => {
               {isLoading || !data ? (
                 <Skeleton active paragraph={{ rows: 6 }} />
               ) : (
-                <Chart options={inventoryOptions(data.inventory)} />
+                <Chart
+                  options={inventoryOptions(data.inventory, {
+                    text: t.text,
+                    textSecondary: t.textSecondary,
+                    border: t.border,
+                  })}
+                />
               )}
             </Card>
           </Col>

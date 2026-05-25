@@ -1,4 +1,8 @@
 import Highcharts from "highcharts";
+// Side-effect imports register the solidgauge series type used by the
+// Inventory Days panel on the Approved Budget page.
+import "highcharts/highcharts-more";
+import "highcharts/modules/solid-gauge";
 import * as HCR from "highcharts-react-official";
 
 // highcharts-react-official ships as a UMD bundle so Vite's CJS-to-ESM interop
