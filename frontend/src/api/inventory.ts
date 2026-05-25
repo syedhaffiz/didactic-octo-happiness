@@ -1,4 +1,5 @@
 import { apiClient, unwrap } from "./client";
+import { USE_MOCK_DATA, mockDelay } from "./dataSource";
 import type { ApiEnvelope } from "../types/api";
 import type {
   IndexRange,
@@ -6,7 +7,10 @@ import type {
   InventoryOverviewParams,
   InventoryOverviewResponse,
 } from "../types/inventory";
+import { buildIndices, buildInventoryOverview } from "../mocks/inventory";
 
+// HTTP path – kept identical to what the backend will expose, so flipping
+// `USE_MOCK_DATA` is the only change required to switch over.
 const get = async <T>(
   path: string,
   params?: Record<string, string | undefined> | object,
@@ -22,8 +26,15 @@ const get = async <T>(
   return unwrap(res);
 };
 
-export const inventoryApi = {
+const httpInventoryApi = {
   index: (range: IndexRange = "1M") => get<IndexResponse>("/inventory/index", { range }),
   overview: (p: InventoryOverviewParams = {}) =>
     get<InventoryOverviewResponse>("/inventory/overview", p),
 };
+
+const mockInventoryApi = {
+  index: (range: IndexRange = "1M") => mockDelay(buildIndices(range)),
+  overview: (p: InventoryOverviewParams = {}) => mockDelay(buildInventoryOverview(p)),
+};
+
+export const inventoryApi = USE_MOCK_DATA ? mockInventoryApi : httpInventoryApi;
