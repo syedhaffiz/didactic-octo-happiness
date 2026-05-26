@@ -6,8 +6,13 @@ import type {
   IndexResponse,
   InventoryOverviewParams,
   InventoryOverviewResponse,
+  PriceIndex,
 } from "../types/inventory";
-import { buildIndices, buildInventoryOverview } from "../mocks/inventory";
+import {
+  buildIndices,
+  buildInventoryOverview,
+  buildOneIndex,
+} from "../mocks/inventory";
 
 // HTTP path – kept identical to what the backend will expose, so flipping
 // `USE_MOCK_DATA` is the only change required to switch over.
@@ -28,12 +33,21 @@ const get = async <T>(
 
 const httpInventoryApi = {
   index: (range: IndexRange = "1M") => get<IndexResponse>("/inventory/index", { range }),
+  indexOne: (code: string, range: IndexRange = "1M") =>
+    get<PriceIndex>(`/inventory/index/${encodeURIComponent(code)}`, { range }),
   overview: (p: InventoryOverviewParams = {}) =>
     get<InventoryOverviewResponse>("/inventory/overview", p),
 };
 
 const mockInventoryApi = {
   index: (range: IndexRange = "1M") => mockDelay(buildIndices(range)),
+  indexOne: (code: string, range: IndexRange = "1M") => {
+    const result = buildOneIndex(code, range);
+    if (!result) {
+      return Promise.reject(new Error(`not_found: Unknown index code: ${code}`));
+    }
+    return mockDelay(result);
+  },
   overview: (p: InventoryOverviewParams = {}) => mockDelay(buildInventoryOverview(p)),
 };
 

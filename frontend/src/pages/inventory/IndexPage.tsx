@@ -10,12 +10,19 @@ import type { IndexRange, PriceIndex } from "../../types/inventory";
 const isRange = (v: string | undefined): v is IndexRange =>
   v === "1W" || v === "1M" || v === "3M" || v === "1Y";
 
+const DEFAULT_RANGE: IndexRange = "1M";
+
 const RANGE_OPTIONS: { value: IndexRange; label: string }[] = [
   { value: "1W", label: "1 Week" },
   { value: "1M", label: "1 Month" },
   { value: "3M", label: "3 Months" },
   { value: "1Y", label: "1 Year" },
 ];
+
+// URL-safe slug for each card's range param. e.g. "ICI 4" → "ici4" → param key
+// "range_ici4". Each card writes/reads its own slot so they never collide.
+const slug = (code: string) => code.toLowerCase().replace(/[^a-z0-9]/g, "");
+const paramKey = (code: string) => `range_${slug(code)}`;
 
 const formatTick = (iso: string): string => {
   const d = new Date(iso + "T00:00:00Z");
@@ -55,16 +62,31 @@ const indexChartOptions = (idx: PriceIndex): Highcharts.Options => ({
   ],
 });
 
+// One independent card. Owns its own URL param, its own fetch, its own
+// dropdown state. The page renders one of these per index code.
 const PriceIndexCard = ({
-  idx,
-  range,
-  onRangeChange,
+  code,
+  initial,
 }: {
-  idx: PriceIndex;
-  range: IndexRange;
-  onRangeChange: (r: IndexRange) => void;
+  code: string;
+  initial: PriceIndex;
 }) => {
   const t = useBrandTokens();
+  const [rawRange, setRawRange] = useUrlParam(paramKey(code));
+  const range: IndexRange = isRange(rawRange) ? rawRange : DEFAULT_RANGE;
+
+  // Only fetch when the user has actually picked a non-default range — the
+  // bulk call already gave us the default-range data for this card.
+  const needsRefetch = isRange(rawRange) && rawRange !== DEFAULT_RANGE;
+  const { data: fetched, isLoading } = useApi(
+    ["inventory", "index", code, range, needsRefetch],
+    () => (needsRefetch ? inventoryApi.indexOne(code, range) : Promise.resolve(initial)),
+  );
+  const idx = fetched ?? initial;
+
+  const setRange = (next: IndexRange) =>
+    setRawRange(next === DEFAULT_RANGE ? undefined : next);
+
   return (
     <Card
       title={
@@ -79,13 +101,14 @@ const PriceIndexCard = ({
         <Select
           size="small"
           value={range}
-          onChange={onRangeChange}
+          onChange={setRange}
           options={RANGE_OPTIONS}
           style={{ width: 110 }}
         />
       }
       style={{ height: "100%" }}
       styles={{ header: { borderBottom: "none" }, body: { paddingTop: 4 } }}
+      loading={isLoading && needsRefetch}
     >
       <Chart options={indexChartOptions(idx)} />
       <div style={{ marginTop: 10, display: "flex", alignItems: "baseline", gap: 8 }}>
@@ -101,14 +124,11 @@ const PriceIndexCard = ({
 };
 
 export const IndexPage = () => {
-  const [rawRange, setRawRange] = useUrlParam("range");
-  const range: IndexRange = isRange(rawRange) ? rawRange : "1M";
-  const setRange = (next: IndexRange) =>
-    setRawRange(next === "1M" ? undefined : next);
-
+  // One bulk fetch up front to discover which cards exist and seed each with
+  // its default-range data. Per-card refetches are layered on top.
   const { data, isLoading, isError, error, refetch } = useApi(
-    ["inventory", "index", range],
-    () => inventoryApi.index(range),
+    ["inventory", "index", "bulk", DEFAULT_RANGE],
+    () => inventoryApi.index(DEFAULT_RANGE),
   );
 
   if (isError) {
@@ -130,7 +150,10 @@ export const IndexPage = () => {
           {isLoading || !idx ? (
             <Skeleton active paragraph={{ rows: 8 }} />
           ) : (
-            <PriceIndexCard idx={idx as PriceIndex} range={range} onRangeChange={setRange} />
+            <PriceIndexCard
+              code={(idx as PriceIndex).code}
+              initial={idx as PriceIndex}
+            />
           )}
         </Col>
       ))}

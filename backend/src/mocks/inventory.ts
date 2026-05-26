@@ -78,6 +78,13 @@ export const buildIndices = (r: IndexRange): IndexResponse => ({
   items: INDEX_DEFS.map((d) => buildIndex(d, r)),
 });
 
+// Per-code lookup so each card on the Inventory Index page can drive its
+// own range filter without re-fetching the other two indices.
+export const buildOneIndex = (code: string, r: IndexRange): PriceIndex | null => {
+  const def = INDEX_DEFS.find((d) => d.code === code);
+  return def ? buildIndex(def, r) : null;
+};
+
 // --- Inventory overview ----------------------------------------------------
 
 const filterKey = (f: InventoryFilters) =>

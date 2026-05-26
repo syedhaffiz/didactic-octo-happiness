@@ -181,6 +181,9 @@ export const openApiSpec = {
       get: {
         tags: ["Inventory"],
         summary: "Coal price indices (ICI 4, API 4, API 5)",
+        description:
+          "Bulk endpoint — returns all indices for a single range. Useful for the " +
+          "initial render. For per-card range filters, use `GET /inventory/index/{code}`.",
         parameters: [
           {
             name: "range",
@@ -190,6 +193,41 @@ export const openApiSpec = {
           },
         ],
         responses: { "200": envelopeResponse("IndexResponse") },
+      },
+    },
+    "/inventory/index/{code}": {
+      get: {
+        tags: ["Inventory"],
+        summary: "Single coal price index, with its own range filter",
+        description:
+          "Returns the time series for one index. Each card on the Inventory Index " +
+          "page calls this so its range dropdown is independent.",
+        parameters: [
+          {
+            name: "code",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "URL-encoded index code, e.g. `ICI%204`, `API%204`, `API%205`",
+          },
+          {
+            name: "range",
+            in: "query",
+            schema: { type: "string", enum: ["1W", "1M", "3M", "1Y"] },
+            description: "Defaults to `1M`",
+          },
+        ],
+        responses: {
+          "200": envelopeResponse("PriceIndex"),
+          "404": {
+            description: "Unknown code",
+            content: {
+              "application/json": {
+                schema: envelope({ $ref: "#/components/schemas/ApiError" }),
+              },
+            },
+          },
+        },
       },
     },
     "/inventory/overview": {
