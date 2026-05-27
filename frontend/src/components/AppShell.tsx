@@ -1,6 +1,18 @@
 import { Suspense, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Avatar, Badge, Button, Layout, Menu, Skeleton, Space, Tooltip } from "antd";
+import {
+  Avatar,
+  Badge,
+  Button,
+  Dropdown,
+  Layout,
+  Menu,
+  Skeleton,
+  Space,
+  Tooltip,
+} from "antd";
+import { useMsal } from "@azure/msal-react";
+import { signOut } from "../auth/token";
 import {
   BellOutlined,
   BulbOutlined,
@@ -55,6 +67,10 @@ export const AppShell = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { mode, toggle } = useThemeMode();
+  // MsalAuthenticationTemplate above guarantees we're authenticated by the
+  // time AppShell renders, so `accounts[0]` is always populated.
+  const { accounts } = useMsal();
+  const accountName = accounts[0]?.name ?? accounts[0]?.username ?? "Account";
 
   // Normalise inventory paths to the parent menu key so any tab highlights the item.
   const selectedKeys = [
@@ -91,15 +107,24 @@ export const AppShell = () => {
               onClick={toggle}
             />
           </Tooltip>
-          <Space size={8} style={{ cursor: "pointer" }}>
-            <Avatar
-              size={28}
-              icon={<UserOutlined />}
-              style={{ background: brand.white, color: brand.purple }}
-            />
-            <span style={{ color: brand.white, fontSize: 13 }}>Hemil Mistry</span>
-            <DownOutlined style={{ color: brand.white, fontSize: 10 }} />
-          </Space>
+          <Dropdown
+            trigger={["click"]}
+            menu={{
+              items: [
+                { key: "signout", label: "Sign out", onClick: () => void signOut() },
+              ],
+            }}
+          >
+            <Space size={8} style={{ cursor: "pointer" }}>
+              <Avatar
+                size={28}
+                icon={<UserOutlined />}
+                style={{ background: brand.white, color: brand.purple }}
+              />
+              <span style={{ color: brand.white, fontSize: 13 }}>{accountName}</span>
+              <DownOutlined style={{ color: brand.white, fontSize: 10 }} />
+            </Space>
+          </Dropdown>
         </Space>
       </Header>
       <Layout>

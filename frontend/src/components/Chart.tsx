@@ -22,6 +22,10 @@ type Options = Highcharts.Options;
 
 const baseDefaults: Options = {
   credits: { enabled: false },
+  // Silences Highcharts' "include accessibility module" dev warning. When
+  // we're ready to ship a11y support, import `highcharts/modules/accessibility`
+  // in this file and flip this to `true`.
+  accessibility: { enabled: false },
   title: { text: undefined },
   legend: { itemStyle: { fontFamily, fontWeight: "500" } },
   colors: [...chartPalette],
