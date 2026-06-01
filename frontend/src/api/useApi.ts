@@ -12,10 +12,17 @@ interface UseApiResult<T> {
 // full reload because it's in memory only.
 const referenceCache = new Map<string, unknown>();
 
+// In-flight request dedup. When multiple components mount concurrently with
+// the same deps key (e.g. three filter dropdowns reading the shared /filters
+// payload, or React StrictMode's double-invoke in dev), they share a single
+// network request instead of racing each other.
+const inFlight = new Map<string, Promise<unknown>>();
+
 interface Options {
-  // When true, the most recent successful result is stored under the cache key
-  // and used as the initial value on the next mount with the same key. Suitable
-  // for reference data that never (or rarely) changes during a session.
+  // When true, the most recent successful result is stored under the cache
+  // key and reused on subsequent mounts with the same key — no refetch.
+  // Suitable for reference data that never (or rarely) changes during a
+  // session. `refetch()` always bypasses the cache.
   cache?: boolean;
 }
 
@@ -23,8 +30,11 @@ interface Options {
 // participates in the cache key and triggers a refetch when changed —
 // equivalent in spirit to TanStack Query's `queryKey`.
 //
-// Only the latest in-flight request commits its result; earlier ones are
-// discarded so filter spam doesn't show stale data.
+// Behaviour:
+//   • cache: true + key in cache + first render → no fetch (use cached value).
+//   • Multiple components, same key, same render cycle → one network call.
+//   • Filter spam → only the latest result commits; earlier ones discarded.
+//   • refetch() → bypasses cache, always hits the network.
 export const useApi = <T>(
   deps: ReadonlyArray<unknown>,
   fn: () => Promise<T>,
@@ -41,15 +51,37 @@ export const useApi = <T>(
   const callIdRef = useRef(0);
 
   useEffect(() => {
-    // The effect kicks off an async fetch and commits the result into state.
-    // Setting state inside an effect is the correct pattern for data-fetching
-    // hooks; the set-state-in-effect lint rule is too strict here.
     const id = ++callIdRef.current;
     /* eslint-disable react-hooks/set-state-in-effect */
+
+    // Cache hit on initial render — skip the network call entirely. A manual
+    // refetch (tick > 0) bypasses this so the caller can force a refresh.
+    if (opts.cache && tick === 0 && referenceCache.has(key)) {
+      setData(referenceCache.get(key) as T);
+      setIsLoading(false);
+      setIsError(false);
+      setError(null);
+      return;
+    }
+
     setIsLoading(true);
     setIsError(false);
     setError(null);
-    fn()
+
+    // Dedupe concurrent calls for the same key. If a request is already in
+    // flight, reuse its promise instead of starting another.
+    let promise = inFlight.get(key) as Promise<T> | undefined;
+    if (!promise) {
+      promise = fn();
+      inFlight.set(key, promise);
+      // Drop the in-flight entry once settled so future calls re-fetch
+      // (unless cache: true, in which case the cache catches them first).
+      promise.finally(() => {
+        if (inFlight.get(key) === promise) inFlight.delete(key);
+      });
+    }
+
+    promise
       .then((result) => {
         if (id !== callIdRef.current) return;
         setData(result);
