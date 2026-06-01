@@ -404,10 +404,10 @@ const VesselsBlock = ({
   loadingError,
   linkBlue,
 }: {
-  sailed: VesselRow[] | undefined;
+  sailed: VesselRow[] | undefined | null;
   sailedLoading: boolean;
   sailedError: Error | null;
-  loading: VesselRow[] | undefined;
+  loading: VesselRow[] | undefined | null;
   loadingLoading: boolean;
   loadingError: Error | null;
   linkBlue: string;
@@ -415,10 +415,16 @@ const VesselsBlock = ({
   const columns = vesselColumns(linkBlue);
 
   const renderTable = (
-    rows: VesselRow[] | undefined,
+    rows: VesselRow[] | undefined | null,
     isLoading: boolean,
     error: Error | null,
   ) => {
+    // Loading check first, on its own — once isLoading flips to false, we
+    // commit to either error, empty, or table. Crucially, a successful
+    // response with `items: null` lands in the Empty branch, not Skeleton.
+    if (isLoading) {
+      return <Skeleton active paragraph={{ rows: 6 }} style={{ padding: 16 }} />;
+    }
     if (error) {
       return (
         <Alert
@@ -430,10 +436,7 @@ const VesselsBlock = ({
         />
       );
     }
-    if (isLoading || !rows) {
-      return <Skeleton active paragraph={{ rows: 6 }} style={{ padding: 16 }} />;
-    }
-    if (rows.length === 0) {
+    if (!rows || rows.length === 0) {
       return <Empty description="No vessels" style={{ padding: 32 }} />;
     }
     return (
@@ -447,10 +450,10 @@ const VesselsBlock = ({
     );
   };
 
-  // While a count is loading, show "…" instead of "0" so the tab label
-  // doesn't flash a misleading zero.
-  const countLabel = (rows: VesselRow[] | undefined, isLoading: boolean) =>
-    isLoading || !rows ? "…" : rows.length;
+  // Show "…" only while the fetch is in flight. A successful response with
+  // null/empty items shows "0" — accurate, not misleading.
+  const countLabel = (rows: VesselRow[] | undefined | null, isLoading: boolean) =>
+    isLoading ? "…" : (rows?.length ?? 0);
 
   return (
     <Tabs
