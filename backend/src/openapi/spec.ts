@@ -234,8 +234,18 @@ export const openApiSpec = {
         summary: "Inventory KPIs, port stock, dispatch, sales, vessels",
         parameters: [
           { $ref: "#/components/parameters/Port" },
-          { name: "origin", in: "query", schema: { type: "string" } },
-          { name: "grade", in: "query", schema: { type: "string" } },
+          {
+            name: "origin",
+            in: "query",
+            schema: { type: "string" },
+            description: "Origin id (the `id` field from /filters → origins)",
+          },
+          {
+            name: "grade",
+            in: "query",
+            schema: { type: "string" },
+            description: "Grade id (the `id` field from /filters → grades)",
+          },
         ],
         responses: { "200": envelopeResponse("InventoryOverviewResponse") },
       },
@@ -268,7 +278,7 @@ export const openApiSpec = {
         name: "port",
         in: "query",
         schema: { type: "string" },
-        description: "Port name from /filters/ports",
+        description: "Port id (the `id` field from /filters → ports)",
       },
     },
 
@@ -285,15 +295,41 @@ export const openApiSpec = {
       },
 
       // --- Filters -----------------------------------------------------
+      FilterRef: {
+        type: "object",
+        required: ["id", "name"],
+        properties: {
+          id: { type: "string", example: "mundra" },
+          name: { type: "string", example: "Mundra" },
+        },
+      },
+      GradeRef: {
+        type: "object",
+        required: ["id", "name", "group_name"],
+        properties: {
+          id: { type: "string", example: "indo-4200-gar" },
+          name: { type: "string", example: "INDO-4200 GAR" },
+          group_name: { type: "string", example: "INDO" },
+        },
+      },
+      IndexNameRef: {
+        type: "object",
+        required: ["index_name", "code_id"],
+        properties: {
+          index_name: { type: "string", example: "api4", description: "Short slug" },
+          code_id: { type: "string", example: "API 4", description: "Display code" },
+        },
+      },
       FiltersResponse: {
         type: "object",
-        required: ["ports", "segments", "zones", "grades", "origins"],
+        required: ["ports", "segments", "zones", "origins", "grades", "indexNames"],
         properties: {
-          ports: { type: "array", items: { type: "string" } },
-          segments: { type: "array", items: { type: "string" } },
-          zones: { type: "array", items: { type: "string" } },
-          grades: { type: "array", items: { type: "string" } },
-          origins: { type: "array", items: { type: "string" } },
+          ports: { type: "array", items: { $ref: "#/components/schemas/FilterRef" } },
+          segments: { type: "array", items: { $ref: "#/components/schemas/FilterRef" } },
+          zones: { type: "array", items: { $ref: "#/components/schemas/FilterRef" } },
+          origins: { type: "array", items: { $ref: "#/components/schemas/FilterRef" } },
+          grades: { type: "array", items: { $ref: "#/components/schemas/GradeRef" } },
+          indexNames: { type: "array", items: { $ref: "#/components/schemas/IndexNameRef" } },
         },
       },
 

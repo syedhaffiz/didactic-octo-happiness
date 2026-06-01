@@ -1,11 +1,26 @@
 // --- Filters ---------------------------------------------------------------
 
+export interface FilterRef {
+  id: string;
+  name: string;
+}
+
+export interface GradeRef extends FilterRef {
+  group_name: string;
+}
+
+export interface IndexNameRef {
+  index_name: string; // short slug, e.g. "api4"
+  code_id: string; // display code, e.g. "API 4"
+}
+
 export interface FiltersResponse {
-  ports: string[];
-  segments: string[];
-  zones: string[];
-  grades: string[];
-  origins: string[];
+  ports: FilterRef[];
+  segments: FilterRef[];
+  zones: FilterRef[];
+  origins: FilterRef[];
+  grades: GradeRef[];
+  indexNames: IndexNameRef[];
 }
 
 // --- Envelope --------------------------------------------------------------

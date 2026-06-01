@@ -5,12 +5,29 @@ import { filtersApi, type FiltersResponse } from "../../api/filters";
 
 const ALL = "__all__";
 
+// All filters in the response are arrays of objects. Each has its own
+// value/label fields — we extract { value, label } per filter kind so
+// SelectFilter doesn't care about the shape.
+const optionExtractors: {
+  [K in keyof FiltersResponse]: (
+    item: FiltersResponse[K][number],
+  ) => { value: string; label: string };
+} = {
+  ports: (p) => ({ value: p.id, label: p.name }),
+  segments: (s) => ({ value: s.id, label: s.name }),
+  zones: (z) => ({ value: z.id, label: z.name }),
+  origins: (o) => ({ value: o.id, label: o.name }),
+  grades: (g) => ({ value: g.id, label: g.name }),
+  indexNames: (i) => ({ value: i.code_id, label: i.index_name }),
+};
+
 interface SelectFilterProps {
   label: string;
-  // Which slice of the shared /filters response to render. Every dropdown
-  // shares the same fetch via `useApi`'s reference cache — only the first
-  // mount makes the network call; the rest read from cache instantly.
+  // Which slice of the shared /filters response to render. All instances
+  // share the same fetch via `useApi`'s reference cache — only the first
+  // mount makes the network call.
   kind: keyof FiltersResponse;
+  // The selected `id` (or `code_id` for indexNames). Stored in the URL.
   value: string | undefined;
   onChange: (v: string | undefined) => void;
   width?: number;
@@ -24,11 +41,19 @@ export const SelectFilter = ({
   width = 160,
 }: SelectFilterProps) => {
   const { data } = useApi(["filters"], filtersApi.all, { cache: true });
-  const items = data?.[kind] ?? [];
+
+  // Cast through the discriminated extractor table. TS can't narrow the
+  // mapped-tuple correlation here, but the runtime correspondence is
+  // direct: items[kind] is fed to the matching extractor.
+  const items = (data?.[kind] ?? []) as FiltersResponse[typeof kind];
+  const extract = optionExtractors[kind] as (item: unknown) => {
+    value: string;
+    label: string;
+  };
 
   const options = [
     { value: ALL, label: "All" },
-    ...items.map((v) => ({ value: v, label: v })),
+    ...items.map((item) => extract(item)),
   ];
 
   return (

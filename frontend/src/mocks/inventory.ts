@@ -26,6 +26,9 @@ import {
   COAL_GRADES,
   INVENTORY_VESSELS,
   ORIGINS,
+  gradeNameById,
+  originNameById,
+  portNameById,
 } from "./catalog";
 import { intRange, pick, range, round, seedFromString, seeded } from "./rand";
 
@@ -94,7 +97,22 @@ export const buildOneIndex = (code: string, r: IndexRange): PriceIndex | null =>
 
 // --- Inventory overview ----------------------------------------------------
 
-const filterKey = (f: InventoryOverviewParams) =>
+// Filter params arrive as ids (e.g. port="mundra"). Internal generators
+// (port-level table, vessel rows) are name-keyed, so convert once at the
+// boundary and thread the normalised shape through.
+interface NormalizedFilters {
+  port?: string;
+  origin?: string;
+  grade?: string;
+}
+
+const normalize = (f: InventoryOverviewParams): NormalizedFilters => ({
+  port: portNameById(f.port),
+  origin: originNameById(f.origin),
+  grade: gradeNameById(f.grade),
+});
+
+const filterKey = (f: NormalizedFilters) =>
   `${f.port ?? "ALL"}:${f.origin ?? "ALL"}:${f.grade ?? "ALL"}`;
 
 const HEADLINE_DEFAULTS = {
@@ -110,7 +128,7 @@ const HEADLINE_DEFAULTS = {
 
 const flex = (base: number, factor: number) => Math.max(0, Math.round(base * factor));
 
-const buildKpis = (f: InventoryOverviewParams): InventoryKpi[] => {
+const buildKpis = (f: NormalizedFilters): InventoryKpi[] => {
   const noFilter = !f.port && !f.origin && !f.grade;
   const rng = seeded(seedFromString(`inv:kpis:${filterKey(f)}`));
   const factor = noFilter ? 1 : 0.6 + rng() * 0.7;
@@ -170,7 +188,7 @@ const PORT_LEVELS = [
   { port: "Hazira", stock: 7650, unsold: 980 },
 ];
 
-const buildCurrentInventory = (f: InventoryOverviewParams): PortInventoryRow[] => {
+const buildCurrentInventory = (f: NormalizedFilters): PortInventoryRow[] => {
   const noFilter = !f.port && !f.origin && !f.grade;
   const rng = seeded(seedFromString(`inv:level:${filterKey(f)}`));
   const rows = f.port ? PORT_LEVELS.filter((p) => p.port === f.port) : PORT_LEVELS;
@@ -184,7 +202,7 @@ const buildCurrentInventory = (f: InventoryOverviewParams): PortInventoryRow[] =
   });
 };
 
-const buildDispatchSummary = (f: InventoryOverviewParams): DispatchSummary => {
+const buildDispatchSummary = (f: NormalizedFilters): DispatchSummary => {
   const rng = seeded(seedFromString(`inv:dispatch:${filterKey(f)}`));
   const noFilter = !f.port && !f.origin && !f.grade;
   const last24 = noFilter ? 1553 : flex(1553, 0.5 + rng() * 1.5);
@@ -197,7 +215,7 @@ const buildDispatchSummary = (f: InventoryOverviewParams): DispatchSummary => {
 
 const MONTHS_BACK = ["Dec", "Jan", "Feb", "Mar", "Apr", "May"];
 
-const buildSales = (f: InventoryOverviewParams): SalesMonth[] => {
+const buildSales = (f: NormalizedFilters): SalesMonth[] => {
   const rng = seeded(seedFromString(`inv:sales:${filterKey(f)}`));
   return MONTHS_BACK.map((m) => ({
     month: m,
@@ -208,7 +226,7 @@ const buildSales = (f: InventoryOverviewParams): SalesMonth[] => {
 const buildVessels = (
   resource: "sailed" | "loading",
   count: number,
-  f: InventoryOverviewParams,
+  f: NormalizedFilters,
 ): VesselRow[] => {
   const rng = seeded(seedFromString(`inv:vessels:${resource}:${filterKey(f)}`));
   return Array.from({ length: count }, (_, idx) => {
@@ -230,8 +248,9 @@ const buildVessels = (
 };
 
 export const buildInventoryOverview = (
-  f: InventoryOverviewParams,
+  rawFilters: InventoryOverviewParams,
 ): InventoryOverviewResponse => {
+  const f = normalize(rawFilters);
   const kpis = buildKpis(f);
   const sailed = kpis.find((k) => k.id === "vessels")?.primaryValue ?? 23;
   const loading = kpis.find((k) => k.id === "vessels")?.secondaryValue ?? 5;
