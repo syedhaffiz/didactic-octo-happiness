@@ -4,17 +4,22 @@ import type {
   InventoryFilters,
   InventoryOverviewResponse,
   PriceIndex,
+  VesselRow,
 } from "../types/inventory.js";
 import {
   buildIndices,
   buildInventoryOverview,
   buildOneIndex,
+  buildVesselsSailedOut,
+  buildVesselsUnderloading,
 } from "../mocks/inventory.js";
 
 export interface InventoryRepository {
   getIndices(range: IndexRange): Promise<IndexResponse>;
   getIndex(code: string, range: IndexRange): Promise<PriceIndex | null>;
   getOverview(filters: InventoryFilters): Promise<InventoryOverviewResponse>;
+  getVesselsSailedOut(filters: InventoryFilters): Promise<VesselRow[]>;
+  getVesselsUnderloading(filters: InventoryFilters): Promise<VesselRow[]>;
 }
 
 class MockInventoryRepository implements InventoryRepository {
@@ -26,6 +31,12 @@ class MockInventoryRepository implements InventoryRepository {
   }
   async getOverview(filters: InventoryFilters) {
     return buildInventoryOverview(filters);
+  }
+  async getVesselsSailedOut(filters: InventoryFilters) {
+    return buildVesselsSailedOut(filters);
+  }
+  async getVesselsUnderloading(filters: InventoryFilters) {
+    return buildVesselsUnderloading(filters);
   }
 }
 

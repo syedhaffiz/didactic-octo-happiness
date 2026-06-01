@@ -53,3 +53,24 @@ export const getOverview: RequestHandler = async (req, res, next) => {
     next(e);
   }
 };
+
+// Vessels are their own endpoints — same filters as overview, but each
+// table is fetched independently so the page can render KPIs/charts
+// without waiting on the (potentially larger) vessel lists.
+export const getVesselsSailedOut: RequestHandler = async (req, res, next) => {
+  try {
+    const q = parse(overviewSchema, req.query);
+    res.json(ok(await inventoryService.vesselsSailedOut(q)));
+  } catch (e) {
+    next(e);
+  }
+};
+
+export const getVesselsUnderloading: RequestHandler = async (req, res, next) => {
+  try {
+    const q = parse(overviewSchema, req.query);
+    res.json(ok(await inventoryService.vesselsUnderloading(q)));
+  } catch (e) {
+    next(e);
+  }
+};

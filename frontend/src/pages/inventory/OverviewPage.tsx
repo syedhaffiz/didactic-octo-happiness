@@ -222,6 +222,18 @@ export const OverviewPage = () => {
     () => inventoryApi.overview({ port, origin, grade }),
   );
 
+  // Vessel tables have their own endpoints — independent loading state so
+  // the KPI/dispatch/sales blocks can render even if the vessel lists are
+  // still streaming.
+  const vesselsSailedOutQuery = useApi(
+    ["inventory", "vessels", "sailed-out", port, origin, grade],
+    () => inventoryApi.vesselsSailedOut({ port, origin, grade }),
+  );
+  const vesselsUnderloadingQuery = useApi(
+    ["inventory", "vessels", "under-loading", port, origin, grade],
+    () => inventoryApi.vesselsUnderloading({ port, origin, grade }),
+  );
+
   if (isError) {
     return (
       <Alert
@@ -306,13 +318,17 @@ export const OverviewPage = () => {
         </Col>
       </Row>
 
-      {/* Vessels */}
+      {/* Vessels — two independent endpoints, each loads on its own */}
       <Card style={{ marginTop: 16 }} styles={{ body: { paddingTop: 4 } }}>
-        {isLoading || !data ? (
-          <Skeleton active paragraph={{ rows: 8 }} />
-        ) : (
-          <VesselsBlock data={data} linkBlue={t.linkBlue} />
-        )}
+        <VesselsBlock
+          sailed={vesselsSailedOutQuery.data}
+          sailedLoading={vesselsSailedOutQuery.isLoading}
+          sailedError={vesselsSailedOutQuery.error}
+          loading={vesselsUnderloadingQuery.data}
+          loadingLoading={vesselsUnderloadingQuery.isLoading}
+          loadingError={vesselsUnderloadingQuery.error}
+          linkBlue={t.linkBlue}
+        />
       </Card>
     </>
   );
@@ -362,42 +378,72 @@ const DispatchSummaryBlock = ({ data }: { data: InventoryOverviewResponse }) => 
 };
 
 const VesselsBlock = ({
-  data,
+  sailed,
+  sailedLoading,
+  sailedError,
+  loading,
+  loadingLoading,
+  loadingError,
   linkBlue,
 }: {
-  data: InventoryOverviewResponse;
+  sailed: VesselRow[] | undefined;
+  sailedLoading: boolean;
+  sailedError: Error | null;
+  loading: VesselRow[] | undefined;
+  loadingLoading: boolean;
+  loadingError: Error | null;
   linkBlue: string;
 }) => {
   const columns = vesselColumns(linkBlue);
+
+  const renderTable = (
+    rows: VesselRow[] | undefined,
+    isLoading: boolean,
+    error: Error | null,
+  ) => {
+    if (error) {
+      return (
+        <Alert
+          type="error"
+          showIcon
+          message="Could not load vessels"
+          description={error.message}
+          style={{ margin: 16 }}
+        />
+      );
+    }
+    if (isLoading || !rows) {
+      return <Skeleton active paragraph={{ rows: 6 }} style={{ padding: 16 }} />;
+    }
+    return (
+      <Table
+        rowKey={(r) => `${r.vessel}-${r.blDate}`}
+        columns={columns}
+        dataSource={rows}
+        pagination={{ pageSize: 10, showSizeChanger: false }}
+        size="middle"
+      />
+    );
+  };
+
+  // While a count is loading, show "…" instead of "0" so the tab label
+  // doesn't flash a misleading zero.
+  const countLabel = (rows: VesselRow[] | undefined, isLoading: boolean) =>
+    isLoading || !rows ? "…" : rows.length;
+
   return (
     <Tabs
       defaultActiveKey="sailed"
       items={[
         {
           key: "sailed",
-          label: `Vessels Sailed Out (${data.vesselsSailedOut.length})`,
-          children: (
-            <Table
-              rowKey={(r) => `${r.vessel}-${r.blDate}`}
-              columns={columns}
-              dataSource={data.vesselsSailedOut}
-              pagination={{ pageSize: 10, showSizeChanger: false }}
-              size="middle"
-            />
-          ),
+          label: `Vessels Sailed Out (${countLabel(sailed, sailedLoading)})`,
+          children: renderTable(sailed, sailedLoading, sailedError),
         },
         {
           key: "loading",
-          label: `Vessels Underloading (${data.vesselsUnderloading.length})`,
-          children: (
-            <Table
-              rowKey={(r) => `${r.vessel}-${r.blDate}`}
-              columns={columns}
-              dataSource={data.vesselsUnderloading}
-              pagination={{ pageSize: 10, showSizeChanger: false }}
-              size="middle"
-            />
-          ),
+          label: `Vessels Underloading (${countLabel(loading, loadingLoading)})`,
+          children: renderTable(loading, loadingLoading, loadingError),
         },
       ]}
     />

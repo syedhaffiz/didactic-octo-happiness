@@ -231,7 +231,10 @@ export const openApiSpec = {
     "/inventory/overview": {
       get: {
         tags: ["Inventory"],
-        summary: "Inventory KPIs, port stock, dispatch, sales, vessels",
+        summary: "Inventory KPIs, port stock, dispatch, sales",
+        description:
+          "Vessels are no longer part of this payload — see " +
+          "`/inventory/vessels/sailed-out` and `/inventory/vessels/under-loading`.",
         parameters: [
           { $ref: "#/components/parameters/Port" },
           {
@@ -248,6 +251,56 @@ export const openApiSpec = {
           },
         ],
         responses: { "200": envelopeResponse("InventoryOverviewResponse") },
+      },
+    },
+    "/inventory/vessels/sailed-out": {
+      get: {
+        tags: ["Inventory"],
+        summary: "Vessels that have sailed out, filtered",
+        description: "Same filters as /inventory/overview.",
+        parameters: [
+          { $ref: "#/components/parameters/Port" },
+          { name: "origin", in: "query", schema: { type: "string" } },
+          { name: "grade", in: "query", schema: { type: "string" } },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            content: {
+              "application/json": {
+                schema: envelope({
+                  type: "array",
+                  items: { $ref: "#/components/schemas/InventoryVesselRow" },
+                }),
+              },
+            },
+          },
+        },
+      },
+    },
+    "/inventory/vessels/under-loading": {
+      get: {
+        tags: ["Inventory"],
+        summary: "Vessels currently under-loading at a port, filtered",
+        description: "Same filters as /inventory/overview.",
+        parameters: [
+          { $ref: "#/components/parameters/Port" },
+          { name: "origin", in: "query", schema: { type: "string" } },
+          { name: "grade", in: "query", schema: { type: "string" } },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            content: {
+              "application/json": {
+                schema: envelope({
+                  type: "array",
+                  items: { $ref: "#/components/schemas/InventoryVesselRow" },
+                }),
+              },
+            },
+          },
+        },
       },
     },
 
@@ -615,15 +668,13 @@ export const openApiSpec = {
       },
       InventoryOverviewResponse: {
         type: "object",
-        required: ["asOf", "kpis", "currentInventory", "dispatch", "sales", "vesselsSailedOut", "vesselsUnderloading"],
+        required: ["asOf", "kpis", "currentInventory", "dispatch", "sales"],
         properties: {
           asOf: { type: "string", format: "date" },
           kpis: { type: "array", items: { $ref: "#/components/schemas/InventoryKpi" } },
           currentInventory: { type: "array", items: { $ref: "#/components/schemas/PortInventoryRow" } },
           dispatch: { $ref: "#/components/schemas/DispatchSummary" },
           sales: { type: "array", items: { $ref: "#/components/schemas/SalesMonth" } },
-          vesselsSailedOut: { type: "array", items: { $ref: "#/components/schemas/InventoryVesselRow" } },
-          vesselsUnderloading: { type: "array", items: { $ref: "#/components/schemas/InventoryVesselRow" } },
         },
       },
     },

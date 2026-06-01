@@ -71,8 +71,6 @@ export interface InventoryOverviewResponse {
   currentInventory: PortInventoryRow[];
   dispatch: DispatchSummary;
   sales: SalesMonth[];
-  vesselsSailedOut: VesselRow[];
-  vesselsUnderloading: VesselRow[];
 }
 
 export interface InventoryOverviewParams {

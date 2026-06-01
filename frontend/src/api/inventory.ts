@@ -7,11 +7,14 @@ import type {
   InventoryOverviewParams,
   InventoryOverviewResponse,
   PriceIndex,
+  VesselRow,
 } from "../types/inventory";
 import {
   buildIndices,
   buildInventoryOverview,
   buildOneIndex,
+  buildVesselsSailedOut,
+  buildVesselsUnderloading,
 } from "../mocks/inventory";
 
 // HTTP path – kept identical to what the backend will expose, so flipping
@@ -37,6 +40,10 @@ const httpInventoryApi = {
     get<PriceIndex>(`/inventory/index/${encodeURIComponent(code)}`, { range }),
   overview: (p: InventoryOverviewParams = {}) =>
     get<InventoryOverviewResponse>("/inventory/overview", p),
+  vesselsSailedOut: (p: InventoryOverviewParams = {}) =>
+    get<VesselRow[]>("/inventory/vessels/sailed-out", p),
+  vesselsUnderloading: (p: InventoryOverviewParams = {}) =>
+    get<VesselRow[]>("/inventory/vessels/under-loading", p),
 };
 
 const mockInventoryApi = {
@@ -49,6 +56,9 @@ const mockInventoryApi = {
     return mockDelay(result);
   },
   overview: (p: InventoryOverviewParams = {}) => mockDelay(buildInventoryOverview(p)),
+  vesselsSailedOut: (p: InventoryOverviewParams = {}) => mockDelay(buildVesselsSailedOut(p)),
+  vesselsUnderloading: (p: InventoryOverviewParams = {}) =>
+    mockDelay(buildVesselsUnderloading(p)),
 };
 
 export const inventoryApi = USE_MOCK_DATA ? mockInventoryApi : httpInventoryApi;

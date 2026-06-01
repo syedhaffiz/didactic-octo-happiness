@@ -5,4 +5,8 @@ export const inventoryService = {
   indices: (range: IndexRange) => inventoryRepository.getIndices(range),
   index: (code: string, range: IndexRange) => inventoryRepository.getIndex(code, range),
   overview: (filters: InventoryFilters) => inventoryRepository.getOverview(filters),
+  vesselsSailedOut: (filters: InventoryFilters) =>
+    inventoryRepository.getVesselsSailedOut(filters),
+  vesselsUnderloading: (filters: InventoryFilters) =>
+    inventoryRepository.getVesselsUnderloading(filters),
 };

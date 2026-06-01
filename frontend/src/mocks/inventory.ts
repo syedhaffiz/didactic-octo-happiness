@@ -115,6 +115,18 @@ const normalize = (f: InventoryOverviewParams): NormalizedFilters => ({
 const filterKey = (f: NormalizedFilters) =>
   `${f.port ?? "ALL"}:${f.origin ?? "ALL"}:${f.grade ?? "ALL"}`;
 
+// Shared between buildKpis and the two vessel endpoints so the KPI card
+// and the tab badges agree on the count.
+const computeVesselCounts = (f: NormalizedFilters): { sailed: number; loading: number } => {
+  const noFilter = !f.port && !f.origin && !f.grade;
+  if (noFilter) return { sailed: HEADLINE_DEFAULTS.sailedOut, loading: HEADLINE_DEFAULTS.underLoading };
+  const rng = seeded(seedFromString(`inv:vessel-counts:${filterKey(f)}`));
+  return {
+    sailed: intRange(rng, 8, 28),
+    loading: intRange(rng, 1, 8),
+  };
+};
+
 const HEADLINE_DEFAULTS = {
   totalInventory: 52486,
   unsoldInventory: 21245,
@@ -133,6 +145,7 @@ const buildKpis = (f: NormalizedFilters): InventoryKpi[] => {
   const rng = seeded(seedFromString(`inv:kpis:${filterKey(f)}`));
   const factor = noFilter ? 1 : 0.6 + rng() * 0.7;
   const d = HEADLINE_DEFAULTS;
+  const { sailed, loading } = computeVesselCounts(f);
 
   return [
     {
@@ -172,9 +185,9 @@ const buildKpis = (f: NormalizedFilters): InventoryKpi[] => {
       id: "vessels",
       title: "Total Vessels",
       primaryLabel: "Sailed Out",
-      primaryValue: noFilter ? d.sailedOut : intRange(rng, 8, 28),
+      primaryValue: sailed,
       secondaryLabel: "Under loading",
-      secondaryValue: noFilter ? d.underLoading : intRange(rng, 1, 8),
+      secondaryValue: loading,
       lastUpdated: isoDay(AS_OF),
     },
   ];
@@ -251,16 +264,21 @@ export const buildInventoryOverview = (
   rawFilters: InventoryOverviewParams,
 ): InventoryOverviewResponse => {
   const f = normalize(rawFilters);
-  const kpis = buildKpis(f);
-  const sailed = kpis.find((k) => k.id === "vessels")?.primaryValue ?? 23;
-  const loading = kpis.find((k) => k.id === "vessels")?.secondaryValue ?? 5;
   return {
     asOf: isoDay(AS_OF),
-    kpis,
+    kpis: buildKpis(f),
     currentInventory: buildCurrentInventory(f),
     dispatch: buildDispatchSummary(f),
     sales: buildSales(f),
-    vesselsSailedOut: buildVessels("sailed", sailed, f),
-    vesselsUnderloading: buildVessels("loading", loading, f),
   };
+};
+
+export const buildVesselsSailedOut = (rawFilters: InventoryOverviewParams): VesselRow[] => {
+  const f = normalize(rawFilters);
+  return buildVessels("sailed", computeVesselCounts(f).sailed, f);
+};
+
+export const buildVesselsUnderloading = (rawFilters: InventoryOverviewParams): VesselRow[] => {
+  const f = normalize(rawFilters);
+  return buildVessels("loading", computeVesselCounts(f).loading, f);
 };

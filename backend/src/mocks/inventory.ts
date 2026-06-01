@@ -99,7 +99,7 @@ interface NormalizedFilters {
   grade?: string;
 }
 
-const normalize = (f: NormalizedFilters): NormalizedFilters => ({
+const normalize = (f: InventoryFilters): NormalizedFilters => ({
   port: portNameById(f.port),
   origin: originNameById(f.origin),
   grade: gradeNameById(f.grade),
@@ -107,6 +107,18 @@ const normalize = (f: NormalizedFilters): NormalizedFilters => ({
 
 const filterKey = (f: NormalizedFilters) =>
   `${f.port ?? "ALL"}:${f.origin ?? "ALL"}:${f.grade ?? "ALL"}`;
+
+// Vessel counts are shared between the KPI card and the two vessel
+// endpoints — extracted here so all three derive from the same RNG seed.
+const computeVesselCounts = (f: NormalizedFilters): { sailed: number; loading: number } => {
+  const noFilter = !f.port && !f.origin && !f.grade;
+  if (noFilter) return { sailed: HEADLINE_DEFAULTS.sailedOut, loading: HEADLINE_DEFAULTS.underLoading };
+  const rng = seeded(seedFromString(`inv:vessel-counts:${filterKey(f)}`));
+  return {
+    sailed: intRange(rng, 8, 28),
+    loading: intRange(rng, 1, 8),
+  };
+};
 
 // Default "no filters" KPI values pinned to the screenshot; deterministic
 // variation when filters are applied so the page reacts visibly.
@@ -128,6 +140,7 @@ const buildKpis = (f: NormalizedFilters): InventoryKpi[] => {
   const rng = seeded(seedFromString(`inv:kpis:${filterKey(f)}`));
   const factor = noFilter ? 1 : 0.6 + rng() * 0.7;
   const d = HEADLINE_DEFAULTS;
+  const { sailed, loading } = computeVesselCounts(f);
 
   return [
     {
@@ -167,9 +180,9 @@ const buildKpis = (f: NormalizedFilters): InventoryKpi[] => {
       id: "vessels",
       title: "Total Vessels",
       primaryLabel: "Sailed Out",
-      primaryValue: noFilter ? d.sailedOut : intRange(rng, 8, 28),
+      primaryValue: sailed,
       secondaryLabel: "Under loading",
-      secondaryValue: noFilter ? d.underLoading : intRange(rng, 1, 8),
+      secondaryValue: loading,
       lastUpdated: isoDay(AS_OF),
     },
   ];
@@ -249,18 +262,26 @@ export const buildInventoryOverview = (
   rawFilters: InventoryFilters,
 ): InventoryOverviewResponse => {
   const f = normalize(rawFilters);
-  const kpis = buildKpis(f);
-  const sailed = kpis.find((k) => k.id === "vessels")?.primaryValue ?? 23;
-  const loading = kpis.find((k) => k.id === "vessels")?.secondaryValue ?? 5;
   return {
     asOf: isoDay(AS_OF),
-    kpis,
+    kpis: buildKpis(f),
     currentInventory: buildCurrentInventory(f),
     dispatch: buildDispatchSummary(f),
     sales: buildSales(f),
-    vesselsSailedOut: buildVessels("sailed", sailed, f),
-    vesselsUnderloading: buildVessels("loading", loading, f),
   };
+};
+
+// Each vessel list is its own endpoint. The count comes from
+// computeVesselCounts (shared with the KPI card), so the tab label stays
+// in sync with what the KPI says.
+export const buildVesselsSailedOut = (rawFilters: InventoryFilters): VesselRow[] => {
+  const f = normalize(rawFilters);
+  return buildVessels("sailed", computeVesselCounts(f).sailed, f);
+};
+
+export const buildVesselsUnderloading = (rawFilters: InventoryFilters): VesselRow[] => {
+  const f = normalize(rawFilters);
+  return buildVessels("loading", computeVesselCounts(f).loading, f);
 };
 
 void PORTS;
