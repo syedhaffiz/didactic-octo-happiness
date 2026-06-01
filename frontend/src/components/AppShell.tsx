@@ -13,6 +13,7 @@ import {
 } from "antd";
 import { useMsal } from "@azure/msal-react";
 import { signOut } from "../auth/token";
+import { ErrorBoundary } from "./ErrorBoundary";
 import {
   BellOutlined,
   BulbOutlined,
@@ -167,9 +168,13 @@ export const AppShell = () => {
           />
         </Sider>
         <Content style={{ padding: 24 }}>
-          <Suspense fallback={<Skeleton active paragraph={{ rows: 8 }} />}>
-            <Outlet />
-          </Suspense>
+          {/* Reset on route change so navigating away from a crashed page
+              clears the error automatically. */}
+          <ErrorBoundary resetKeys={[location.pathname]}>
+            <Suspense fallback={<Skeleton active paragraph={{ rows: 8 }} />}>
+              <Outlet />
+            </Suspense>
+          </ErrorBoundary>
         </Content>
       </Layout>
     </Layout>

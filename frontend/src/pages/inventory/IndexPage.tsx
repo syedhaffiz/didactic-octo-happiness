@@ -1,5 +1,6 @@
 import { Alert, Card, Col, Empty, Row, Select, Skeleton } from "antd";
 import { Chart } from "../../components/Chart";
+import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { inventoryApi } from "../../api/inventory";
 import { useApi } from "../../api/useApi";
 import { useUrlParam } from "../../utils/useUrlParam";
@@ -170,7 +171,11 @@ export const IndexPage = () => {
     <Row gutter={[16, 16]}>
       {items.map((idx) => (
         <Col xs={24} md={12} xl={8} key={idx.code}>
-          <PriceIndexCard code={idx.code} initial={idx} />
+          {/* Per-card boundary so one index crashing (bad series, chart
+              option mismatch, etc.) doesn't take down the other two. */}
+          <ErrorBoundary level="section" label={idx.code}>
+            <PriceIndexCard code={idx.code} initial={idx} />
+          </ErrorBoundary>
         </Col>
       ))}
     </Row>

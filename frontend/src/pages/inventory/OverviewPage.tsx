@@ -22,6 +22,7 @@ import {
 import type { ReactElement } from "react";
 import type { ColumnsType } from "antd/es/table";
 import { Chart } from "../../components/Chart";
+import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { PortFilter } from "../../components/filters/PortFilter";
 import { OriginFilter } from "../../components/filters/OriginFilter";
 import { GradeFilter } from "../../components/filters/GradeFilter";
@@ -271,25 +272,27 @@ export const OverviewPage = () => {
       </div>
 
       {/* KPI summary cards */}
-      {isLoading ? (
-        <Row gutter={[16, 16]}>
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Col xs={24} sm={12} xl={6} key={`s${i}`}>
-              <Skeleton active paragraph={{ rows: 3 }} />
-            </Col>
-          ))}
-        </Row>
-      ) : !overview || overview.kpis.length === 0 ? (
-        <Card><Empty description="No KPIs available" /></Card>
-      ) : (
-        <Row gutter={[16, 16]}>
-          {overview.kpis.map((k) => (
-            <Col xs={24} sm={12} xl={6} key={k.id}>
-              <InventoryKpiCard kpi={k} />
-            </Col>
-          ))}
-        </Row>
-      )}
+      <ErrorBoundary level="section" label="KPIs" resetKeys={[port, origin, grade]}>
+        {isLoading ? (
+          <Row gutter={[16, 16]}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Col xs={24} sm={12} xl={6} key={`s${i}`}>
+                <Skeleton active paragraph={{ rows: 3 }} />
+              </Col>
+            ))}
+          </Row>
+        ) : !overview || overview.kpis.length === 0 ? (
+          <Card><Empty description="No KPIs available" /></Card>
+        ) : (
+          <Row gutter={[16, 16]}>
+            {overview.kpis.map((k) => (
+              <Col xs={24} sm={12} xl={6} key={k.id}>
+                <InventoryKpiCard kpi={k} />
+              </Col>
+            ))}
+          </Row>
+        )}
+      </ErrorBoundary>
 
       {/* Current Inventory Level */}
       <Card
@@ -301,52 +304,60 @@ export const OverviewPage = () => {
         }
         style={{ marginTop: 16 }}
       >
-        {isLoading ? (
-          <Skeleton active paragraph={{ rows: 6 }} />
-        ) : !overview || overview.currentInventory.length === 0 ? (
-          <Empty description="No inventory data" />
-        ) : (
-          <Chart options={currentInventoryOptions(overview.currentInventory)} />
-        )}
+        <ErrorBoundary level="section" label="inventory chart" resetKeys={[port, origin, grade]}>
+          {isLoading ? (
+            <Skeleton active paragraph={{ rows: 6 }} />
+          ) : !overview || overview.currentInventory.length === 0 ? (
+            <Empty description="No inventory data" />
+          ) : (
+            <Chart options={currentInventoryOptions(overview.currentInventory)} />
+          )}
+        </ErrorBoundary>
       </Card>
 
       {/* Dispatch + Sales */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} lg={8}>
           <Card title="Dispatch Summary" style={{ height: "100%" }}>
-            {isLoading ? (
-              <Skeleton active paragraph={{ rows: 5 }} />
-            ) : !overview ? (
-              <Empty description="No dispatch data" />
-            ) : (
-              <DispatchSummaryBlock data={overview} />
-            )}
+            <ErrorBoundary level="section" label="Dispatch" resetKeys={[port, origin, grade]}>
+              {isLoading ? (
+                <Skeleton active paragraph={{ rows: 5 }} />
+              ) : !overview ? (
+                <Empty description="No dispatch data" />
+              ) : (
+                <DispatchSummaryBlock data={overview} />
+              )}
+            </ErrorBoundary>
           </Card>
         </Col>
         <Col xs={24} lg={16}>
           <Card title="Sales" style={{ height: "100%" }}>
-            {isLoading ? (
-              <Skeleton active paragraph={{ rows: 5 }} />
-            ) : !overview || overview.sales.length === 0 ? (
-              <Empty description="No sales data" />
-            ) : (
-              <Chart options={salesOptions(overview.sales)} />
-            )}
+            <ErrorBoundary level="section" label="Sales" resetKeys={[port, origin, grade]}>
+              {isLoading ? (
+                <Skeleton active paragraph={{ rows: 5 }} />
+              ) : !overview || overview.sales.length === 0 ? (
+                <Empty description="No sales data" />
+              ) : (
+                <Chart options={salesOptions(overview.sales)} />
+              )}
+            </ErrorBoundary>
           </Card>
         </Col>
       </Row>
 
       {/* Vessels — two independent endpoints, each loads on its own */}
       <Card style={{ marginTop: 16 }} styles={{ body: { paddingTop: 4 } }}>
-        <VesselsBlock
-          sailed={vesselsSailedOutQuery.data?.items}
-          sailedLoading={vesselsSailedOutQuery.isLoading}
-          sailedError={vesselsSailedOutQuery.error}
-          loading={vesselsUnderloadingQuery.data?.items}
-          loadingLoading={vesselsUnderloadingQuery.isLoading}
-          loadingError={vesselsUnderloadingQuery.error}
-          linkBlue={t.linkBlue}
-        />
+        <ErrorBoundary level="section" label="Vessels" resetKeys={[port, origin, grade]}>
+          <VesselsBlock
+            sailed={vesselsSailedOutQuery.data?.items}
+            sailedLoading={vesselsSailedOutQuery.isLoading}
+            sailedError={vesselsSailedOutQuery.error}
+            loading={vesselsUnderloadingQuery.data?.items}
+            loadingLoading={vesselsUnderloadingQuery.isLoading}
+            loadingError={vesselsUnderloadingQuery.error}
+            linkBlue={t.linkBlue}
+          />
+        </ErrorBoundary>
       </Card>
     </>
   );
