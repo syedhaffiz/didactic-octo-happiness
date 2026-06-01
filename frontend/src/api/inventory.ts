@@ -7,7 +7,7 @@ import type {
   InventoryOverviewParams,
   InventoryOverviewResponse,
   PriceIndex,
-  VesselRow,
+  VesselsResponse,
 } from "../types/inventory";
 import {
   buildIndices,
@@ -41,9 +41,9 @@ const httpInventoryApi = {
   overview: (p: InventoryOverviewParams = {}) =>
     get<InventoryOverviewResponse>("/inventory/overview", p),
   vesselsSailedOut: (p: InventoryOverviewParams = {}) =>
-    get<VesselRow[]>("/inventory/vessels/sailed-out", p),
+    get<VesselsResponse>("/inventory/vessels/sailed-out", p),
   vesselsUnderloading: (p: InventoryOverviewParams = {}) =>
-    get<VesselRow[]>("/inventory/vessels/under-loading", p),
+    get<VesselsResponse>("/inventory/vessels/under-loading", p),
 };
 
 const mockInventoryApi = {

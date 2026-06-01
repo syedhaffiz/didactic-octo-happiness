@@ -263,19 +263,7 @@ export const openApiSpec = {
           { name: "origin", in: "query", schema: { type: "string" } },
           { name: "grade", in: "query", schema: { type: "string" } },
         ],
-        responses: {
-          "200": {
-            description: "OK",
-            content: {
-              "application/json": {
-                schema: envelope({
-                  type: "array",
-                  items: { $ref: "#/components/schemas/InventoryVesselRow" },
-                }),
-              },
-            },
-          },
-        },
+        responses: { "200": envelopeResponse("VesselsResponse") },
       },
     },
     "/inventory/vessels/under-loading": {
@@ -288,19 +276,7 @@ export const openApiSpec = {
           { name: "origin", in: "query", schema: { type: "string" } },
           { name: "grade", in: "query", schema: { type: "string" } },
         ],
-        responses: {
-          "200": {
-            description: "OK",
-            content: {
-              "application/json": {
-                schema: envelope({
-                  type: "array",
-                  items: { $ref: "#/components/schemas/InventoryVesselRow" },
-                }),
-              },
-            },
-          },
-        },
+        responses: { "200": envelopeResponse("VesselsResponse") },
       },
     },
 
@@ -668,9 +644,9 @@ export const openApiSpec = {
       },
       InventoryOverviewResponse: {
         type: "object",
-        required: ["item"],
+        required: ["items"],
         properties: {
-          item: {
+          items: {
             type: "object",
             required: ["asOf", "kpis", "currentInventory", "dispatch", "sales"],
             properties: {
@@ -683,6 +659,16 @@ export const openApiSpec = {
               dispatch: { $ref: "#/components/schemas/DispatchSummary" },
               sales: { type: "array", items: { $ref: "#/components/schemas/SalesMonth" } },
             },
+          },
+        },
+      },
+      VesselsResponse: {
+        type: "object",
+        required: ["items"],
+        properties: {
+          items: {
+            type: "array",
+            items: { $ref: "#/components/schemas/InventoryVesselRow" },
           },
         },
       },

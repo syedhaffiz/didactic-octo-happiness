@@ -221,9 +221,9 @@ export const OverviewPage = () => {
     ["inventory", "overview", port, origin, grade],
     () => inventoryApi.overview({ port, origin, grade }),
   );
-  // The wire envelope nests the payload under `item`; project to a local for
+  // The wire envelope nests the payload under `items`; project to a local for
   // easier reads below.
-  const overview = data?.item;
+  const overview = data?.items;
 
   // Vessel tables have their own endpoints — independent loading state so
   // the KPI/dispatch/sales blocks can render even if the vessel lists are
@@ -324,10 +324,10 @@ export const OverviewPage = () => {
       {/* Vessels — two independent endpoints, each loads on its own */}
       <Card style={{ marginTop: 16 }} styles={{ body: { paddingTop: 4 } }}>
         <VesselsBlock
-          sailed={vesselsSailedOutQuery.data}
+          sailed={vesselsSailedOutQuery.data?.items}
           sailedLoading={vesselsSailedOutQuery.isLoading}
           sailedError={vesselsSailedOutQuery.error}
-          loading={vesselsUnderloadingQuery.data}
+          loading={vesselsUnderloadingQuery.data?.items}
           loadingLoading={vesselsUnderloadingQuery.isLoading}
           loadingError={vesselsUnderloadingQuery.error}
           linkBlue={t.linkBlue}
@@ -337,7 +337,7 @@ export const OverviewPage = () => {
   );
 };
 
-const DispatchSummaryBlock = ({ data }: { data: InventoryOverviewResponse["item"] }) => {
+const DispatchSummaryBlock = ({ data }: { data: InventoryOverviewResponse["items"] }) => {
   const t = useBrandTokens();
   const isUp = data.dispatch.deltaPct >= 0;
   return (

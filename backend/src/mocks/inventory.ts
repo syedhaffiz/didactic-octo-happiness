@@ -10,6 +10,7 @@ import type {
   PricePoint,
   SalesMonth,
   VesselRow,
+  VesselsResponse,
 } from "../types/inventory.js";
 import {
   COAL_GRADES,
@@ -263,7 +264,7 @@ export const buildInventoryOverview = (
 ): InventoryOverviewResponse => {
   const f = normalize(rawFilters);
   return {
-    item: {
+    items: {
       asOf: isoDay(AS_OF),
       kpis: buildKpis(f),
       currentInventory: buildCurrentInventory(f),
@@ -276,14 +277,14 @@ export const buildInventoryOverview = (
 // Each vessel list is its own endpoint. The count comes from
 // computeVesselCounts (shared with the KPI card), so the tab label stays
 // in sync with what the KPI says.
-export const buildVesselsSailedOut = (rawFilters: InventoryFilters): VesselRow[] => {
+export const buildVesselsSailedOut = (rawFilters: InventoryFilters): VesselsResponse => {
   const f = normalize(rawFilters);
-  return buildVessels("sailed", computeVesselCounts(f).sailed, f);
+  return { items: buildVessels("sailed", computeVesselCounts(f).sailed, f) };
 };
 
-export const buildVesselsUnderloading = (rawFilters: InventoryFilters): VesselRow[] => {
+export const buildVesselsUnderloading = (rawFilters: InventoryFilters): VesselsResponse => {
   const f = normalize(rawFilters);
-  return buildVessels("loading", computeVesselCounts(f).loading, f);
+  return { items: buildVessels("loading", computeVesselCounts(f).loading, f) };
 };
 
 void PORTS;

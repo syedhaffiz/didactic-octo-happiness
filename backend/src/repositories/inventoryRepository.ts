@@ -4,7 +4,7 @@ import type {
   InventoryFilters,
   InventoryOverviewResponse,
   PriceIndex,
-  VesselRow,
+  VesselsResponse,
 } from "../types/inventory.js";
 import {
   buildIndices,
@@ -18,8 +18,8 @@ export interface InventoryRepository {
   getIndices(range: IndexRange): Promise<IndexResponse>;
   getIndex(code: string, range: IndexRange): Promise<PriceIndex | null>;
   getOverview(filters: InventoryFilters): Promise<InventoryOverviewResponse>;
-  getVesselsSailedOut(filters: InventoryFilters): Promise<VesselRow[]>;
-  getVesselsUnderloading(filters: InventoryFilters): Promise<VesselRow[]>;
+  getVesselsSailedOut(filters: InventoryFilters): Promise<VesselsResponse>;
+  getVesselsUnderloading(filters: InventoryFilters): Promise<VesselsResponse>;
 }
 
 class MockInventoryRepository implements InventoryRepository {

@@ -21,6 +21,7 @@ import type {
   PricePoint,
   SalesMonth,
   VesselRow,
+  VesselsResponse,
 } from "../types/inventory";
 import {
   COAL_GRADES,
@@ -265,7 +266,7 @@ export const buildInventoryOverview = (
 ): InventoryOverviewResponse => {
   const f = normalize(rawFilters);
   return {
-    item: {
+    items: {
       asOf: isoDay(AS_OF),
       kpis: buildKpis(f),
       currentInventory: buildCurrentInventory(f),
@@ -275,12 +276,16 @@ export const buildInventoryOverview = (
   };
 };
 
-export const buildVesselsSailedOut = (rawFilters: InventoryOverviewParams): VesselRow[] => {
+export const buildVesselsSailedOut = (
+  rawFilters: InventoryOverviewParams,
+): VesselsResponse => {
   const f = normalize(rawFilters);
-  return buildVessels("sailed", computeVesselCounts(f).sailed, f);
+  return { items: buildVessels("sailed", computeVesselCounts(f).sailed, f) };
 };
 
-export const buildVesselsUnderloading = (rawFilters: InventoryOverviewParams): VesselRow[] => {
+export const buildVesselsUnderloading = (
+  rawFilters: InventoryOverviewParams,
+): VesselsResponse => {
   const f = normalize(rawFilters);
-  return buildVessels("loading", computeVesselCounts(f).loading, f);
+  return { items: buildVessels("loading", computeVesselCounts(f).loading, f) };
 };

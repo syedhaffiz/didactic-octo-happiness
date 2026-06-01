@@ -66,13 +66,18 @@ export interface VesselRow {
 }
 
 export interface InventoryOverviewResponse {
-  item: {
+  items: {
     asOf: string;
     kpis: InventoryKpi[];
     currentInventory: PortInventoryRow[];
     dispatch: DispatchSummary;
     sales: SalesMonth[];
   };
+}
+
+// Vessel endpoints wrap the array in the same `items` envelope.
+export interface VesselsResponse {
+  items: VesselRow[];
 }
 
 export interface InventoryOverviewParams {
