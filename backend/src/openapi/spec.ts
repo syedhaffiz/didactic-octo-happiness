@@ -668,13 +668,22 @@ export const openApiSpec = {
       },
       InventoryOverviewResponse: {
         type: "object",
-        required: ["asOf", "kpis", "currentInventory", "dispatch", "sales"],
+        required: ["item"],
         properties: {
-          asOf: { type: "string", format: "date" },
-          kpis: { type: "array", items: { $ref: "#/components/schemas/InventoryKpi" } },
-          currentInventory: { type: "array", items: { $ref: "#/components/schemas/PortInventoryRow" } },
-          dispatch: { $ref: "#/components/schemas/DispatchSummary" },
-          sales: { type: "array", items: { $ref: "#/components/schemas/SalesMonth" } },
+          item: {
+            type: "object",
+            required: ["asOf", "kpis", "currentInventory", "dispatch", "sales"],
+            properties: {
+              asOf: { type: "string", format: "date" },
+              kpis: { type: "array", items: { $ref: "#/components/schemas/InventoryKpi" } },
+              currentInventory: {
+                type: "array",
+                items: { $ref: "#/components/schemas/PortInventoryRow" },
+              },
+              dispatch: { $ref: "#/components/schemas/DispatchSummary" },
+              sales: { type: "array", items: { $ref: "#/components/schemas/SalesMonth" } },
+            },
+          },
         },
       },
     },

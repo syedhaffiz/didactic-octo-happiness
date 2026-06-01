@@ -265,11 +265,13 @@ export const buildInventoryOverview = (
 ): InventoryOverviewResponse => {
   const f = normalize(rawFilters);
   return {
-    asOf: isoDay(AS_OF),
-    kpis: buildKpis(f),
-    currentInventory: buildCurrentInventory(f),
-    dispatch: buildDispatchSummary(f),
-    sales: buildSales(f),
+    item: {
+      asOf: isoDay(AS_OF),
+      kpis: buildKpis(f),
+      currentInventory: buildCurrentInventory(f),
+      dispatch: buildDispatchSummary(f),
+      sales: buildSales(f),
+    },
   };
 };
 

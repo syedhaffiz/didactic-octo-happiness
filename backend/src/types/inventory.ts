@@ -68,11 +68,13 @@ export interface VesselRow {
 }
 
 export interface InventoryOverviewResponse {
-  asOf: string;
-  kpis: InventoryKpi[];
-  currentInventory: PortInventoryRow[];
-  dispatch: DispatchSummary;
-  sales: SalesMonth[];
+  item: {
+    asOf: string;
+    kpis: InventoryKpi[];
+    currentInventory: PortInventoryRow[];
+    dispatch: DispatchSummary;
+    sales: SalesMonth[];
+  };
 }
 
 export interface InventoryFilters {

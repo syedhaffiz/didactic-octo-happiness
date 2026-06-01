@@ -221,6 +221,9 @@ export const OverviewPage = () => {
     ["inventory", "overview", port, origin, grade],
     () => inventoryApi.overview({ port, origin, grade }),
   );
+  // The wire envelope nests the payload under `item`; project to a local for
+  // easier reads below.
+  const overview = data?.item;
 
   // Vessel tables have their own endpoints — independent loading state so
   // the KPI/dispatch/sales blocks can render even if the vessel lists are
@@ -268,7 +271,7 @@ export const OverviewPage = () => {
 
       {/* KPI summary cards */}
       <Row gutter={[16, 16]}>
-        {(isLoading ? Array.from({ length: 4 }) : data?.kpis ?? []).map((k, i) => (
+        {(isLoading ? Array.from({ length: 4 }) : overview?.kpis ?? []).map((k, i) => (
           <Col xs={24} sm={12} xl={6} key={k ? (k as InventoryKpi).id : `s${i}`}>
             {isLoading || !k ? (
               <Skeleton active paragraph={{ rows: 3 }} />
@@ -284,15 +287,15 @@ export const OverviewPage = () => {
         title="Current Inventory Level"
         extra={
           <span style={{ color: t.textSecondary, fontSize: 12 }}>
-            Last updated : {data ? fmtDate(data.asOf) : "—"}
+            Last updated : {overview ? fmtDate(overview.asOf) : "—"}
           </span>
         }
         style={{ marginTop: 16 }}
       >
-        {isLoading || !data ? (
+        {isLoading || !overview ? (
           <Skeleton active paragraph={{ rows: 6 }} />
         ) : (
-          <Chart options={currentInventoryOptions(data.currentInventory)} />
+          <Chart options={currentInventoryOptions(overview.currentInventory)} />
         )}
       </Card>
 
@@ -300,19 +303,19 @@ export const OverviewPage = () => {
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} lg={8}>
           <Card title="Dispatch Summary" style={{ height: "100%" }}>
-            {isLoading || !data ? (
+            {isLoading || !overview ? (
               <Skeleton active paragraph={{ rows: 5 }} />
             ) : (
-              <DispatchSummaryBlock data={data} />
+              <DispatchSummaryBlock data={overview} />
             )}
           </Card>
         </Col>
         <Col xs={24} lg={16}>
           <Card title="Sales" style={{ height: "100%" }}>
-            {isLoading || !data ? (
+            {isLoading || !overview ? (
               <Skeleton active paragraph={{ rows: 5 }} />
             ) : (
-              <Chart options={salesOptions(data.sales)} />
+              <Chart options={salesOptions(overview.sales)} />
             )}
           </Card>
         </Col>
@@ -334,7 +337,7 @@ export const OverviewPage = () => {
   );
 };
 
-const DispatchSummaryBlock = ({ data }: { data: InventoryOverviewResponse }) => {
+const DispatchSummaryBlock = ({ data }: { data: InventoryOverviewResponse["item"] }) => {
   const t = useBrandTokens();
   const isUp = data.dispatch.deltaPct >= 0;
   return (
