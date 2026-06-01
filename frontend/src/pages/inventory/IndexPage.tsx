@@ -1,4 +1,4 @@
-import { Alert, Card, Col, Row, Select, Skeleton } from "antd";
+import { Alert, Card, Col, Empty, Row, Select, Skeleton } from "antd";
 import { Chart } from "../../components/Chart";
 import { inventoryApi } from "../../api/inventory";
 import { useApi } from "../../api/useApi";
@@ -110,15 +110,21 @@ const PriceIndexCard = ({
       styles={{ header: { borderBottom: "none" }, body: { paddingTop: 4 } }}
       loading={isLoading && needsRefetch}
     >
-      <Chart options={indexChartOptions(idx)} />
-      <div style={{ marginTop: 10, display: "flex", alignItems: "baseline", gap: 8 }}>
-        <span style={{ fontSize: 22, fontWeight: 700, color: t.text }}>
-          {idx.current.toFixed(2)}
-        </span>
-        <span style={{ color: t.deltaDown, fontSize: 12 }}>
-          ({formatHeadlineDate(idx.currentDate)})
-        </span>
-      </div>
+      {idx.series.length === 0 ? (
+        <Empty description="No series data" style={{ padding: 32 }} />
+      ) : (
+        <>
+          <Chart options={indexChartOptions(idx)} />
+          <div style={{ marginTop: 10, display: "flex", alignItems: "baseline", gap: 8 }}>
+            <span style={{ fontSize: 22, fontWeight: 700, color: t.text }}>
+              {idx.current.toFixed(2)}
+            </span>
+            <span style={{ color: t.deltaDown, fontSize: 12 }}>
+              ({formatHeadlineDate(idx.currentDate)})
+            </span>
+          </div>
+        </>
+      )}
     </Card>
   );
 };
@@ -143,18 +149,28 @@ export const IndexPage = () => {
     );
   }
 
+  if (isLoading) {
+    return (
+      <Row gutter={[16, 16]}>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Col xs={24} md={12} xl={8} key={`s${i}`}>
+            <Skeleton active paragraph={{ rows: 8 }} />
+          </Col>
+        ))}
+      </Row>
+    );
+  }
+
+  const items = data?.items ?? [];
+  if (items.length === 0) {
+    return <Card><Empty description="No indices available" /></Card>;
+  }
+
   return (
     <Row gutter={[16, 16]}>
-      {(isLoading ? Array.from({ length: 3 }) : data?.items ?? []).map((idx, i) => (
-        <Col xs={24} md={12} xl={8} key={idx ? (idx as PriceIndex).code : `s${i}`}>
-          {isLoading || !idx ? (
-            <Skeleton active paragraph={{ rows: 8 }} />
-          ) : (
-            <PriceIndexCard
-              code={(idx as PriceIndex).code}
-              initial={idx as PriceIndex}
-            />
-          )}
+      {items.map((idx) => (
+        <Col xs={24} md={12} xl={8} key={idx.code}>
+          <PriceIndexCard code={idx.code} initial={idx} />
         </Col>
       ))}
     </Row>

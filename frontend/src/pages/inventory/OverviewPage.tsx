@@ -3,6 +3,7 @@ import {
   Button,
   Card,
   Col,
+  Empty,
   Row,
   Skeleton,
   Space,
@@ -270,17 +271,25 @@ export const OverviewPage = () => {
       </div>
 
       {/* KPI summary cards */}
-      <Row gutter={[16, 16]}>
-        {(isLoading ? Array.from({ length: 4 }) : overview?.kpis ?? []).map((k, i) => (
-          <Col xs={24} sm={12} xl={6} key={k ? (k as InventoryKpi).id : `s${i}`}>
-            {isLoading || !k ? (
+      {isLoading ? (
+        <Row gutter={[16, 16]}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Col xs={24} sm={12} xl={6} key={`s${i}`}>
               <Skeleton active paragraph={{ rows: 3 }} />
-            ) : (
-              <InventoryKpiCard kpi={k as InventoryKpi} />
-            )}
-          </Col>
-        ))}
-      </Row>
+            </Col>
+          ))}
+        </Row>
+      ) : !overview || overview.kpis.length === 0 ? (
+        <Card><Empty description="No KPIs available" /></Card>
+      ) : (
+        <Row gutter={[16, 16]}>
+          {overview.kpis.map((k) => (
+            <Col xs={24} sm={12} xl={6} key={k.id}>
+              <InventoryKpiCard kpi={k} />
+            </Col>
+          ))}
+        </Row>
+      )}
 
       {/* Current Inventory Level */}
       <Card
@@ -292,8 +301,10 @@ export const OverviewPage = () => {
         }
         style={{ marginTop: 16 }}
       >
-        {isLoading || !overview ? (
+        {isLoading ? (
           <Skeleton active paragraph={{ rows: 6 }} />
+        ) : !overview || overview.currentInventory.length === 0 ? (
+          <Empty description="No inventory data" />
         ) : (
           <Chart options={currentInventoryOptions(overview.currentInventory)} />
         )}
@@ -303,8 +314,10 @@ export const OverviewPage = () => {
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} lg={8}>
           <Card title="Dispatch Summary" style={{ height: "100%" }}>
-            {isLoading || !overview ? (
+            {isLoading ? (
               <Skeleton active paragraph={{ rows: 5 }} />
+            ) : !overview ? (
+              <Empty description="No dispatch data" />
             ) : (
               <DispatchSummaryBlock data={overview} />
             )}
@@ -312,8 +325,10 @@ export const OverviewPage = () => {
         </Col>
         <Col xs={24} lg={16}>
           <Card title="Sales" style={{ height: "100%" }}>
-            {isLoading || !overview ? (
+            {isLoading ? (
               <Skeleton active paragraph={{ rows: 5 }} />
+            ) : !overview || overview.sales.length === 0 ? (
+              <Empty description="No sales data" />
             ) : (
               <Chart options={salesOptions(overview.sales)} />
             )}
@@ -417,6 +432,9 @@ const VesselsBlock = ({
     }
     if (isLoading || !rows) {
       return <Skeleton active paragraph={{ rows: 6 }} style={{ padding: 16 }} />;
+    }
+    if (rows.length === 0) {
+      return <Empty description="No vessels" style={{ padding: 32 }} />;
     }
     return (
       <Table
