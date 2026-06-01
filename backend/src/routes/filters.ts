@@ -1,18 +1,11 @@
 import { Router } from "express";
-import {
-  getGrades,
-  getOrigins,
-  getPorts,
-  getSegments,
-  getZones,
-} from "../controllers/filtersController.js";
+import { getAll } from "../controllers/filtersController.js";
 
 const router = Router();
 
-router.get("/ports", getPorts);
-router.get("/segments", getSegments);
-router.get("/zones", getZones);
-router.get("/grades", getGrades);
-router.get("/origins", getOrigins);
+// Single endpoint that returns every reference list the UI needs. The
+// payload is small (a few dozen strings total), so batching is much
+// cheaper than five round-trips on page mount.
+router.get("/", getAll);
 
 export default router;

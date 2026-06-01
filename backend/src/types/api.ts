@@ -1,3 +1,15 @@
+// --- Filters ---------------------------------------------------------------
+
+export interface FiltersResponse {
+  ports: string[];
+  segments: string[];
+  zones: string[];
+  grades: string[];
+  origins: string[];
+}
+
+// --- Envelope --------------------------------------------------------------
+
 export interface ApiError {
   code: string;
   message: string;

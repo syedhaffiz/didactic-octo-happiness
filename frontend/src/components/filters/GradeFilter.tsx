@@ -1,5 +1,4 @@
 import { SelectFilter } from "./SelectFilter";
-import { filtersApi } from "../../api/filters";
 
 export const GradeFilter = ({
   value,
@@ -7,12 +6,4 @@ export const GradeFilter = ({
 }: {
   value: string | undefined;
   onChange: (v: string | undefined) => void;
-}) => (
-  <SelectFilter
-    label="Grade"
-    value={value}
-    onChange={onChange}
-    cacheKey="filters:grades"
-    fetcher={filtersApi.grades}
-  />
-);
+}) => <SelectFilter label="Grade" kind="grades" value={value} onChange={onChange} />;

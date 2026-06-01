@@ -3,25 +3,34 @@ import { USE_MOCK_DATA, mockDelay } from "./dataSource";
 import type { ApiEnvelope } from "../types/api";
 import { GRADES, ORIGINS, PORTS, SEGMENTS, ZONES } from "../mocks/catalog";
 
+// Matches backend FiltersResponse — every reference list the UI needs in
+// one payload.
+export interface FiltersResponse {
+  ports: string[];
+  segments: string[];
+  zones: string[];
+  grades: string[];
+  origins: string[];
+}
+
 const get = async <T>(path: string): Promise<T> => {
   const res = await apiClient.get<ApiEnvelope<T>>(path);
   return unwrap(res);
 };
 
 const httpFiltersApi = {
-  ports: () => get<string[]>("/filters/ports"),
-  segments: () => get<string[]>("/filters/segments"),
-  zones: () => get<string[]>("/filters/zones"),
-  grades: () => get<string[]>("/filters/grades"),
-  origins: () => get<string[]>("/filters/origins"),
+  all: () => get<FiltersResponse>("/filters"),
 };
 
 const mockFiltersApi = {
-  ports: () => mockDelay<string[]>([...PORTS]),
-  segments: () => mockDelay<string[]>([...SEGMENTS]),
-  zones: () => mockDelay<string[]>([...ZONES]),
-  grades: () => mockDelay<string[]>([...GRADES]),
-  origins: () => mockDelay<string[]>([...ORIGINS]),
+  all: (): Promise<FiltersResponse> =>
+    mockDelay({
+      ports: [...PORTS],
+      segments: [...SEGMENTS],
+      zones: [...ZONES],
+      grades: [...GRADES],
+      origins: [...ORIGINS],
+    }),
 };
 
 export const filtersApi = USE_MOCK_DATA ? mockFiltersApi : httpFiltersApi;

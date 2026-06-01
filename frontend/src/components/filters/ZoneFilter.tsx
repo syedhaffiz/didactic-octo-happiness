@@ -1,5 +1,4 @@
 import { SelectFilter } from "./SelectFilter";
-import { filtersApi } from "../../api/filters";
 
 export const ZoneFilter = ({
   value,
@@ -7,12 +6,4 @@ export const ZoneFilter = ({
 }: {
   value: string | undefined;
   onChange: (v: string | undefined) => void;
-}) => (
-  <SelectFilter
-    label="Zone"
-    value={value}
-    onChange={onChange}
-    cacheKey="filters:zones"
-    fetcher={filtersApi.zones}
-  />
-);
+}) => <SelectFilter label="Zone" kind="zones" value={value} onChange={onChange} />;

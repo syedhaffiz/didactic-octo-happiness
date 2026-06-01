@@ -1,5 +1,4 @@
 import { SelectFilter } from "./SelectFilter";
-import { filtersApi } from "../../api/filters";
 
 export const OriginFilter = ({
   value,
@@ -7,12 +6,4 @@ export const OriginFilter = ({
 }: {
   value: string | undefined;
   onChange: (v: string | undefined) => void;
-}) => (
-  <SelectFilter
-    label="Origin"
-    value={value}
-    onChange={onChange}
-    cacheKey="filters:origins"
-    fetcher={filtersApi.origins}
-  />
-);
+}) => <SelectFilter label="Origin" kind="origins" value={value} onChange={onChange} />;

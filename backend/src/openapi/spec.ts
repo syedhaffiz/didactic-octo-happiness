@@ -19,8 +19,6 @@ const envelope = (dataSchema: object) => ({
   },
 });
 
-const stringArray = { type: "array", items: { type: "string" } };
-
 export const openApiSpec = {
   openapi: "3.0.3",
   info: {
@@ -244,64 +242,16 @@ export const openApiSpec = {
     },
 
     // --- Filters (reference data) -----------------------------------------
-    "/filters/ports": {
+    "/filters": {
       get: {
         tags: ["Filters"],
-        summary: "List of ports for dropdowns",
-        responses: {
-          "200": {
-            description: "OK",
-            content: { "application/json": { schema: envelope(stringArray) } },
-          },
-        },
-      },
-    },
-    "/filters/segments": {
-      get: {
-        tags: ["Filters"],
-        summary: "List of segments",
-        responses: {
-          "200": {
-            description: "OK",
-            content: { "application/json": { schema: envelope(stringArray) } },
-          },
-        },
-      },
-    },
-    "/filters/zones": {
-      get: {
-        tags: ["Filters"],
-        summary: "List of zones",
-        responses: {
-          "200": {
-            description: "OK",
-            content: { "application/json": { schema: envelope(stringArray) } },
-          },
-        },
-      },
-    },
-    "/filters/grades": {
-      get: {
-        tags: ["Filters"],
-        summary: "List of coal grades",
-        responses: {
-          "200": {
-            description: "OK",
-            content: { "application/json": { schema: envelope(stringArray) } },
-          },
-        },
-      },
-    },
-    "/filters/origins": {
-      get: {
-        tags: ["Filters"],
-        summary: "List of origin countries",
-        responses: {
-          "200": {
-            description: "OK",
-            content: { "application/json": { schema: envelope(stringArray) } },
-          },
-        },
+        summary: "All reference lists used by dropdowns",
+        description:
+          "Returns every dropdown's option list in a single payload. The UI " +
+          "fetches this once on session start and caches it in memory, so " +
+          "each filter dropdown reads its slice without an additional " +
+          "round-trip.",
+        responses: { "200": envelopeResponse("FiltersResponse") },
       },
     },
   },
@@ -331,6 +281,19 @@ export const openApiSpec = {
           code: { type: "string", example: "validation_error" },
           message: { type: "string" },
           details: {},
+        },
+      },
+
+      // --- Filters -----------------------------------------------------
+      FiltersResponse: {
+        type: "object",
+        required: ["ports", "segments", "zones", "grades", "origins"],
+        properties: {
+          ports: { type: "array", items: { type: "string" } },
+          segments: { type: "array", items: { type: "string" } },
+          zones: { type: "array", items: { type: "string" } },
+          grades: { type: "array", items: { type: "string" } },
+          origins: { type: "array", items: { type: "string" } },
         },
       },
 

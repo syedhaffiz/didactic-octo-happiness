@@ -1,5 +1,4 @@
 import { SelectFilter } from "./SelectFilter";
-import { filtersApi } from "../../api/filters";
 
 export const PortFilter = ({
   value,
@@ -7,12 +6,4 @@ export const PortFilter = ({
 }: {
   value: string | undefined;
   onChange: (v: string | undefined) => void;
-}) => (
-  <SelectFilter
-    label="Port"
-    value={value}
-    onChange={onChange}
-    cacheKey="filters:ports"
-    fetcher={filtersApi.ports}
-  />
-);
+}) => <SelectFilter label="Port" kind="ports" value={value} onChange={onChange} />;

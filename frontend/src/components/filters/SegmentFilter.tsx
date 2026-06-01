@@ -1,5 +1,4 @@
 import { SelectFilter } from "./SelectFilter";
-import { filtersApi } from "../../api/filters";
 
 export const SegmentFilter = ({
   value,
@@ -7,12 +6,4 @@ export const SegmentFilter = ({
 }: {
   value: string | undefined;
   onChange: (v: string | undefined) => void;
-}) => (
-  <SelectFilter
-    label="Segment"
-    value={value}
-    onChange={onChange}
-    cacheKey="filters:segments"
-    fetcher={filtersApi.segments}
-  />
-);
+}) => <SelectFilter label="Segment" kind="segments" value={value} onChange={onChange} />;
