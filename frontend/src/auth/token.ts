@@ -1,16 +1,17 @@
 // Token acquisition helpers used by the axios interceptor.
 //
-// `getAccessToken` does silent token acquisition against MSAL's cache.
-// When the cache is empty or expired, it falls back to an interactive
-// redirect — same UX as fresh sign-in.
+// Reads the *active* PCA via `getActivePca()` so the same code path works in
+// both standalone mode (our own instance) and federated mode (the host's
+// instance, registered by App.tsx on mount).
 
 import {
   InteractionRequiredAuthError,
   type AccountInfo,
+  type IPublicClientApplication,
 } from "@azure/msal-browser";
-import { API_SCOPES, pca } from "./msalConfig";
+import { API_SCOPES, getActivePca } from "./msalConfig";
 
-const activeAccount = (): AccountInfo | null =>
+const activeAccount = (pca: IPublicClientApplication): AccountInfo | null =>
   pca.getActiveAccount() ?? pca.getAllAccounts()[0] ?? null;
 
 export interface TokenOptions {
@@ -20,9 +21,10 @@ export interface TokenOptions {
 export const getAccessToken = async (
   opts: TokenOptions = {},
 ): Promise<string | null> => {
-  const account = activeAccount();
-  // No account yet — caller will retry once MsalAuthenticationTemplate
-  // finishes the sign-in redirect and an account becomes available.
+  const pca = getActivePca();
+  if (!pca) return null; // federated mode before host has mounted us
+
+  const account = activeAccount(pca);
   if (!account) return null;
 
   try {
@@ -33,17 +35,17 @@ export const getAccessToken = async (
     });
     return result.accessToken;
   } catch (e) {
-    // Cache miss or consent change — only fall back to interactive flow
-    // when MSAL explicitly says so. Anything else is propagated.
     if (e instanceof InteractionRequiredAuthError) {
       await pca.acquireTokenRedirect({ scopes: API_SCOPES, account });
-      return null; // redirect navigates away; the await never resolves
+      return null;
     }
     throw e;
   }
 };
 
 export const signOut = async () => {
-  const account = activeAccount();
+  const pca = getActivePca();
+  if (!pca) return;
+  const account = activeAccount(pca);
   await pca.logoutRedirect({ account: account ?? undefined });
 };

@@ -36,38 +36,48 @@ const Placeholder = lazy(() =>
   import("./pages/Placeholder").then((m) => ({ default: m.Placeholder })),
 );
 
-export const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <AppShell />,
-    children: [
-      { index: true, element: <Navigate to="/finance/overview" replace /> },
-      { path: "finance/overview", element: <FinanceOverview /> },
-      { path: "finance/sales", element: <Sales /> },
-      { path: "finance/revenue", element: <Revenue /> },
-      { path: "finance/working-capital", element: <WorkingCapital /> },
-      { path: "finance/profitability", element: <Profitability /> },
-      { path: "finance/approved-budget", element: <ApprovedBudget /> },
-      { path: "finance/dispatch", element: <Placeholder title="Dispatch" /> },
-      { path: "finance/inventory-days", element: <Placeholder title="Inventory Days" /> },
+// Factory so the same routes work standalone (basename "/") and federated
+// (basename "/control-tower" or whatever the host mounts us under).
+export const createAppRouter = (basename: string = "/") =>
+  createBrowserRouter(
+    [
       {
-        path: "inventory",
-        element: <InventoryShell />,
+        path: "/",
+        element: <AppShell />,
         children: [
-          { index: true, element: <Navigate to="/inventory/index" replace /> },
-          { path: "index", element: <IndexPage /> },
-          { path: "inventory", element: <InventoryOverviewPage /> },
+          { index: true, element: <Navigate to="/finance/overview" replace /> },
+          { path: "finance/overview", element: <FinanceOverview /> },
+          { path: "finance/sales", element: <Sales /> },
+          { path: "finance/revenue", element: <Revenue /> },
+          { path: "finance/working-capital", element: <WorkingCapital /> },
+          { path: "finance/profitability", element: <Profitability /> },
+          { path: "finance/approved-budget", element: <ApprovedBudget /> },
+          { path: "finance/dispatch", element: <Placeholder title="Dispatch" /> },
+          { path: "finance/inventory-days", element: <Placeholder title="Inventory Days" /> },
+          {
+            path: "inventory",
+            element: <InventoryShell />,
+            children: [
+              { index: true, element: <Navigate to="/inventory/index" replace /> },
+              { path: "index", element: <IndexPage /> },
+              { path: "inventory", element: <InventoryOverviewPage /> },
+            ],
+          },
+          { path: "logistics", element: <Placeholder title="Logistics" /> },
+          { path: "marketing", element: <Placeholder title="Marketing" /> },
+          { path: "legal", element: <Placeholder title="Legal" /> },
+          { path: "planning", element: <Placeholder title="Planning" /> },
+          { path: "sourcing", element: <Placeholder title="Sourcing" /> },
+          { path: "customs", element: <Placeholder title="Customs" /> },
+          { path: "commercial", element: <Placeholder title="Commercial" /> },
+          { path: "settings", element: <Placeholder title="Settings" /> },
+          { path: "*", element: <Placeholder title="Not found" /> },
         ],
       },
-      { path: "logistics", element: <Placeholder title="Logistics" /> },
-      { path: "marketing", element: <Placeholder title="Marketing" /> },
-      { path: "legal", element: <Placeholder title="Legal" /> },
-      { path: "planning", element: <Placeholder title="Planning" /> },
-      { path: "sourcing", element: <Placeholder title="Sourcing" /> },
-      { path: "customs", element: <Placeholder title="Customs" /> },
-      { path: "commercial", element: <Placeholder title="Commercial" /> },
-      { path: "settings", element: <Placeholder title="Settings" /> },
-      { path: "*", element: <Placeholder title="Not found" /> },
     ],
-  },
-]);
+    { basename },
+  );
+
+// Standalone default for backwards-compat with main.tsx during the rename.
+// Kept as a getter so the basename can be overridden later if needed.
+export const router = createAppRouter("/");

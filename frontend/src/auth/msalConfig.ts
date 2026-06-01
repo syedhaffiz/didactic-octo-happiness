@@ -1,7 +1,19 @@
 // Azure AD / Entra ID configuration via MSAL.
 //
-// SSO is REQUIRED. The app refuses to start if these env vars aren't set
-// (see `main.tsx` for the fallback error screen):
+// Two run modes:
+//
+//   Standalone (npm run dev / build): the env vars below are required, the
+//   internal `pca` singleton is created at module load, and `getActivePca`
+//   returns it. Throws `MissingAuthConfigError` if the vars are missing so
+//   a misconfigured dev gets a clear error.
+//
+//   Federated (npm run build:remote, mounted in a host): set
+//   VITE_FEDERATED=true. The internal singleton is NOT created. The host
+//   owns the `PublicClientApplication`; our App component calls
+//   `setActivePca` with the host's instance (read via `useMsal()`) so the
+//   axios interceptor can acquire tokens against it.
+//
+// Required env vars (standalone only):
 //   VITE_AZURE_CLIENT_ID   — the app registration's client ID
 //   VITE_AZURE_TENANT_ID   — tenant ID, or "common" / "organizations"
 //   VITE_AZURE_REDIRECT_URI — defaults to window.location.origin
@@ -10,6 +22,7 @@ import {
   PublicClientApplication,
   LogLevel,
   type Configuration,
+  type IPublicClientApplication,
 } from "@azure/msal-browser";
 
 const clientId = import.meta.env.VITE_AZURE_CLIENT_ID as string | undefined;
@@ -18,8 +31,10 @@ const redirectUri =
   (import.meta.env.VITE_AZURE_REDIRECT_URI as string | undefined) ??
   (typeof window !== "undefined" ? window.location.origin : "/");
 
-// Thrown at module load if SSO env vars are missing. `main.tsx` catches it
-// and renders a setup-guidance screen so the dev knows exactly what to fix.
+export const IS_FEDERATED = import.meta.env.VITE_FEDERATED === "true";
+
+// Thrown at module load if SSO env vars are missing in standalone mode.
+// `main.tsx` catches it and renders a setup-guidance screen.
 export class MissingAuthConfigError extends Error {
   constructor() {
     super(
@@ -31,27 +46,20 @@ export class MissingAuthConfigError extends Error {
   }
 }
 
-if (!clientId) {
-  throw new MissingAuthConfigError();
-}
-
-// Scopes requested for the bearer token. Microsoft Graph User.Read is the
-// safe default — it lets us read the signed-in user's basic profile and
-// confirms a working token. When the backend gets its own Azure AD app
-// registration, swap this for a custom scope like
-// `api://<backend-app-id>/access_as_user` to receive backend-issued tokens.
+// Scopes requested for the bearer token.
 export const API_SCOPES = ["User.Read"];
+export const loginRequest = { scopes: API_SCOPES };
+
+// --- PCA singleton (standalone only) --------------------------------------
 
 const msalConfig: Configuration = {
   auth: {
-    clientId,
+    clientId: clientId ?? "",
     authority: `https://login.microsoftonline.com/${tenantId}`,
     redirectUri,
     postLogoutRedirectUri: redirectUri,
   },
-  cache: {
-    cacheLocation: "sessionStorage",
-  },
+  cache: { cacheLocation: "sessionStorage" },
   system: {
     loggerOptions: {
       logLevel: import.meta.env.DEV ? LogLevel.Warning : LogLevel.Error,
@@ -64,8 +72,26 @@ const msalConfig: Configuration = {
   },
 };
 
-// Module-level singleton — same instance the axios interceptor uses to
-// acquire tokens and the React provider uses for sign-in state.
-export const pca = new PublicClientApplication(msalConfig);
+let standalonePca: PublicClientApplication | null = null;
 
-export const loginRequest = { scopes: API_SCOPES };
+if (!IS_FEDERATED) {
+  if (!clientId) throw new MissingAuthConfigError();
+  standalonePca = new PublicClientApplication(msalConfig);
+}
+
+// `pca` is the standalone singleton (or null in federated mode). Standalone
+// bootstrap, AuthProvider, and standalone main.tsx all import this directly.
+export const pca = standalonePca;
+
+// --- Active PCA (read by the axios interceptor) ---------------------------
+//
+// In standalone mode the bootstrap sets this to our own `pca` early. In
+// federated mode App.tsx reads `useMsal().instance` and registers it here
+// so the interceptor uses the host's PCA.
+let activePca: IPublicClientApplication | null = standalonePca;
+
+export const setActivePca = (instance: IPublicClientApplication) => {
+  activePca = instance;
+};
+
+export const getActivePca = (): IPublicClientApplication | null => activePca;

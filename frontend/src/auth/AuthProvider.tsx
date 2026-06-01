@@ -1,17 +1,13 @@
-// Top-level auth wrapper. SSO is mandatory: every route is gated behind
-// a Microsoft sign-in redirect.
+// Standalone-mode auth wrapper. Provides MsalProvider + MsalAuthenticationTemplate
+// using our own PCA singleton.
 //
-// MSAL initialisation happens *before* React mounts (see `auth/bootstrap.ts`),
-// so by the time this provider renders, `pca.initialize()` and
-// `handleRedirectPromise()` have already completed.
+// In federated mode this component is NOT used — the host owns the MsalProvider
+// and the sign-in flow. The exposed App component (src/App.tsx) only relies on
+// `useActiveAccountSync` to register the host's PCA with the axios interceptor.
 
-import { useEffect, type ReactNode } from "react";
-import { MsalProvider, MsalAuthenticationTemplate, useMsal } from "@azure/msal-react";
-import {
-  EventType,
-  InteractionType,
-  type AuthenticationResult,
-} from "@azure/msal-browser";
+import type { ReactNode } from "react";
+import { MsalProvider, MsalAuthenticationTemplate } from "@azure/msal-react";
+import { InteractionType } from "@azure/msal-browser";
 import { Alert, Skeleton } from "antd";
 import { loginRequest, pca } from "./msalConfig";
 
@@ -32,35 +28,14 @@ const ErrorFallback = ({ error }: { error: unknown }) => (
   </div>
 );
 
-// Keep MSAL's active account in sync with subsequent login / silent-token
-// events. Bootstrap handles the initial pick; this just covers what comes
-// after (e.g. user signs in via the login template, switches accounts, etc.).
-const ActiveAccountSync = ({ children }: { children: ReactNode }) => {
-  const { instance } = useMsal();
-
-  useEffect(() => {
-    const callbackId = instance.addEventCallback((event) => {
-      if (
-        (event.eventType === EventType.LOGIN_SUCCESS ||
-          event.eventType === EventType.ACQUIRE_TOKEN_SUCCESS) &&
-        event.payload &&
-        "account" in event.payload
-      ) {
-        const payload = event.payload as AuthenticationResult;
-        if (payload.account) instance.setActiveAccount(payload.account);
-      }
-    });
-    return () => {
-      if (callbackId) instance.removeEventCallback(callbackId);
-    };
-  }, [instance]);
-
-  return <>{children}</>;
-};
-
-export const AuthProvider = ({ children }: { children: ReactNode }) => (
-  <MsalProvider instance={pca}>
-    <ActiveAccountSync>
+export const StandaloneAuthProvider = ({ children }: { children: ReactNode }) => {
+  if (!pca) {
+    throw new Error(
+      "StandaloneAuthProvider used in federated mode — host must provide MsalProvider",
+    );
+  }
+  return (
+    <MsalProvider instance={pca}>
       <MsalAuthenticationTemplate
         interactionType={InteractionType.Redirect}
         authenticationRequest={loginRequest}
@@ -69,6 +44,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => (
       >
         {children}
       </MsalAuthenticationTemplate>
-    </ActiveAccountSync>
-  </MsalProvider>
-);
+    </MsalProvider>
+  );
+};
