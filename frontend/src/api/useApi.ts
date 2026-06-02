@@ -41,41 +41,62 @@ export const useApi = <T>(
   opts: Options = {},
 ): UseApiResult<T> => {
   const key = JSON.stringify(deps);
-  const cached = opts.cache ? (referenceCache.get(key) as T | undefined) : undefined;
 
-  const [data, setData] = useState<T | undefined>(cached);
-  const [isLoading, setIsLoading] = useState<boolean>(cached === undefined);
+  // The fetch effect is keyed only on [key, tick] so it does not restart on
+  // every render. `fn` and `cache` are read through refs so the effect always
+  // sees the latest values without making them effect dependencies — a fresh
+  // `fn` identity each render would otherwise re-run the request constantly.
+  const fnRef = useRef(fn);
+  fnRef.current = fn;
+  const cache = opts.cache ?? false;
+  const cacheRef = useRef(cache);
+  cacheRef.current = cache;
+
+  const readCache = (): T | undefined =>
+    cacheRef.current && referenceCache.has(key)
+      ? (referenceCache.get(key) as T)
+      : undefined;
+
+  const [data, setData] = useState<T | undefined>(readCache);
+  const [isLoading, setIsLoading] = useState<boolean>(() => readCache() === undefined);
   const [isError, setIsError] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [tick, setTick] = useState(0);
-  const callIdRef = useRef(0);
 
   useEffect(() => {
-    const id = ++callIdRef.current;
+    // Each effect run owns its own cancellation flag. The cleanup flips it on
+    // unmount or before the next run (deps change / refetch), so a late or
+    // superseded response can never commit to a stale render. This replaces
+    // the old mutable call-id counter, which — with no per-run cleanup — could
+    // drop a valid result when an in-flight promise was shared across
+    // StrictMode's double-invoke or multiple components, surfacing as empty
+    // data despite a successful response.
+    let cancelled = false;
     /* eslint-disable react-hooks/set-state-in-effect */
 
-    // Cache hit on initial render — skip the network call entirely. A manual
-    // refetch (tick > 0) bypasses this so the caller can force a refresh.
-    if (opts.cache && tick === 0 && referenceCache.has(key)) {
+    // Cache hit on a non-forced load — serve the stored value and skip the
+    // network entirely. refetch() bumps `tick` above 0 to bypass this.
+    if (cacheRef.current && tick === 0 && referenceCache.has(key)) {
       setData(referenceCache.get(key) as T);
       setIsLoading(false);
       setIsError(false);
       setError(null);
-      return;
+      return () => {
+        cancelled = true;
+      };
     }
 
     setIsLoading(true);
     setIsError(false);
     setError(null);
 
-    // Dedupe concurrent calls for the same key. If a request is already in
-    // flight, reuse its promise instead of starting another.
+    // Reuse an in-flight request for this key if one exists; otherwise start
+    // one and register it. The entry is dropped once settled so later mounts
+    // re-fetch (cache: true short-circuits above before reaching here).
     let promise = inFlight.get(key) as Promise<T> | undefined;
     if (!promise) {
-      promise = fn();
+      promise = fnRef.current();
       inFlight.set(key, promise);
-      // Drop the in-flight entry once settled so future calls re-fetch
-      // (unless cache: true, in which case the cache catches them first).
       promise.finally(() => {
         if (inFlight.get(key) === promise) inFlight.delete(key);
       });
@@ -83,19 +104,27 @@ export const useApi = <T>(
 
     promise
       .then((result) => {
-        if (id !== callIdRef.current) return;
+        // Guard on this run's own flag — NOT a shared counter — so a reused
+        // in-flight promise still commits to every live subscriber.
+        if (cancelled) return;
         setData(result);
         setIsLoading(false);
-        if (opts.cache) referenceCache.set(key, result);
+        setIsError(false);
+        setError(null);
+        if (cacheRef.current) referenceCache.set(key, result);
       })
       .catch((err: unknown) => {
-        if (id !== callIdRef.current) return;
+        if (cancelled) return;
         setIsError(true);
         setError(err instanceof Error ? err : new Error(String(err)));
         setIsLoading(false);
       });
     /* eslint-enable react-hooks/set-state-in-effect */
-    // Keyed off serialised deps + refetch tick; fn's closure captures the latest deps.
+
+    return () => {
+      cancelled = true;
+    };
+    // Keyed off serialised deps + refetch tick; fn/cache are read via refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, tick]);
 
