@@ -42,6 +42,8 @@ export const brand = {
   // App surfaces
   bg: "#F3F6FB", // page background (cool light blue-grey)
   cardBg: "#FFFFFF",
+  cardHeader: "#DDE7F6", // pale blue card header bar
+  cardShadow: "0 2px 10px rgba(14, 39, 91, 0.08)", // resting card elevation
   border: "#E3E7EF",
 
   // Tinted surfaces
@@ -65,6 +67,8 @@ export const brandDark = {
   sider: "#141414",
   body: "#0F0F0F",
   tableHeader: "#211E2A",
+  cardHeader: "#241F33", // pale-equivalent card header bar (dark)
+  cardShadow: "0 2px 10px rgba(0, 0, 0, 0.45)",
   accentText: "#7FB0E8",
   value: "#9DC0F0",
   deltaUp: "#46C97A",

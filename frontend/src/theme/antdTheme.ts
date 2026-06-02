@@ -40,6 +40,7 @@ export const lightTheme: ThemeConfig = {
     Card: {
       borderRadiusLG: 14,
       colorBorderSecondary: brand.border,
+      headerBg: brand.cardHeader,
     },
     Table: {
       headerBg: brand.tableHeader,
@@ -85,6 +86,7 @@ export const darkTheme: ThemeConfig = {
     },
     Card: {
       borderRadiusLG: 14,
+      headerBg: brandDark.cardHeader,
     },
     Table: {
       headerBg: brandDark.tableHeader,

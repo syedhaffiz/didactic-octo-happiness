@@ -9,3 +9,10 @@ body,
 * {
   box-sizing: border-box;
 }
+
+/* Resting elevation for cards. The shadow value (mode-aware) is injected as
+   --ct-card-shadow by ThemeProvider; the color literal stays in tokens.ts.
+   antd only shadows borderless cards, so bordered cards have no conflict. */
+.ant-card {
+  box-shadow: var(--ct-card-shadow, none);
+}
