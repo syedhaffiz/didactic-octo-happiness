@@ -1,29 +1,37 @@
 // Azure AD / Entra ID configuration via MSAL.
 //
-// Two run modes:
+// SSO is toggled by the VITE_SSO_ENABLED env var (build-time, so it also
+// applies to deployed builds — set it in the pipeline/host env):
 //
-//   Standalone (npm run dev / build): the env vars below are required, the
-//   internal `pca` singleton is created at module load, and `getActivePca`
-//   returns it. Throws `MissingAuthConfigError` if the vars are missing so
-//   a misconfigured dev gets a clear error.
+//   VITE_SSO_ENABLED=true  (or unset) — SSO ON. The Azure env vars below are
+//     required; the `pca` singleton is created at module load and the app is
+//     gated behind a Microsoft sign-in. Throws MissingAuthConfigError if the
+//     client id is missing so a misconfigured environment fails loudly.
 //
-//   Federated (npm run build:remote, mounted in a host): set
-//   VITE_FEDERATED=true. The internal singleton is NOT created. The host
-//   owns the `PublicClientApplication`; our App component calls
-//   `setActivePca` with the host's instance (read via `useMsal()`) so the
-//   axios interceptor can acquire tokens against it.
+//   VITE_SSO_ENABLED=false — SSO OFF. No PCA is created, no Azure config is
+//     required, and the sign-in gate is skipped. The axios interceptor sends
+//     a dummy bearer token and the UI shows a hardcoded placeholder user.
+//     Intended for local dev and non-secured demo deployments.
 //
-// Required env vars (standalone only):
-//   VITE_AZURE_CLIENT_ID   — the app registration's client ID
-//   VITE_AZURE_TENANT_ID   — tenant ID, or "common" / "organizations"
+// Required env vars (SSO ON only):
+//   VITE_AZURE_CLIENT_ID    — the app registration's client ID
+//   VITE_AZURE_TENANT_ID    — tenant ID, or "common" / "organizations"
 //   VITE_AZURE_REDIRECT_URI — defaults to window.location.origin
 
 import {
   PublicClientApplication,
   LogLevel,
   type Configuration,
-  type IPublicClientApplication,
 } from "@azure/msal-browser";
+
+// SSO is on unless explicitly disabled. Defaulting to ON keeps deployed
+// environments secure unless someone deliberately turns it off.
+export const SSO_ENABLED = import.meta.env.VITE_SSO_ENABLED !== "false";
+
+// Used when SSO is OFF: a placeholder identity for the header and a fixed
+// bearer token attached to every API call.
+export const DUMMY_USERNAME = "Demo User";
+export const DUMMY_TOKEN = "dummy-token";
 
 const clientId = import.meta.env.VITE_AZURE_CLIENT_ID as string | undefined;
 const tenantId = (import.meta.env.VITE_AZURE_TENANT_ID as string | undefined) ?? "common";
@@ -31,16 +39,15 @@ const redirectUri =
   (import.meta.env.VITE_AZURE_REDIRECT_URI as string | undefined) ??
   (typeof window !== "undefined" ? window.location.origin : "/");
 
-export const IS_FEDERATED = import.meta.env.VITE_FEDERATED === "true";
-
-// Thrown at module load if SSO env vars are missing in standalone mode.
+// Thrown at module load if SSO is on but its env vars are missing.
 // `main.tsx` catches it and renders a setup-guidance screen.
 export class MissingAuthConfigError extends Error {
   constructor() {
     super(
-      "VITE_AZURE_CLIENT_ID is not set. SSO is required — copy " +
-        "`frontend/.env.example` to `frontend/.env.local` and fill in your " +
-        "Azure app registration details, then restart the dev server.",
+      "VITE_AZURE_CLIENT_ID is not set while SSO is enabled. Either fill in " +
+        "your Azure app registration details in `frontend/.env.local`, or set " +
+        "VITE_SSO_ENABLED=false to run without SSO. Restart the dev server " +
+        "after changing env vars.",
     );
     this.name = "MissingAuthConfigError";
   }
@@ -50,7 +57,7 @@ export class MissingAuthConfigError extends Error {
 export const API_SCOPES = ["User.Read"];
 export const loginRequest = { scopes: API_SCOPES };
 
-// --- PCA singleton (standalone only) --------------------------------------
+// --- PCA singleton (SSO ON only) ------------------------------------------
 
 const msalConfig: Configuration = {
   auth: {
@@ -74,24 +81,11 @@ const msalConfig: Configuration = {
 
 let standalonePca: PublicClientApplication | null = null;
 
-if (!IS_FEDERATED) {
+if (SSO_ENABLED) {
   if (!clientId) throw new MissingAuthConfigError();
   standalonePca = new PublicClientApplication(msalConfig);
 }
 
-// `pca` is the standalone singleton (or null in federated mode). Standalone
-// bootstrap, AuthProvider, and standalone main.tsx all import this directly.
+// `pca` is the MSAL singleton when SSO is on, otherwise null. Bootstrap,
+// AuthProvider, and the token helper all import it directly.
 export const pca = standalonePca;
-
-// --- Active PCA (read by the axios interceptor) ---------------------------
-//
-// In standalone mode the bootstrap sets this to our own `pca` early. In
-// federated mode App.tsx reads `useMsal().instance` and registers it here
-// so the interceptor uses the host's PCA.
-let activePca: IPublicClientApplication | null = standalonePca;
-
-export const setActivePca = (instance: IPublicClientApplication) => {
-  activePca = instance;
-};
-
-export const getActivePca = (): IPublicClientApplication | null => activePca;

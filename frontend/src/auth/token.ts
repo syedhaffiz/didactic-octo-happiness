@@ -1,18 +1,17 @@
 // Token acquisition helpers used by the axios interceptor.
 //
-// Reads the *active* PCA via `getActivePca()` so the same code path works in
-// both standalone mode (our own instance) and federated mode (the host's
-// instance, registered by App.tsx on mount).
+// When SSO is OFF we short-circuit to a dummy token so the API contract
+// (Authorization: Bearer <token>) stays identical for the backend. When SSO
+// is ON we acquire a real bearer token silently from MSAL.
 
 import {
   InteractionRequiredAuthError,
   type AccountInfo,
-  type IPublicClientApplication,
 } from "@azure/msal-browser";
-import { API_SCOPES, getActivePca } from "./msalConfig";
+import { API_SCOPES, DUMMY_TOKEN, SSO_ENABLED, pca } from "./msalConfig";
 
-const activeAccount = (pca: IPublicClientApplication): AccountInfo | null =>
-  pca.getActiveAccount() ?? pca.getAllAccounts()[0] ?? null;
+const activeAccount = (): AccountInfo | null =>
+  pca?.getActiveAccount() ?? pca?.getAllAccounts()[0] ?? null;
 
 export interface TokenOptions {
   forceRefresh?: boolean;
@@ -21,10 +20,12 @@ export interface TokenOptions {
 export const getAccessToken = async (
   opts: TokenOptions = {},
 ): Promise<string | null> => {
-  const pca = getActivePca();
-  if (!pca) return null; // federated mode before host has mounted us
+  // SSO off — every request carries the dummy token.
+  if (!SSO_ENABLED) return DUMMY_TOKEN;
 
-  const account = activeAccount(pca);
+  if (!pca) return null;
+
+  const account = activeAccount();
   if (!account) return null;
 
   try {
@@ -44,8 +45,8 @@ export const getAccessToken = async (
 };
 
 export const signOut = async () => {
-  const pca = getActivePca();
-  if (!pca) return;
-  const account = activeAccount(pca);
+  // No session to end when SSO is off.
+  if (!SSO_ENABLED || !pca) return;
+  const account = activeAccount();
   await pca.logoutRedirect({ account: account ?? undefined });
 };
