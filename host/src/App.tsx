@@ -1,5 +1,5 @@
-// Host root: owns SSO (or skips it when disabled) and a trivial top-level
-// switch between Home and the mounted IRM remote.
+// Host root: owns SSO for the whole portal and a trivial top-level switch
+// between Home and the mounted IRM remote.
 //
 // Intentionally NO react-router here. The remote is a self-contained app with
 // its own <RouterProvider> (basename "/irm"); it must be the only router in the
@@ -11,7 +11,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { MsalProvider, MsalAuthenticationTemplate, useMsal } from "@azure/msal-react";
 import { InteractionType } from "@azure/msal-browser";
 import { ConfigProvider, Skeleton, Alert } from "antd";
-import { DUMMY_USERNAME, SSO_ENABLED, loginRequest, pca } from "./auth/msalConfig";
+import { loginRequest, pca } from "./auth/msalConfig";
 import { HostShell } from "./components/HostShell";
 import { Home } from "./pages/Home";
 
@@ -72,8 +72,8 @@ const Shell = ({ userName }: { userName: string }) => {
             </div>
           }
         >
-          {/* Tell the remote whether this host runs SSO so it matches our mode. */}
-          <RemoteApp basename={IRM_BASE} ssoEnabled={SSO_ENABLED} />
+          {/* The remote consumes the host's token via the shared MSAL instance. */}
+          <RemoteApp basename={IRM_BASE} />
         </Suspense>
       ) : (
         <Home onOpenIrm={() => navigate(IRM_BASE)} />
@@ -90,20 +90,16 @@ const AuthedShell = () => {
 
 export const App = () => (
   <ConfigProvider>
-    {SSO_ENABLED ? (
-      <MsalProvider instance={pca!}>
-        <MsalAuthenticationTemplate
-          interactionType={InteractionType.Redirect}
-          authenticationRequest={loginRequest}
-          loadingComponent={Loading}
-          errorComponent={SignInError}
-        >
-          <AuthedShell />
-        </MsalAuthenticationTemplate>
-      </MsalProvider>
-    ) : (
-      <Shell userName={DUMMY_USERNAME} />
-    )}
+    <MsalProvider instance={pca}>
+      <MsalAuthenticationTemplate
+        interactionType={InteractionType.Redirect}
+        authenticationRequest={loginRequest}
+        loadingComponent={Loading}
+        errorComponent={SignInError}
+      >
+        <AuthedShell />
+      </MsalAuthenticationTemplate>
+    </MsalProvider>
   </ConfigProvider>
 );
 

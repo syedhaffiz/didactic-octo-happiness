@@ -1,9 +1,11 @@
-// MSAL config for the HOST. The host owns the single PublicClientApplication
-// for the whole portal; the remote reuses this instance (shared singleton).
+// MSAL config for the HOST — the single auth authority for the whole portal.
+// The host signs the user in; the remote reuses this instance (shared
+// singleton) to acquire tokens. SSO is always on.
 //
-// SSO is toggled by VITE_SSO_ENABLED (default on). When off, no PCA is created
-// and no Azure config is required — the host runs with a placeholder user and
-// tells the remote to do the same. Handy for demoing federation without Azure.
+// Required env vars (host/.env.local):
+//   VITE_AZURE_CLIENT_ID    — the app registration's client ID
+//   VITE_AZURE_TENANT_ID    — tenant ID, or "common" / "organizations"
+//   VITE_AZURE_REDIRECT_URI — defaults to window.location.origin (use :3000)
 
 import {
   PublicClientApplication,
@@ -11,21 +13,25 @@ import {
   type Configuration,
 } from "@azure/msal-browser";
 
-export const SSO_ENABLED = import.meta.env.VITE_SSO_ENABLED !== "false";
-export const DUMMY_USERNAME = "Demo User";
-
 const clientId = import.meta.env.VITE_AZURE_CLIENT_ID as string | undefined;
 const tenantId = (import.meta.env.VITE_AZURE_TENANT_ID as string | undefined) ?? "common";
 const redirectUri =
   (import.meta.env.VITE_AZURE_REDIRECT_URI as string | undefined) ??
   (typeof window !== "undefined" ? window.location.origin : "/");
 
+if (!clientId) {
+  throw new Error(
+    "VITE_AZURE_CLIENT_ID is not set. Copy host/.env.example to " +
+      "host/.env.local and fill in your Azure app registration details.",
+  );
+}
+
 export const API_SCOPES = ["User.Read"];
 export const loginRequest = { scopes: API_SCOPES };
 
 const msalConfig: Configuration = {
   auth: {
-    clientId: clientId ?? "",
+    clientId,
     authority: `https://login.microsoftonline.com/${tenantId}`,
     redirectUri,
     postLogoutRedirectUri: redirectUri,
@@ -43,16 +49,4 @@ const msalConfig: Configuration = {
   },
 };
 
-let instance: PublicClientApplication | null = null;
-
-if (SSO_ENABLED) {
-  if (!clientId) {
-    throw new Error(
-      "VITE_AZURE_CLIENT_ID is not set while SSO is enabled. Fill in " +
-        "host/.env.local, or set VITE_SSO_ENABLED=false to run without SSO.",
-    );
-  }
-  instance = new PublicClientApplication(msalConfig);
-}
-
-export const pca = instance;
+export const pca = new PublicClientApplication(msalConfig);

@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "dev:remote": "cross-env FEDERATED=true VITE_FEDERATED=true vite",
-    "build:remote": "cross-env FEDERATED=true VITE_FEDERATED=true tsc -b && cross-env FEDERATED=true VITE_FEDERATED=true vite build",
-    "preview:remote": "cross-env FEDERATED=true VITE_FEDERATED=true vite preview",
+    "dev:remote": "cross-env FEDERATED=true vite",
+    "build:remote": "cross-env FEDERATED=true tsc -b && cross-env FEDERATED=true vite build",
+    "preview:remote": "cross-env FEDERATED=true vite preview",
     "lint": "eslint .",
     "preview": "vite preview"
   },

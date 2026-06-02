@@ -1,11 +1,9 @@
 // Initialise MSAL before React mounts: handleRedirectPromise must run after
-// initialize() to complete a redirect sign-in. No-op when SSO is disabled.
+// initialize() to complete a redirect sign-in.
 
 import { pca } from "./msalConfig";
 
 export const bootstrapAuth = async (): Promise<void> => {
-  if (!pca) return; // SSO disabled
-
   await pca.initialize();
   await pca.handleRedirectPromise();
 

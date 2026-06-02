@@ -1,11 +1,11 @@
-// Root component: theme + auth + router.
+// Root component: theme + identity + router.
 //
 // Used in both run modes:
-//   - Standalone: rendered from main.tsx (basename "/"). AuthProvider either
-//     gates behind SSO or passes through with a placeholder identity.
 //   - Federated: imported by the host via Module Federation and rendered under
-//     the host's MsalProvider. `basename` lets the host mount us under any
-//     sub-path (e.g. "/irm").
+//     the host's MsalProvider. The host owns auth; AuthProvider just reads the
+//     host's account and registers its PCA with the API interceptor. `basename`
+//     lets the host mount us under a sub-path (e.g. "/irm").
+//   - Standalone (npm run dev): no host, so no token — for UI work on mocks.
 
 import { useMemo } from "react";
 import { RouterProvider } from "react-router-dom";
@@ -16,16 +16,14 @@ import { createAppRouter } from "./routes";
 
 interface AppProps {
   basename?: string;
-  // Passed by a federation host to indicate whether the host runs SSO.
-  ssoEnabled?: boolean;
 }
 
-export const App = ({ basename = "/", ssoEnabled }: AppProps) => {
+export const App = ({ basename = "/" }: AppProps) => {
   const router = useMemo(() => createAppRouter(basename), [basename]);
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <AuthProvider ssoEnabled={ssoEnabled}>
+        <AuthProvider>
           <RouterProvider router={router} />
         </AuthProvider>
       </ThemeProvider>
