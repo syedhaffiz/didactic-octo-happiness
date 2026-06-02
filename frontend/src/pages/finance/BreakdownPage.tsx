@@ -49,7 +49,7 @@ export const BreakdownPage = ({
         <Alert
           type="error"
           showIcon
-          message={`Could not load ${title.toLowerCase()}`}
+          title={`Could not load ${title.toLowerCase()}`}
           description={error instanceof Error ? error.message : "Unknown error"}
           action={<a onClick={() => refetch()} style={{ cursor: "pointer" }}>Retry</a>}
         />

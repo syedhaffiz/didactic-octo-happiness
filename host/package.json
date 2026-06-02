@@ -1,0 +1,27 @@
+{
+  "name": "host",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@azure/msal-browser": "^5.11.0",
+    "@azure/msal-react": "^5.4.2",
+    "antd": "^6.4.3",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  },
+  "devDependencies": {
+    "@module-federation/vite": "^1.15.5",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "esbuild": "^0.28.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.12"
+  }
+}

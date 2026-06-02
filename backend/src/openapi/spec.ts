@@ -1,4 +1,4 @@
-// OpenAPI 3.0 specification for the Control Tower backend.
+// OpenAPI 3.0 specification for the IRM backend.
 //
 // Hand-authored as a TS module — keeps the spec versionable alongside the
 // route handlers and avoids juggling YAML. Component schemas mirror the
@@ -22,10 +22,10 @@ const envelope = (dataSchema: object) => ({
 export const openApiSpec = {
   openapi: "3.0.3",
   info: {
-    title: "Control Tower API",
+    title: "IRM API",
     version: "0.1.0",
     description:
-      "Backend for the IRM Control Tower dashboard. All endpoints return an " +
+      "Backend for the IRM (Integrated Resource Management) dashboard. All endpoints return an " +
       "ApiEnvelope: `{ data, meta?, error? }`. On success `data` is populated; " +
       "on failure `error` is populated and the HTTP status is non-2xx.",
   },

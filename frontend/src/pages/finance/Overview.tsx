@@ -34,7 +34,7 @@ export const FinanceOverview = () => {
         <Alert
           type="error"
           showIcon
-          message="Could not load overview"
+          title="Could not load overview"
           description={error instanceof Error ? error.message : "Unknown error"}
           action={
             <a onClick={() => refetch()} style={{ cursor: "pointer" }}>

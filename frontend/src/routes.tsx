@@ -36,9 +36,12 @@ const Placeholder = lazy(() =>
   import("./pages/Placeholder").then((m) => ({ default: m.Placeholder })),
 );
 
-export const router = createBrowserRouter(
-  [
-    {
+// Factory so the same routes work standalone (basename "/") and federated
+// (basename "/irm" or whatever the host mounts us under).
+export const createAppRouter = (basename: string = "/") =>
+  createBrowserRouter(
+    [
+      {
         path: "/",
         element: <AppShell />,
         children: [
@@ -72,4 +75,9 @@ export const router = createBrowserRouter(
         ],
       },
     ],
+    { basename },
   );
+
+// Standalone default (basename "/"). Federated mounts call createAppRouter
+// with the host-allocated basename instead.
+export const router = createAppRouter("/");

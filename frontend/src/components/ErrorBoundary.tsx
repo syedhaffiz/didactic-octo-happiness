@@ -91,7 +91,7 @@ export class ErrorBoundary extends Component<Props, State> {
         <Alert
           type="error"
           showIcon
-          message={`Couldn't load ${label}`}
+          title={`Couldn't load ${label}`}
           description={
             <Space direction="vertical" size={6} style={{ width: "100%" }}>
               <div style={{ wordBreak: "break-word", fontSize: 12 }}>{error.message}</div>
@@ -110,7 +110,7 @@ export class ErrorBoundary extends Component<Props, State> {
         <Alert
           type="error"
           showIcon
-          message="Something went wrong"
+          title="Something went wrong"
           description={
             <Space direction="vertical" size={12} style={{ width: "100%" }}>
               <div style={{ wordBreak: "break-word" }}>{error.message}</div>

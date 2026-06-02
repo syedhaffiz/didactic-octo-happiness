@@ -143,7 +143,7 @@ export const IndexPage = () => {
       <Alert
         type="error"
         showIcon
-        message="Could not load indices"
+        title="Could not load indices"
         description={error instanceof Error ? error.message : "Unknown error"}
         action={<a onClick={() => refetch()} style={{ cursor: "pointer" }}>Retry</a>}
       />

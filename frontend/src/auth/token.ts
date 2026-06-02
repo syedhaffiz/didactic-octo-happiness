@@ -1,17 +1,19 @@
 // Token acquisition helpers used by the axios interceptor.
 //
-// When SSO is OFF we short-circuit to a dummy token so the API contract
-// (Authorization: Bearer <token>) stays identical for the backend. When SSO
-// is ON we acquire a real bearer token silently from MSAL.
+// Reads the *active* PCA via getActivePca() so the same path works standalone
+// (our own instance) and federated (the host's instance, registered by
+// AuthProvider on mount). When auth is inactive (standalone + SSO off) we
+// short-circuit to a dummy token so the API contract stays identical.
 
 import {
   InteractionRequiredAuthError,
   type AccountInfo,
+  type IPublicClientApplication,
 } from "@azure/msal-browser";
-import { API_SCOPES, DUMMY_TOKEN, SSO_ENABLED, pca } from "./msalConfig";
+import { API_SCOPES, DUMMY_TOKEN, getActivePca, isAuthActive } from "./msalConfig";
 
-const activeAccount = (): AccountInfo | null =>
-  pca?.getActiveAccount() ?? pca?.getAllAccounts()[0] ?? null;
+const activeAccount = (pca: IPublicClientApplication): AccountInfo | null =>
+  pca.getActiveAccount() ?? pca.getAllAccounts()[0] ?? null;
 
 export interface TokenOptions {
   forceRefresh?: boolean;
@@ -20,12 +22,14 @@ export interface TokenOptions {
 export const getAccessToken = async (
   opts: TokenOptions = {},
 ): Promise<string | null> => {
-  // SSO off — every request carries the dummy token.
-  if (!SSO_ENABLED) return DUMMY_TOKEN;
+  // Auth inactive (SSO off, or federated under a no-SSO host) — every request
+  // carries the dummy token.
+  if (!isAuthActive()) return DUMMY_TOKEN;
 
-  if (!pca) return null;
+  const pca = getActivePca();
+  if (!pca) return null; // federated mode before the host has mounted us
 
-  const account = activeAccount();
+  const account = activeAccount(pca);
   if (!account) return null;
 
   try {
@@ -45,8 +49,9 @@ export const getAccessToken = async (
 };
 
 export const signOut = async () => {
-  // No session to end when SSO is off.
-  if (!SSO_ENABLED || !pca) return;
-  const account = activeAccount();
+  if (!isAuthActive()) return; // no session to end
+  const pca = getActivePca();
+  if (!pca) return;
+  const account = activeAccount(pca);
   await pca.logoutRedirect({ account: account ?? undefined });
 };

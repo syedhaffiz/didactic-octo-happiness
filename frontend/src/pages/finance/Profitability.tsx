@@ -108,7 +108,7 @@ export const Profitability = () => {
         <Alert
           type="error"
           showIcon
-          message="Could not load profitability"
+          title="Could not load profitability"
           description={error instanceof Error ? error.message : "Unknown error"}
           action={<a onClick={() => refetch()} style={{ cursor: "pointer" }}>Retry</a>}
         />

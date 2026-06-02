@@ -202,7 +202,7 @@ export const ApprovedBudget = () => {
         <Alert
           type="error"
           showIcon
-          message="Could not load budget"
+          title="Could not load budget"
           description={error instanceof Error ? error.message : "Unknown error"}
           action={
             <a onClick={() => refetch()} style={{ cursor: "pointer" }}>

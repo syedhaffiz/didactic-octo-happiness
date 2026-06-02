@@ -23,6 +23,6 @@ export const Logo = ({ color = brand.white }: { color?: string }) => (
         opacity: 0.95,
       }}
     />
-    <span style={{ fontSize: 14 }}>IRM Control Tower</span>
+    <span style={{ fontSize: 14 }}>IRM</span>
   </div>
 );

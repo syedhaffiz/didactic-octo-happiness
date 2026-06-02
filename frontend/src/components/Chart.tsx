@@ -3,20 +3,16 @@ import Highcharts from "highcharts";
 // Inventory Days panel on the Approved Budget page.
 import "highcharts/highcharts-more";
 import "highcharts/modules/solid-gauge";
-import * as HCR from "highcharts-react-official";
-
-// highcharts-react-official ships as a UMD bundle so Vite's CJS-to-ESM interop
-// surfaces it as a namespace object — the actual component sits at `.HighchartsReact`.
-interface HighchartsReactProps {
-  highcharts: typeof Highcharts;
-  options: Highcharts.Options;
-  containerProps?: React.HTMLAttributes<HTMLDivElement>;
-}
-const HighchartsReact = (HCR as unknown as {
-  HighchartsReact: React.ComponentType<HighchartsReactProps>;
-}).HighchartsReact;
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { brand, chartPalette, fontFamily } from "../theme/tokens";
+
+// NOTE: we drive Highcharts imperatively rather than via highcharts-react-official.
+// That package ships as UMD/CJS, so Vite force-pre-bundles it with its own React
+// reference baked in — which, under Module Federation, is NOT the host's shared
+// React singleton. Its hooks then run against a null dispatcher ("Cannot read
+// properties of null (reading 'useRef')"). This in-house wrapper uses our own
+// (ESM, share-scope-resolved) React, so it works in both standalone and
+// federated runs.
 
 type Options = Highcharts.Options;
 
@@ -90,5 +86,19 @@ export const Chart = ({
     return result;
   }, [options, height]);
 
-  return <HighchartsReact highcharts={Highcharts} options={merged} containerProps={containerProps} />;
+  const hostRef = useRef<HTMLDivElement | null>(null);
+  const chartRef = useRef<Highcharts.Chart | null>(null);
+
+  useEffect(() => {
+    if (!hostRef.current) return;
+    // Datasets are small and only change on filter/range updates, so a full
+    // recreate per options change is simpler than diffing via chart.update().
+    chartRef.current = Highcharts.chart(hostRef.current, merged);
+    return () => {
+      chartRef.current?.destroy();
+      chartRef.current = null;
+    };
+  }, [merged]);
+
+  return <div ref={hostRef} {...containerProps} />;
 };

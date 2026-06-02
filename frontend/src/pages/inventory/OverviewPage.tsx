@@ -244,7 +244,7 @@ export const OverviewPage = () => {
       <Alert
         type="error"
         showIcon
-        message="Could not load inventory"
+        title="Could not load inventory"
         description={error instanceof Error ? error.message : "Unknown error"}
         action={<a onClick={() => refetch()} style={{ cursor: "pointer" }}>Retry</a>}
       />
@@ -441,7 +441,7 @@ const VesselsBlock = ({
         <Alert
           type="error"
           showIcon
-          message="Could not load vessels"
+          title="Could not load vessels"
           description={error.message}
           style={{ margin: 16 }}
         />

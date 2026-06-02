@@ -1,6 +1,6 @@
-# IRM Control Tower
+# IRM
 
-Internal dashboard / "control tower" web app for a Natural Resources business unit.
+Internal dashboard / "IRM" (Integrated Resource Management) web app for a Natural Resources business unit.
 Frontend (React + TypeScript + Ant Design + Highcharts) and backend (Node + TypeScript + Express, mock data today, **Databricks-ready** tomorrow) live side-by-side in this repo.
 
 ```

@@ -1,8 +1,8 @@
 {
-  "name": "control-tower-backend",
+  "name": "irm-backend",
   "version": "0.1.0",
   "private": true,
-  "description": "IRM Control Tower API — Express + TypeScript, mock data now, Databricks later.",
+  "description": "IRM API — Express + TypeScript, mock data now, Databricks later.",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",

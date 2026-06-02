@@ -1,6 +1,6 @@
-# Dashboard Control Tower — Plan (Phase 0)
+# IRM Dashboard — Plan (Phase 0)
 
-> Brand: **adani | Natural Resources** — "IRM Control Tower"
+> Brand: **adani | Natural Resources** — "IRM (Integrated Resource Management)"
 > User chrome: notifications bell, theme toggle (light/dark), user avatar ("Hemil Mistry")
 
 ## 1. Design reference inventory
@@ -63,7 +63,7 @@ Six Figma exports were provided in `Design Reference/`, plus 4 brand-guideline p
 - **Gradient:** the Adani purple→blue gradient is **reserved for the Adani logo only**. The Figma exports apply it to the header bar — we will **not** follow the Figma here. Header bar will be **solid Adani purple**. No gradients on text, icons, backgrounds, or buttons anywhere in the app.
 - **Typography:** the official brand font is a licensed corporate typeface not available on the web. Closest free match is **Poppins** (geometric sans-serif with matching Light / Regular / Medium / SemiBold / Bold weights). Loaded via Google Fonts initially. CSS exposes a `--font-brand` variable so swapping in the official WOFF2 files later is a one-line change in `frontend/src/theme/fonts.css` — no other code touches the font name.
 - **Conflict-resolution rule:** when Figma and brand guidelines disagree, **brand guidelines win**.
-- **Naming rule:** the brand name does **not** appear anywhere in the codebase — not in variable names, CSS classes, file names, comments, copy, or commit messages. The product is referred to as **"IRM Control Tower"** (or just "Control Tower"); brand-specific design tokens are namespaced `--brand-*`.
+- **Naming rule:** the brand name does **not** appear anywhere in the codebase — not in variable names, CSS classes, file names, comments, copy, or commit messages. The product is referred to as **"IRM (Integrated Resource Management)"**; brand-specific design tokens are namespaced `--brand-*`.
 - Tokens captured for code (to be pinned by sampling the guideline swatches during scaffolding):
   - `--brand-purple: #5E267F` (primary — dominant)
   - `--brand-purple-dark: #3A1A57`

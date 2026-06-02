@@ -74,7 +74,7 @@ export const Sales = () => {
         <Alert
           type="error"
           showIcon
-          message="Could not load sales data"
+          title="Could not load sales data"
           description={error instanceof Error ? error.message : "Unknown error"}
           action={<a onClick={() => refetch()} style={{ cursor: "pointer" }}>Retry</a>}
         />

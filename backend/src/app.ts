@@ -24,7 +24,7 @@ export const createApp = () => {
     helmet({ contentSecurityPolicy: false }),
     swaggerUi.serve,
     swaggerUi.setup(openApiSpec, {
-      customSiteTitle: "Control Tower API – Swagger",
+      customSiteTitle: "IRM API – Swagger",
     }),
   );
   app.get("/api/openapi.json", (_req, res) => {
