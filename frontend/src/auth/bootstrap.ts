@@ -1,12 +1,11 @@
-// Pre-React bootstrap for MSAL (standalone mode only).
+// Pre-React bootstrap for MSAL.
 //
-// In federated mode the host has already initialised its own PCA before
-// mounting us, so this is a no-op.
+// When SSO is disabled there is no PCA, so this is a no-op.
 
 import { pca } from "./msalConfig";
 
 export const bootstrapAuth = async (): Promise<void> => {
-  if (!pca) return; // federated mode
+  if (!pca) return; // SSO disabled
 
   await pca.initialize();
   await pca.handleRedirectPromise();

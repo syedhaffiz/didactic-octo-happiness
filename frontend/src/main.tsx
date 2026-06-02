@@ -1,8 +1,5 @@
-// Standalone entry. Boots MSAL using our own PCA, wraps the App with
-// MsalProvider + MsalAuthenticationTemplate (sign-in gate), and mounts.
-//
-// The exposed federation module is `src/expose-app.tsx` instead — it skips
-// the bootstrap and the standalone auth wrapper because the host owns those.
+// App entry. Boots MSAL when SSO is enabled (no-op otherwise), then mounts.
+// The sign-in gate and identity wiring live in <AuthProvider> inside <App>.
 
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -15,7 +12,7 @@ const renderConfigError = (message: string) => {
       <h2 style="margin: 0 0 12px; color: #cf1322;">Auth configuration missing</h2>
       <p style="margin: 0 0 16px; color: #434343; line-height: 1.5;">${message}</p>
       <p style="margin: 0; color: #595959; font-size: 13px;">
-        Once the file exists, stop and restart <code>npm --prefix frontend run dev</code>
+        Once fixed, stop and restart <code>npm --prefix frontend run dev</code>
         (Vite reads env vars only at startup).
       </p>
     </div>
@@ -24,9 +21,8 @@ const renderConfigError = (message: string) => {
 
 (async () => {
   try {
-    const [{ bootstrapAuth }, { StandaloneAuthProvider }, { App }] = await Promise.all([
+    const [{ bootstrapAuth }, { App }] = await Promise.all([
       import("./auth/bootstrap"),
-      import("./auth/AuthProvider"),
       import("./App"),
     ]);
 
@@ -37,9 +33,7 @@ const renderConfigError = (message: string) => {
 
     createRoot(rootEl).render(
       <StrictMode>
-        <StandaloneAuthProvider>
-          <App />
-        </StandaloneAuthProvider>
+        <App />
       </StrictMode>,
     );
   } catch (err) {

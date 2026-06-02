@@ -36,12 +36,9 @@ const Placeholder = lazy(() =>
   import("./pages/Placeholder").then((m) => ({ default: m.Placeholder })),
 );
 
-// Factory so the same routes work standalone (basename "/") and federated
-// (basename "/control-tower" or whatever the host mounts us under).
-export const createAppRouter = (basename: string = "/") =>
-  createBrowserRouter(
-    [
-      {
+export const router = createBrowserRouter(
+  [
+    {
         path: "/",
         element: <AppShell />,
         children: [
@@ -75,9 +72,4 @@ export const createAppRouter = (basename: string = "/") =>
         ],
       },
     ],
-    { basename },
   );
-
-// Standalone default for backwards-compat with main.tsx during the rename.
-// Kept as a getter so the basename can be overridden later if needed.
-export const router = createAppRouter("/");

@@ -1,39 +1,23 @@
-// The mount component. Used in both:
-//   - Standalone: rendered from main.tsx under our own MsalProvider + sign-in template.
-//   - Federated: imported by the host (via Module Federation `exposes`) and
-//     rendered under the host's MsalProvider. The host owns SSO; we just
-//     register their PCA with our axios interceptor via useActiveAccountSync.
+// Root component: theme + auth + router.
 //
-// `basename` lets the host mount us under any sub-path (e.g. "/control-tower").
+// AuthProvider either gates the app behind SSO or, when SSO is disabled,
+// passes through with a placeholder identity. Either way the router (and the
+// API layer beneath it) renders the same.
 
-import { useMemo } from "react";
 import { RouterProvider } from "react-router-dom";
 import { ThemeProvider } from "./theme/ThemeProvider";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { createAppRouter } from "./routes";
-import { useActiveAccountSync } from "./auth/useActiveAccountSync";
+import { AuthProvider } from "./auth/AuthProvider";
+import { router } from "./routes";
 
-interface AppProps {
-  basename?: string;
-}
-
-export const App = ({ basename = "/" }: AppProps) => {
-  const router = useMemo(() => createAppRouter(basename), [basename]);
-  return (
-    <ErrorBoundary>
-      <ThemeProvider>
-        <SyncAuth />
+export const App = () => (
+  <ErrorBoundary>
+    <ThemeProvider>
+      <AuthProvider>
         <RouterProvider router={router} />
-      </ThemeProvider>
-    </ErrorBoundary>
-  );
-};
-
-// Hook-runner wrapper — `useActiveAccountSync` needs to be inside MsalProvider.
-// In both run modes there's an MsalProvider above App.
-const SyncAuth = () => {
-  useActiveAccountSync();
-  return null;
-};
+      </AuthProvider>
+    </ThemeProvider>
+  </ErrorBoundary>
+);
 
 export default App;

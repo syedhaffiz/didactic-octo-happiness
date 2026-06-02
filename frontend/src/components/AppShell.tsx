@@ -11,8 +11,7 @@ import {
   Space,
   Tooltip,
 } from "antd";
-import { useMsal } from "@azure/msal-react";
-import { signOut } from "../auth/token";
+import { useIdentity } from "../auth/AuthProvider";
 import { ErrorBoundary } from "./ErrorBoundary";
 import {
   BellOutlined,
@@ -68,10 +67,9 @@ export const AppShell = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { mode, toggle } = useThemeMode();
-  // MsalAuthenticationTemplate above guarantees we're authenticated by the
-  // time AppShell renders, so `accounts[0]` is always populated.
-  const { accounts } = useMsal();
-  const accountName = accounts[0]?.name ?? accounts[0]?.username ?? "Account";
+  // Identity comes from AuthProvider: the real signed-in account when SSO is
+  // on, or a placeholder user when SSO is off.
+  const { name: accountName, signOut } = useIdentity();
 
   // Normalise inventory paths to the parent menu key so any tab highlights the item.
   const selectedKeys = [
