@@ -4,7 +4,6 @@ import {
   Avatar,
   Badge,
   Button,
-  Dropdown,
   Layout,
   Menu,
   Skeleton,
@@ -26,7 +25,6 @@ import {
   UserOutlined,
   ShopOutlined,
   MoonOutlined,
-  DownOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   SettingOutlined,
@@ -67,9 +65,10 @@ export const AppShell = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { mode, toggle } = useThemeMode();
-  // Identity comes from AuthProvider: the real signed-in account when SSO is
-  // on, or a placeholder user when SSO is off.
-  const { name: accountName, signOut } = useIdentity();
+  // Display name of the silently signed-in account (or a placeholder when the
+  // remote runs without auth env / no active session). Sign-out is the host's
+  // responsibility — the remote has no sign-out.
+  const { name: accountName } = useIdentity();
 
   // Normalise inventory paths to the parent menu key so any tab highlights the item.
   const selectedKeys = [
@@ -106,24 +105,14 @@ export const AppShell = () => {
               onClick={toggle}
             />
           </Tooltip>
-          <Dropdown
-            trigger={["click"]}
-            menu={{
-              items: [
-                { key: "signout", label: "Sign out", onClick: () => void signOut() },
-              ],
-            }}
-          >
-            <Space size={8} style={{ cursor: "pointer" }}>
-              <Avatar
-                size={28}
-                icon={<UserOutlined />}
-                style={{ background: brand.white, color: brand.purple }}
-              />
-              <span style={{ color: brand.white, fontSize: 13 }}>{accountName}</span>
-              <DownOutlined style={{ color: brand.white, fontSize: 10 }} />
-            </Space>
-          </Dropdown>
+          <Space size={8}>
+            <Avatar
+              size={28}
+              icon={<UserOutlined />}
+              style={{ background: brand.white, color: brand.purple }}
+            />
+            <span style={{ color: brand.white, fontSize: 13 }}>{accountName}</span>
+          </Space>
         </Space>
       </Header>
       <Layout>

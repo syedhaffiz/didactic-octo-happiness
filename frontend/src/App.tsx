@@ -1,11 +1,10 @@
 // Root component: theme + identity + router.
 //
-// Used in both run modes:
-//   - Federated: imported by the host via Module Federation and rendered under
-//     the host's MsalProvider. The host owns auth; AuthProvider just reads the
-//     host's account and registers its PCA with the API interceptor. `basename`
-//     lets the host mount us under a sub-path (e.g. "/irm").
-//   - Standalone (npm run dev): no host, so no token — for UI work on mocks.
+// The remote authenticates itself silently (ssoSilent) using its own app
+// registration from env (see auth/msalConfig.ts), riding the session the host
+// established. It needs no auth props from the host — only `basename`, which
+// lets the host mount it under a sub-path (e.g. "/irm"). Standalone (npm run
+// dev) with no auth env runs token-less for UI work on mock data.
 
 import { useMemo } from "react";
 import { RouterProvider } from "react-router-dom";

@@ -33,8 +33,9 @@ const federationPlugin = federation({
     // is the ONLY app that mounts a <RouterProvider>; the host does no
     // react-router routing, so there's no nested-Router collision.
     'react-router-dom': { singleton: true, requiredVersion: '^7.0.0' },
-    '@azure/msal-browser': { singleton: true, requiredVersion: '^5.0.0' },
-    '@azure/msal-react': { singleton: true, requiredVersion: '^5.0.0' },
+    // No @azure/msal-* here: the remote no longer touches MSAL. The host injects
+    // a token getter + user via the App's props (see auth/hostBridge.ts), so
+    // there's no shared MSAL singleton to negotiate.
     // Antd's CSS-in-JS works cross-federation as long as React is shared;
     // sharing it just saves bytes.
     antd: { singleton: true, requiredVersion: '^6.0.0' },

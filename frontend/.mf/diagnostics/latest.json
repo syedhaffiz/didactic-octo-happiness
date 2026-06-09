@@ -1,10 +1,10 @@
 {
   "latestErrorEvent": {
     "code": "TYPE-001",
-    "message": "Failed to generate type declaration. Execute the below cmd to reproduce and fix the error. #TYPE-001\nargs: {\"cmd\":\"npx tsc --project E:\\\\didactic-octo-happiness\\\\frontend\\\\node_modules\\\\.federation\\\\tsconfig.d433063d634a88038fb9dac6feff0030.json\"}\nView the docs to see how to solve: https://module-federation.io/guide/troubleshooting/type#type-001",
+    "message": "Failed to generate type declaration. Execute the below cmd to reproduce and fix the error. #TYPE-001\nargs: {\"cmd\":\"npx tsc --project E:\\\\didactic-octo-happiness\\\\frontend\\\\node_modules\\\\.federation\\\\tsconfig.f40adfd0b05c2ecf6825d0f5af045d88.json\"}\nView the docs to see how to solve: https://module-federation.io/guide/troubleshooting/type#type-001",
     "args": {
-      "cmd": "npx tsc --project E:\\didactic-octo-happiness\\frontend\\node_modules\\.federation\\tsconfig.d433063d634a88038fb9dac6feff0030.json"
+      "cmd": "npx tsc --project E:\\didactic-octo-happiness\\frontend\\node_modules\\.federation\\tsconfig.f40adfd0b05c2ecf6825d0f5af045d88.json"
     },
-    "timestamp": 1780568329255
+    "timestamp": 1781012924592
   }
 }

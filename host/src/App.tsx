@@ -72,7 +72,8 @@ const Shell = ({ userName }: { userName: string }) => {
             </div>
           }
         >
-          {/* The remote consumes the host's token via the shared MSAL instance. */}
+          {/* The host just authenticates the user; the remote signs in
+              silently (ssoSilent) with its own app registration. */}
           <RemoteApp basename={IRM_BASE} />
         </Suspense>
       ) : (
@@ -82,7 +83,8 @@ const Shell = ({ userName }: { userName: string }) => {
   );
 };
 
-// Reads the signed-in account name (only valid under MsalProvider).
+// Reads the signed-in account name for the host's own header. (The remote
+// gets its own name via silent SSO; the host injects nothing into it.)
 const AuthedShell = () => {
   const { accounts } = useMsal();
   return <Shell userName={accounts[0]?.name ?? accounts[0]?.username ?? "Account"} />;

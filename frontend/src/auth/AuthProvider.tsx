@@ -1,38 +1,35 @@
 // Identity context for the remote.
 //
-// The host owns authentication. This provider reads the host-provided MSAL
-// account (via useMsal) for the display name, registers the host's PCA with the
-// axios interceptor (useActiveAccountSync), and exposes a sign-out action. The
-// remote renders no MsalProvider and no sign-in gate of its own.
-//
-// When run standalone (no host), useMsal yields a stubbed instance with no
-// accounts — the name falls back to a generic label and no token is attached.
+// The remote signs in silently (ssoSilent) using its own app registration, so
+// the only thing this exposes is the display name of that account. No sign-out
+// (the host owns logout). When auth is disabled / no silent session exists, the
+// name falls back to a placeholder and the app runs token-less.
 
-import { createContext, useContext, type ReactNode } from "react";
-import { useMsal } from "@azure/msal-react";
-import { signOut } from "./token";
-import { useActiveAccountSync } from "./useActiveAccountSync";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { ensureAccount } from "./token";
 
 interface Identity {
   name: string;
-  signOut: () => void;
 }
 
-const IdentityContext = createContext<Identity>({
-  name: "Account",
-  signOut: () => {},
-});
+const IdentityContext = createContext<Identity>({ name: "Account" });
 
 export const useIdentity = (): Identity => useContext(IdentityContext);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  useActiveAccountSync();
-  const { accounts } = useMsal();
-  const name = accounts[0]?.name ?? accounts[0]?.username ?? "Account";
+  const [name, setName] = useState("Account");
 
-  return (
-    <IdentityContext.Provider value={{ name, signOut: () => void signOut() }}>
-      {children}
-    </IdentityContext.Provider>
-  );
+  useEffect(() => {
+    let cancelled = false;
+    ensureAccount().then((account) => {
+      if (!cancelled && account) {
+        setName(account.name ?? account.username ?? "Account");
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return <IdentityContext.Provider value={{ name }}>{children}</IdentityContext.Provider>;
 };
