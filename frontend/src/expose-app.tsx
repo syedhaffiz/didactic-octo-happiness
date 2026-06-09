@@ -1,7 +1,7 @@
 // Module Federation exposed entry.
 //
 // The host imports this via:
-//   const RemoteApp = (await import("irm/App")).default;
+//   const RemoteApp = (await import("nr_irm_fe/App")).default;
 //   <RemoteApp basename="/irm" />
 //
 // The host must:

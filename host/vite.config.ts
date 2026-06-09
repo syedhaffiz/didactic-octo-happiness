@@ -18,12 +18,24 @@ export default defineConfig({
     federation({
       name: 'host',
       remotes: {
-        // Matches the remote's `name` in frontend/vite.config.ts.
-        irm: {
+        // This is the ONLY host↔remote connection. `entry` is the URL where the
+        // remote publishes its remoteEntry.js manifest — the host fetches it at
+        // runtime to load the exposed `./App`. It is NOT an API base URL and NOT
+        // the mount path (that's `basename="/irm"` in src/App.tsx).
+        //
+        // CHANGE PER ENVIRONMENT: point `entry` at wherever the remote is served.
+        //   - local dev:  http://localhost:5173/remoteEntry.js  (npm --prefix frontend run dev:remote)
+        //   - deployed:   https://<remote-host>/remoteEntry.js
+        // Prefer wiring this from an env var (e.g. import.meta.env.VITE_IRM_REMOTE_URL)
+        // so dev/staging/prod don't each need a code change.
+        //
+        // The remotes key / `name` / `entryGlobalName` must all match the
+        // remote's federation `name` in frontend/vite.config.ts ('nr_irm_fe').
+        nr_irm_fe: {
           type: 'module',
-          name: 'irm',
+          name: 'nr_irm_fe',
           entry: 'http://localhost:5173/remoteEntry.js',
-          entryGlobalName: 'irm',
+          entryGlobalName: 'nr_irm_fe',
           shareScope: 'default',
         },
       },
@@ -33,8 +45,8 @@ export default defineConfig({
       // routing (it switches views via the History API). The remote is the only
       // app that mounts a router and shares it as a singleton.
       shared: {
-        react: { singleton: true, requiredVersion: '^19.0.0' },
-        'react-dom': { singleton: true, requiredVersion: '^19.0.0' },
+        react: { singleton: true, requiredVersion: '^18.0.0' },
+        'react-dom': { singleton: true, requiredVersion: '^18.0.0' },
         '@azure/msal-browser': { singleton: true, requiredVersion: '^5.0.0' },
         '@azure/msal-react': { singleton: true, requiredVersion: '^5.0.0' },
         antd: { singleton: true, requiredVersion: '^6.0.0' },

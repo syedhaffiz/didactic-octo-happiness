@@ -15,7 +15,7 @@ import { loginRequest, pca } from "./auth/msalConfig";
 import { HostShell } from "./components/HostShell";
 import { Home } from "./pages/Home";
 
-const RemoteApp = lazy(() => import("irm/App"));
+const RemoteApp = lazy(() => import("nr_irm_fe/App"));
 
 export const IRM_BASE = "/irm";
 

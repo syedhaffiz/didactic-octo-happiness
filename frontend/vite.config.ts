@@ -10,8 +10,8 @@ import { federation } from '@module-federation/vite'
 const isFederated = process.env.FEDERATED === 'true'
 
 const federationPlugin = federation({
-  // Host imports as: import("irm/App")
-  name: 'irm',
+  // Host imports as: import("nr_irm_fe/App")
+  name: 'nr_irm_fe',
   filename: 'remoteEntry.js',
   exposes: {
     './App': './src/expose-app.tsx',
@@ -19,8 +19,14 @@ const federationPlugin = federation({
   // Singletons MUST be shared so there's exactly one React/router/MSAL
   // instance across host + remote. Mismatched versions log a warning.
   shared: {
-    react: { singleton: true, requiredVersion: '^19.0.0' },
-    'react-dom': { singleton: true, requiredVersion: '^19.0.0' },
+    // React is provided by the host (its singleton). The host runs React 18,
+    // so this remote is built against 18 too and accepts ^18 — keeping the
+    // major aligned avoids the "two copies of React" / dispatcher errors.
+    // requiredVersion:'*' → accept whatever React the HOST shares (any version),
+    // so a mismatch in the host's declared range can't push the remote onto its
+    // own second React (null-dispatcher: "reading 'useMemo'").
+    react: { singleton: true, requiredVersion: '*' },
+    'react-dom': { singleton: true, requiredVersion: '*' },
     // Shared as a singleton so this remote's react-router resolves against the
     // single shared React (a non-shared copy bundles a second React and breaks
     // hooks — "Cannot read properties of null (reading 'useRef')"). This remote
