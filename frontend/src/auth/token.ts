@@ -1,49 +1,25 @@
-// Silent token acquisition for the remote.
+// Token acquisition for the axios interceptor, using the host's MSAL instance
+// (provided via the App's `msalInstance` prop). The host already signed the
+// user in, so the instance has an active account and acquireTokenSilent
+// returns a fresh token.
 //
-// First call establishes an account silently via ssoSilent (prompt=none),
-// using the existing AAD session the host signed the user into. Subsequent
-// calls use acquireTokenSilent. The remote never falls back to an interactive
-// prompt — if a token can't be obtained silently it returns null (the host is
-// responsible for getting the user signed in).
+// Silent-only: if a token can't be obtained without interaction, we return null
+// rather than prompting — interactive login (and sign-out) belong to the host.
+// We check error codes by string (not `instanceof`) so no MSAL runtime import
+// is needed and host/remote msal-browser versions don't have to match.
 
-import {
-  InteractionRequiredAuthError,
-  type AccountInfo,
-} from "@azure/msal-browser";
-import { API_SCOPES, pca } from "./msalConfig";
+import type { AccountInfo, IPublicClientApplication } from "@azure/msal-browser";
+import { API_SCOPES, getMsalInstance } from "./hostMsal";
 
-let initPromise: Promise<void> | null = null;
+const INTERACTION_CODES = new Set([
+  "interaction_required",
+  "login_required",
+  "consent_required",
+  "no_account_error",
+]);
 
-const ensureInit = (): Promise<void> => {
-  if (!pca) return Promise.resolve();
-  if (!initPromise) {
-    initPromise = (async () => {
-      await pca.initialize();
-      await pca.handleRedirectPromise();
-      const existing = pca.getActiveAccount() ?? pca.getAllAccounts()[0];
-      if (existing) pca.setActiveAccount(existing);
-    })();
-  }
-  return initPromise;
-};
-
-// Returns an account, establishing one silently against the existing session if
-// the cache is empty. Null when auth is disabled or no silent session exists.
-export const ensureAccount = async (): Promise<AccountInfo | null> => {
-  if (!pca) return null;
-  await ensureInit();
-
-  const cached = pca.getActiveAccount() ?? pca.getAllAccounts()[0] ?? null;
-  if (cached) return cached;
-
-  try {
-    const result = await pca.ssoSilent({ scopes: API_SCOPES });
-    pca.setActiveAccount(result.account);
-    return result.account;
-  } catch {
-    return null; // no silent session — host owns interactive login
-  }
-};
+const activeAccount = (pca: IPublicClientApplication): AccountInfo | null =>
+  pca.getActiveAccount() ?? pca.getAllAccounts()[0] ?? null;
 
 export interface TokenOptions {
   forceRefresh?: boolean;
@@ -52,9 +28,10 @@ export interface TokenOptions {
 export const getAccessToken = async (
   opts: TokenOptions = {},
 ): Promise<string | null> => {
-  if (!pca) return null;
+  const pca = getMsalInstance();
+  if (!pca) return null; // no host instance (standalone) → unauthenticated
 
-  const account = await ensureAccount();
+  const account = activeAccount(pca);
   if (!account) return null;
 
   try {
@@ -65,8 +42,8 @@ export const getAccessToken = async (
     });
     return result.accessToken;
   } catch (e) {
-    // Silent-only: don't prompt. Let the caller proceed token-less.
-    if (e instanceof InteractionRequiredAuthError) return null;
+    const code = (e as { errorCode?: string }).errorCode;
+    if (code && INTERACTION_CODES.has(code)) return null;
     throw e;
   }
 };

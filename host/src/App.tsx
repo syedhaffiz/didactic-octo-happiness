@@ -9,7 +9,7 @@
 
 import { lazy, Suspense, useEffect, useState } from "react";
 import { MsalProvider, MsalAuthenticationTemplate, useMsal } from "@azure/msal-react";
-import { InteractionType } from "@azure/msal-browser";
+import { InteractionType, type IPublicClientApplication } from "@azure/msal-browser";
 import { ConfigProvider, Skeleton, Alert } from "antd";
 import { loginRequest, pca } from "./auth/msalConfig";
 import { HostShell } from "./components/HostShell";
@@ -36,7 +36,13 @@ const SignInError = ({ error }: { error: unknown }) => (
   </div>
 );
 
-const Shell = ({ userName }: { userName: string }) => {
+const Shell = ({
+  userName,
+  msalInstance,
+}: {
+  userName: string;
+  msalInstance: IPublicClientApplication;
+}) => {
   // Top-level navigation without react-router. We only track whether we're on
   // Home or inside IRM; the remote's own router handles everything below /irm
   // (its pushState calls don't fire popstate, so they don't disturb this
@@ -72,9 +78,9 @@ const Shell = ({ userName }: { userName: string }) => {
             </div>
           }
         >
-          {/* The host just authenticates the user; the remote signs in
-              silently (ssoSilent) with its own app registration. */}
-          <RemoteApp basename={IRM_BASE} />
+          {/* Hand the remote the host's MSAL instance; it acquires tokens
+              silently on it (host's app registration) — no props beyond this. */}
+          <RemoteApp basename={IRM_BASE} msalInstance={msalInstance} />
         </Suspense>
       ) : (
         <Home onOpenIrm={() => navigate(IRM_BASE)} />
@@ -83,11 +89,13 @@ const Shell = ({ userName }: { userName: string }) => {
   );
 };
 
-// Reads the signed-in account name for the host's own header. (The remote
-// gets its own name via silent SSO; the host injects nothing into it.)
+// Lives under MsalProvider: reads the account name for the host header and
+// hands the host's MSAL instance to the remote (the remote's only prop besides
+// basename).
 const AuthedShell = () => {
-  const { accounts } = useMsal();
-  return <Shell userName={accounts[0]?.name ?? accounts[0]?.username ?? "Account"} />;
+  const { instance, accounts } = useMsal();
+  const name = accounts[0]?.name ?? accounts[0]?.username ?? "Account";
+  return <Shell userName={name} msalInstance={instance} />;
 };
 
 export const App = () => (

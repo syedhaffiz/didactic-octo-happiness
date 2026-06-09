@@ -1,12 +1,15 @@
 // Identity context for the remote.
 //
-// The remote signs in silently (ssoSilent) using its own app registration, so
-// the only thing this exposes is the display name of that account. No sign-out
-// (the host owns logout). When auth is disabled / no silent session exists, the
-// name falls back to a placeholder and the app runs token-less.
+// The host passes its MSAL instance via the App's `msalInstance` prop. This
+// provider registers that instance for the axios interceptor and reads the
+// signed-in account's name for the header. The remote has no MSAL config, no
+// app registration, and no sign-out (logout is the host's job).
+//
+// Standalone (no instance prop) → token-less, placeholder name.
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { ensureAccount } from "./token";
+import { createContext, useContext, type ReactNode } from "react";
+import type { IPublicClientApplication } from "@azure/msal-browser";
+import { setMsalInstance } from "./hostMsal";
 
 interface Identity {
   name: string;
@@ -16,20 +19,19 @@ const IdentityContext = createContext<Identity>({ name: "Account" });
 
 export const useIdentity = (): Identity => useContext(IdentityContext);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [name, setName] = useState("Account");
+export const AuthProvider = ({
+  children,
+  msalInstance,
+}: {
+  children: ReactNode;
+  msalInstance?: IPublicClientApplication;
+}) => {
+  // Register synchronously (during render) so the interceptor has the instance
+  // before any child route fires a request.
+  setMsalInstance(msalInstance ?? null);
 
-  useEffect(() => {
-    let cancelled = false;
-    ensureAccount().then((account) => {
-      if (!cancelled && account) {
-        setName(account.name ?? account.username ?? "Account");
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const account = msalInstance?.getActiveAccount() ?? msalInstance?.getAllAccounts()[0];
+  const name = account?.name ?? account?.username ?? "Account";
 
   return <IdentityContext.Provider value={{ name }}>{children}</IdentityContext.Provider>;
 };

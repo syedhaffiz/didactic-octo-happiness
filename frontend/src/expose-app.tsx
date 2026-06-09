@@ -5,15 +5,14 @@
 //   <RemoteApp basename="/irm" />
 //
 // The host must:
-//   1. Authenticate the user (any flow). The remote then signs in SILENTLY with
-//      its own app registration (VITE_AZURE_CLIENT_ID/TENANT_ID) via ssoSilent,
-//      riding that session — no prompt, no sign-out here. No auth props needed.
+//   1. Authenticate the user, then pass its MSAL instance to RemoteApp:
+//        <RemoteApp basename="/irm" msalInstance={instance} />
+//      The remote acquires tokens silently on that instance (host's app
+//      registration). The remote has no MSAL config and no sign-out.
 //   2. Mount RemoteApp under the basename it allocated for us.
 //   3. Share react, react-dom, react-router-dom, and antd as singletons
-//      (see vite.config.ts `shared`).
-//
-// NOTE: the remote's app registration must list the HOST's origin as an SPA
-// redirect URI (the silent iframe runs on the host's origin at runtime).
+//      (see vite.config.ts `shared`). MSAL is NOT shared — the instance is
+//      passed by prop and used duck-typed.
 
 import "./theme/fonts.css";
 import "./index.css";
