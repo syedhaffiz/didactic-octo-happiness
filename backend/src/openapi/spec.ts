@@ -36,6 +36,7 @@ export const openApiSpec = {
     { name: "Health" },
     { name: "Finance" },
     { name: "Inventory" },
+    { name: "Marketing" },
     { name: "Filters", description: "Reference data for dropdowns" },
   ],
 
@@ -291,6 +292,86 @@ export const openApiSpec = {
           "each filter dropdown reads its slice without an additional " +
           "round-trip.",
         responses: { "200": envelopeResponse("FiltersResponse") },
+      },
+    },
+
+    // --- Marketing --------------------------------------------------------
+    "/marketing/indices": {
+      get: {
+        tags: ["Marketing"],
+        summary: "Index Movement — ICI Index & API Index (multi-series)",
+        description: "Bulk endpoint. For per-card range filters use `GET /marketing/indices/{code}`.",
+        parameters: [
+          {
+            name: "range",
+            in: "query",
+            schema: { type: "string", enum: ["1W", "1M", "3M", "1Y"] },
+            description: "Defaults to `1M`",
+          },
+        ],
+        responses: { "200": envelopeResponse("IndexMovementResponse") },
+      },
+    },
+    "/marketing/indices/{code}": {
+      get: {
+        tags: ["Marketing"],
+        summary: "Single Index Movement chart with its own range",
+        parameters: [
+          {
+            name: "code",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "URL-encoded code, e.g. `ICI%20Index`, `API%20Index`",
+          },
+          {
+            name: "range",
+            in: "query",
+            schema: { type: "string", enum: ["1W", "1M", "3M", "1Y"] },
+            description: "Defaults to `1M`",
+          },
+        ],
+        responses: {
+          "200": envelopeResponse("IndexChart"),
+          "404": {
+            description: "Unknown code",
+            content: {
+              "application/json": { schema: envelope({ $ref: "#/components/schemas/ApiError" }) },
+            },
+          },
+        },
+      },
+    },
+    "/marketing/market-share": {
+      get: {
+        tags: ["Marketing"],
+        summary: "Market share (Own vs Non-Own) and Own market share by zone",
+        parameters: [{ $ref: "#/components/parameters/DateRange" }],
+        responses: { "200": envelopeResponse("MarketShareResponse") },
+      },
+    },
+    "/marketing/ocean-freight": {
+      get: {
+        tags: ["Marketing"],
+        summary: "M2M Ocean Freight — Capes & Panamax line charts",
+        parameters: [
+          {
+            name: "dischargePort",
+            in: "query",
+            schema: { type: "string" },
+            description: "Discharge port name; defaults to `Hazira`",
+          },
+          { $ref: "#/components/parameters/DateRange" },
+        ],
+        responses: { "200": envelopeResponse("OceanFreightResponse") },
+      },
+    },
+    "/marketing/target": {
+      get: {
+        tags: ["Marketing"],
+        summary: "Target above 2% — port-wise, origin-wise, segment-wise",
+        parameters: [{ $ref: "#/components/parameters/DateRange" }],
+        responses: { "200": envelopeResponse("TargetResponse") },
       },
     },
   },
@@ -670,6 +751,132 @@ export const openApiSpec = {
             type: "array",
             items: { $ref: "#/components/schemas/InventoryVesselRow" },
           },
+        },
+      },
+
+      // --- Marketing ------------------------------------------------------
+      IndexSeries: {
+        type: "object",
+        required: ["name", "data"],
+        properties: {
+          name: { type: "string", example: "ICI 1" },
+          data: { type: "array", items: { type: "number" } },
+        },
+      },
+      IndexChart: {
+        type: "object",
+        required: ["code", "range", "categories", "series"],
+        properties: {
+          code: { type: "string", example: "ICI Index" },
+          range: { type: "string", enum: ["1W", "1M", "3M", "1Y"] },
+          categories: { type: "array", items: { type: "string" } },
+          series: { type: "array", items: { $ref: "#/components/schemas/IndexSeries" } },
+        },
+      },
+      IndexMovementResponse: {
+        type: "object",
+        required: ["items"],
+        properties: {
+          items: { type: "array", items: { $ref: "#/components/schemas/IndexChart" } },
+        },
+      },
+      ShareRow: {
+        type: "object",
+        required: ["category", "mmt", "totalMmt", "pct"],
+        properties: {
+          category: { type: "string", example: "Own" },
+          mmt: { type: "number" },
+          totalMmt: { type: "number" },
+          pct: { type: "number" },
+        },
+      },
+      ShareSlice: {
+        type: "object",
+        required: ["label", "value", "pct"],
+        properties: {
+          label: { type: "string" },
+          value: { type: "number" },
+          pct: { type: "number" },
+        },
+      },
+      ZoneShareRow: {
+        type: "object",
+        required: ["zone", "pct"],
+        properties: { zone: { type: "integer" }, pct: { type: "number" } },
+      },
+      MarketShareResponse: {
+        type: "object",
+        required: ["unit", "overall", "byZone"],
+        properties: {
+          unit: { type: "string", example: "MMT" },
+          overall: {
+            type: "object",
+            required: ["total", "rows", "slices"],
+            properties: {
+              total: { type: "number" },
+              rows: { type: "array", items: { $ref: "#/components/schemas/ShareRow" } },
+              slices: { type: "array", items: { $ref: "#/components/schemas/ShareSlice" } },
+            },
+          },
+          byZone: {
+            type: "object",
+            required: ["total", "rows", "slices"],
+            properties: {
+              total: { type: "number" },
+              rows: { type: "array", items: { $ref: "#/components/schemas/ZoneShareRow" } },
+              slices: { type: "array", items: { $ref: "#/components/schemas/ShareSlice" } },
+            },
+          },
+        },
+      },
+      FreightSeries: {
+        type: "object",
+        required: ["name", "data"],
+        properties: {
+          name: { type: "string", example: "Samarinda" },
+          data: { type: "array", items: { type: "number" } },
+        },
+      },
+      FreightChart: {
+        type: "object",
+        required: ["vesselType", "unit", "categories", "series"],
+        properties: {
+          vesselType: { type: "string", example: "Capes" },
+          unit: { type: "string", example: "$/MT" },
+          categories: { type: "array", items: { type: "string" } },
+          series: { type: "array", items: { $ref: "#/components/schemas/FreightSeries" } },
+        },
+      },
+      OceanFreightResponse: {
+        type: "object",
+        required: ["dischargePort", "items"],
+        properties: {
+          dischargePort: { type: "string" },
+          items: { type: "array", items: { $ref: "#/components/schemas/FreightChart" } },
+        },
+      },
+      BarRow: {
+        type: "object",
+        required: ["category", "value"],
+        properties: { category: { type: "string" }, value: { type: "number" } },
+      },
+      MktBudgetActualRow: {
+        type: "object",
+        required: ["category", "budget", "actual"],
+        properties: {
+          category: { type: "string" },
+          budget: { type: "number" },
+          actual: { type: "number" },
+        },
+      },
+      TargetResponse: {
+        type: "object",
+        required: ["unit", "portwise", "originwise", "segmentwise"],
+        properties: {
+          unit: { type: "string", example: "MT" },
+          portwise: { type: "array", items: { $ref: "#/components/schemas/BarRow" } },
+          originwise: { type: "array", items: { $ref: "#/components/schemas/MktBudgetActualRow" } },
+          segmentwise: { type: "array", items: { $ref: "#/components/schemas/MktBudgetActualRow" } },
         },
       },
     },
