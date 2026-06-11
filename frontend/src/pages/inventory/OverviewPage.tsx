@@ -23,6 +23,7 @@ import type { ReactElement } from "react";
 import type { ColumnsType } from "antd/es/table";
 import { Chart } from "../../components/Chart";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
+import { ErrorRetry } from "../../components/ErrorRetry";
 import { PortFilter } from "../../components/filters/PortFilter";
 import { OriginFilter } from "../../components/filters/OriginFilter";
 import { GradeFilter } from "../../components/filters/GradeFilter";
@@ -241,13 +242,7 @@ export const OverviewPage = () => {
 
   if (isError) {
     return (
-      <Alert
-        type="error"
-        showIcon
-        title="Could not load inventory"
-        description={error instanceof Error ? error.message : "Unknown error"}
-        action={<a onClick={() => refetch()} style={{ cursor: "pointer" }}>Retry</a>}
-      />
+      <ErrorRetry title="Could not load inventory" error={error} onRetry={refetch} />
     );
   }
 

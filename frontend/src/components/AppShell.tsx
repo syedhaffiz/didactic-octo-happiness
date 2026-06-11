@@ -50,7 +50,17 @@ const menuItems: MenuProps["items"] = [
   },
   { key: "/inventory/index", icon: <InboxOutlined />, label: "Inventory" },
   { key: "/logistics", icon: <TruckOutlined />, label: "Logistics" },
-  { key: "/marketing", icon: <RiseOutlined />, label: "Marketing" },
+  {
+    key: "marketing",
+    icon: <RiseOutlined />,
+    label: "Marketing",
+    children: [
+      { key: "/marketing/index-movement", label: "Index Movement" },
+      { key: "/marketing/market-share", label: "Market Share" },
+      { key: "/marketing/ocean-freight", label: "Ocean Freight" },
+      { key: "/marketing/target", label: "Target above 2%" },
+    ],
+  },
   { key: "/legal", icon: <AuditOutlined />, label: "Legal" },
   { key: "/planning", icon: <ProfileOutlined />, label: "Planning" },
   { key: "/sourcing", icon: <ShoppingCartOutlined />, label: "Sourcing" },
@@ -74,7 +84,9 @@ export const AppShell = () => {
   const selectedKeys = [
     location.pathname.startsWith("/inventory") ? "/inventory/index" : location.pathname,
   ];
-  const [openKeys, setOpenKeys] = useState<string[]>(["finance"]);
+  const [openKeys, setOpenKeys] = useState<string[]>(() =>
+    location.pathname.startsWith("/marketing") ? ["marketing"] : ["finance"],
+  );
 
   return (
     <Layout style={{ minHeight: "100vh" }}>

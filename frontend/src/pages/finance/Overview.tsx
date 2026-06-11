@@ -1,4 +1,5 @@
-import { Alert, Col, Row, Skeleton } from "antd";
+import { Col, Row, Skeleton } from "antd";
+import { ErrorRetry } from "../../components/ErrorRetry";
 import { PageHeader } from "../../components/PageHeader";
 import { KpiCard } from "../../components/KpiCard";
 import { ForexCard } from "../../components/ForexCard";
@@ -31,17 +32,7 @@ export const FinanceOverview = () => {
       />
 
       {isError ? (
-        <Alert
-          type="error"
-          showIcon
-          title="Could not load overview"
-          description={error instanceof Error ? error.message : "Unknown error"}
-          action={
-            <a onClick={() => refetch()} style={{ cursor: "pointer" }}>
-              Retry
-            </a>
-          }
-        />
+        <ErrorRetry title="Could not load overview" error={error} onRetry={refetch} />
       ) : (
         <Row gutter={[16, 16]}>
           <Col xs={24} lg={16}>

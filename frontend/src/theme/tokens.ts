@@ -131,4 +131,36 @@ export const inventoryColors = {
 // PBD column chart color (dark navy bars).
 export const pbdColumn = "#1F2A6B";
 
+// ---------------------------------------------------------------------------
+// Marketing module — colors sampled from the Figma exports
+// (Design Reference/Marketing). Reuse existing brand tokens where they match.
+// ---------------------------------------------------------------------------
+export const marketingColors = {
+  // Index Movement (ICI 1-5) + Ocean Freight series, in order:
+  // blue, purple, orange, pink, light-blue.
+  lineSeries: ["#3E81F4", "#BD3EF4", brand.orange, "#F76EE9", "#6EA0F7"],
+  // Market Share — overall donut (Own vs Non-Own).
+  shareOwn: "#A455FF",
+  shareNonOwn: "#6EA0F6",
+  // Market Share — Own-by-Zone donut, zones 1-8.
+  zoneDonut: [
+    "#0BA0C1",
+    "#F7836E",
+    "#2A7A68",
+    "#9FE8F9",
+    "#F76EE9",
+    "#37A089",
+    "#3E81F4",
+    "#F69C50",
+  ],
+  // Target above 2% — Port Wise bars (navy).
+  portBar: "#264165",
+  // Target above 2% — Origin Wise (purple Budget/Actual = purpleDeep / actualAlt).
+  originBudget: brand.purpleDeep, // #370373
+  originActual: "#610A85",
+  // Target above 2% — Segment Wise (blue Budget/Actual).
+  segmentBudget: "#3B77DF",
+  segmentActual: "#083A91",
+} as const;
+
 export const fontFamily = '"Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';

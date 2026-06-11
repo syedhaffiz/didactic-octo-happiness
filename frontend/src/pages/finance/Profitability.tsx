@@ -1,4 +1,5 @@
-import { Alert, Card, Segmented, Skeleton, Table, Tooltip } from "antd";
+import { Card, Segmented, Skeleton, Table, Tooltip } from "antd";
+import { ErrorRetry } from "../../components/ErrorRetry";
 import type { ColumnsType } from "antd/es/table";
 import { PageHeader } from "../../components/PageHeader";
 import { Chart } from "../../components/Chart";
@@ -105,13 +106,7 @@ export const Profitability = () => {
       />
 
       {isError ? (
-        <Alert
-          type="error"
-          showIcon
-          title="Could not load profitability"
-          description={error instanceof Error ? error.message : "Unknown error"}
-          action={<a onClick={() => refetch()} style={{ cursor: "pointer" }}>Retry</a>}
-        />
+        <ErrorRetry title="Could not load profitability" error={error} onRetry={refetch} />
       ) : (
         <>
           <Card title={mode === "port" ? "Port Wise Analysis" : "Segment Wise Analysis"} style={{ marginBottom: 16 }}>

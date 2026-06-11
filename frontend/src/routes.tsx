@@ -32,6 +32,18 @@ const IndexPage = lazy(() =>
 const InventoryOverviewPage = lazy(() =>
   import("./pages/inventory/OverviewPage").then((m) => ({ default: m.OverviewPage })),
 );
+const MarketingIndexMovement = lazy(() =>
+  import("./pages/marketing/IndexMovementPage").then((m) => ({ default: m.IndexMovementPage })),
+);
+const MarketingMarketShare = lazy(() =>
+  import("./pages/marketing/MarketSharePage").then((m) => ({ default: m.MarketSharePage })),
+);
+const MarketingOceanFreight = lazy(() =>
+  import("./pages/marketing/OceanFreightPage").then((m) => ({ default: m.OceanFreightPage })),
+);
+const MarketingTarget = lazy(() =>
+  import("./pages/marketing/TargetAbove2Page").then((m) => ({ default: m.TargetAbove2Page })),
+);
 const Placeholder = lazy(() =>
   import("./pages/Placeholder").then((m) => ({ default: m.Placeholder })),
 );
@@ -64,7 +76,11 @@ export const createAppRouter = (basename: string = "/") =>
             ],
           },
           { path: "logistics", element: <Placeholder title="Logistics" /> },
-          { path: "marketing", element: <Placeholder title="Marketing" /> },
+          { path: "marketing", element: <Navigate to="/marketing/index-movement" replace /> },
+          { path: "marketing/index-movement", element: <MarketingIndexMovement /> },
+          { path: "marketing/market-share", element: <MarketingMarketShare /> },
+          { path: "marketing/ocean-freight", element: <MarketingOceanFreight /> },
+          { path: "marketing/target", element: <MarketingTarget /> },
           { path: "legal", element: <Placeholder title="Legal" /> },
           { path: "planning", element: <Placeholder title="Planning" /> },
           { path: "sourcing", element: <Placeholder title="Sourcing" /> },

@@ -1,4 +1,5 @@
-import { Alert, Card, Col, Empty, Row, Select, Skeleton } from "antd";
+import { Card, Col, Empty, Row, Select, Skeleton } from "antd";
+import { ErrorRetry } from "../../components/ErrorRetry";
 import { Chart } from "../../components/Chart";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { inventoryApi } from "../../api/inventory";
@@ -140,13 +141,7 @@ export const IndexPage = () => {
 
   if (isError) {
     return (
-      <Alert
-        type="error"
-        showIcon
-        title="Could not load indices"
-        description={error instanceof Error ? error.message : "Unknown error"}
-        action={<a onClick={() => refetch()} style={{ cursor: "pointer" }}>Retry</a>}
-      />
+      <ErrorRetry title="Could not load indices" error={error} onRetry={refetch} />
     );
   }
 

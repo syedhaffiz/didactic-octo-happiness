@@ -1,4 +1,5 @@
-import { Alert, Card, Col, Row, Skeleton } from "antd";
+import { Card, Col, Row, Skeleton } from "antd";
+import { ErrorRetry } from "../../components/ErrorRetry";
 import { PageHeader } from "../../components/PageHeader";
 import { BreakdownCard } from "../../components/BreakdownCard";
 import { DonutChart } from "../../components/DonutChart";
@@ -46,13 +47,7 @@ export const BreakdownPage = ({
       />
 
       {isError ? (
-        <Alert
-          type="error"
-          showIcon
-          title={`Could not load ${title.toLowerCase()}`}
-          description={error instanceof Error ? error.message : "Unknown error"}
-          action={<a onClick={() => refetch()} style={{ cursor: "pointer" }}>Retry</a>}
-        />
+        <ErrorRetry title={`Could not load ${title.toLowerCase()}`} error={error} onRetry={refetch} />
       ) : (
         <>
           <Card

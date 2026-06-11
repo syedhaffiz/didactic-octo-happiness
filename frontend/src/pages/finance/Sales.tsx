@@ -1,4 +1,5 @@
-import { Alert, Card, Col, Row, Skeleton } from "antd";
+import { Card, Col, Row, Skeleton } from "antd";
+import { ErrorRetry } from "../../components/ErrorRetry";
 import { BarChartOutlined } from "@ant-design/icons";
 import { PageHeader } from "../../components/PageHeader";
 import { Chart } from "../../components/Chart";
@@ -71,13 +72,7 @@ export const Sales = () => {
       />
 
       {isError ? (
-        <Alert
-          type="error"
-          showIcon
-          title="Could not load sales data"
-          description={error instanceof Error ? error.message : "Unknown error"}
-          action={<a onClick={() => refetch()} style={{ cursor: "pointer" }}>Retry</a>}
-        />
+        <ErrorRetry title="Could not load sales data" error={error} onRetry={refetch} />
       ) : (
         <Row gutter={[16, 16]}>
           <Col xs={24} lg={12}>

@@ -1,4 +1,5 @@
-import { Alert, Card, Col, Row, Skeleton, Space } from "antd";
+import { Card, Col, Row, Skeleton, Space } from "antd";
+import { ErrorRetry } from "../../components/ErrorRetry";
 import {
   AreaChartOutlined,
   BarChartOutlined,
@@ -199,17 +200,7 @@ export const ApprovedBudget = () => {
       />
 
       {isError ? (
-        <Alert
-          type="error"
-          showIcon
-          title="Could not load budget"
-          description={error instanceof Error ? error.message : "Unknown error"}
-          action={
-            <a onClick={() => refetch()} style={{ cursor: "pointer" }}>
-              Retry
-            </a>
-          }
-        />
+        <ErrorRetry title="Could not load budget" error={error} onRetry={refetch} />
       ) : (
         <Row gutter={[16, 16]}>
           <Col xs={24} lg={12}>
