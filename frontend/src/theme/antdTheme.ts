@@ -28,10 +28,12 @@ export const lightTheme: ThemeConfig = {
       headerHeight: 60,
     },
     Menu: {
-      itemSelectedBg: brand.accentSoft,
-      itemSelectedColor: brand.accent,
+      // Selected item = solid blue with a white icon/label (matches the design,
+      // incl. the collapsed blue-square icon).
+      itemSelectedBg: brand.accent,
+      itemSelectedColor: brand.white,
       itemHoverBg: brand.accentHover,
-      itemColor: brand.textSubtle,
+      itemColor: brand.black,
       itemHeight: 38,
       subMenuItemBg: "transparent",
       itemBorderRadius: 8,

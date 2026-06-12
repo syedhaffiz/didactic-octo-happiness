@@ -16,3 +16,57 @@ body,
 .ant-card {
   box-shadow: var(--ct-card-shadow, none);
 }
+
+/* The menu is transparent so the (white) Sider background shows through. */
+.ant-menu-light.ant-menu-root {
+  background: transparent;
+  border-inline-end: none;
+}
+
+/* Selected / open submenu title → solid-blue bar with white text, icon and
+   arrow. Covers the expanded "Marketing" bar AND the collapsed blue-square
+   icon. antd has no tokens for this, so colors come from --ct-* vars
+   (ThemeProvider). */
+.ant-menu-light .ant-menu-submenu-selected > .ant-menu-submenu-title,
+.ant-menu-light .ant-menu-submenu-open > .ant-menu-submenu-title {
+  background: var(--ct-menu-active-bg) !important;
+  color: var(--ct-menu-active-color) !important;
+}
+.ant-menu-light .ant-menu-submenu-selected > .ant-menu-submenu-title .ant-menu-submenu-arrow,
+.ant-menu-light .ant-menu-submenu-selected > .ant-menu-submenu-title .ant-menu-item-icon,
+.ant-menu-light .ant-menu-submenu-open > .ant-menu-submenu-title .ant-menu-submenu-arrow,
+.ant-menu-light .ant-menu-submenu-open > .ant-menu-submenu-title .ant-menu-item-icon {
+  color: var(--ct-menu-active-color) !important;
+}
+
+/* Expanded open submenu = ONE rounded card: the blue title bar is flush with
+   the light-blue children panel (no gap). The submenu <li> is the card; the
+   title and the panel fill it edge-to-edge, the card's overflow rounds them. */
+.ant-menu-light.ant-menu-inline .ant-menu-submenu-open {
+  background: var(--ct-submenu-bg);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.ant-menu-light.ant-menu-inline .ant-menu-submenu-open > .ant-menu-submenu-title {
+  margin: 0 !important;
+  width: 100%;
+  /* border-radius: 0 !important; */
+}
+.ant-menu-light.ant-menu-inline .ant-menu-submenu-open > .ant-menu-sub {
+  background: transparent;
+  margin: 0;
+  border-radius: 0;
+  padding-block: 4px;
+}
+.ant-menu-light.ant-menu-inline .ant-menu-submenu-open > .ant-menu-sub > .ant-menu-item {
+  color: var(--ct-menu-child-color);
+}
+/* Active child → blue + bold, no pill (sits on the light-blue panel). */
+.ant-menu-light.ant-menu-inline
+  .ant-menu-submenu-open
+  > .ant-menu-sub
+  > .ant-menu-item-selected {
+  background: transparent !important;
+  color: var(--ct-menu-child-active) !important;
+  font-weight: 600;
+}
