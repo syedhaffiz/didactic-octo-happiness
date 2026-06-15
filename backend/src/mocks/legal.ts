@@ -162,12 +162,6 @@ export const buildCriticalCases = (_f: LegalFilters = {}): CriticalCasesResponse
   items: ALL_CASES.map((c, i) => ({ srNo: i + 1, ...c })),
 });
 
-export const buildCaseByNo = (caseNo: string): CriticalCase | null => {
-  const idx = ALL_CASES.findIndex((c) => c.caseNo === caseNo);
-  if (idx === -1) return null;
-  return { srNo: idx + 1, ...(ALL_CASES[idx] as Omit<CriticalCase, "srNo">) };
-};
-
 // --- Critical Issues -------------------------------------------------------
 
 const ISSUES: Omit<CriticalIssue, "srNo">[] = [

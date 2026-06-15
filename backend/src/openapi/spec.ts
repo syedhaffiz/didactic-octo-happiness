@@ -390,36 +390,10 @@ export const openApiSpec = {
         tags: ["Legal"],
         summary: "Critical cases list (table on the Critical Cases page)",
         description:
-          "Each row carries the modal-only fields (briefFacts, currentStatus, …) so " +
-          "the Details modal renders without a second fetch.",
+          "Each row carries the modal-only fields (briefFacts, currentStatus, …) " +
+          "so the Details modal renders directly from the row data — no per-case fetch.",
         parameters: [{ $ref: "#/components/parameters/DateRange" }],
         responses: { "200": envelopeResponse("CriticalCasesResponse") },
-      },
-    },
-    "/legal/critical-cases/{caseNo}": {
-      get: {
-        tags: ["Legal"],
-        summary: "Single case detail (used when deep-linking the modal)",
-        parameters: [
-          {
-            name: "caseNo",
-            in: "path",
-            required: true,
-            schema: { type: "string" },
-            description: "URL-encoded case number, e.g. `EC%2F103%2F2022`",
-          },
-        ],
-        responses: {
-          "200": envelopeResponse("CriticalCase"),
-          "404": {
-            description: "Unknown case",
-            content: {
-              "application/json": {
-                schema: envelope({ $ref: "#/components/schemas/ApiError" }),
-              },
-            },
-          },
-        },
       },
     },
     "/legal/critical-issues": {
