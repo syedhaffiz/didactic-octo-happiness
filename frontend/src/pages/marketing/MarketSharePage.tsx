@@ -6,10 +6,13 @@ import { OverallShareCard } from "../../components/marketing/OverallShareCard";
 import { ZoneShareCard } from "../../components/marketing/ZoneShareCard";
 import { marketingApi } from "../../api/marketing";
 import { useApi } from "../../api/useApi";
-import { useUrlDateRange } from "../../utils/useUrlParam";
+import {
+  formatDateRangePill,
+  useDateRangeWithDefault,
+} from "../../utils/useDateRangeWithDefault";
 
 export const MarketSharePage = () => {
-  const [dateRange, setDateRange, rawRange] = useUrlDateRange();
+  const { start, end, value, rawRange, setRange } = useDateRangeWithDefault(1);
 
   const { data, isLoading, isError, error, refetch } = useApi(
     ["marketing", "market-share", rawRange],
@@ -17,14 +20,13 @@ export const MarketSharePage = () => {
   );
 
   const unit = data?.unit ?? "MMT";
-  const hasRange = Boolean(dateRange?.[0] && dateRange?.[1]);
 
   return (
     <>
       <PageHeader
         title="Market Share"
-        datePill={hasRange ? rawRange : undefined}
-        filters={<DateRangeFilter value={dateRange} onChange={setDateRange} />}
+        datePill={formatDateRangePill(start, end)}
+        filters={<DateRangeFilter value={value} onChange={setRange} />}
       />
 
       {isError ? (

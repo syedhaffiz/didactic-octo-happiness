@@ -12,10 +12,14 @@ import {
 import { TargetChart, targetCardTitle } from "../../components/marketing/TargetChart";
 import { marketingApi } from "../../api/marketing";
 import { useApi } from "../../api/useApi";
-import { useUrlDateRange, useUrlParam } from "../../utils/useUrlParam";
+import { useUrlParam } from "../../utils/useUrlParam";
+import {
+  formatDateRangePill,
+  useDateRangeWithDefault,
+} from "../../utils/useDateRangeWithDefault";
 
 export const TargetAbove2Page = () => {
-  const [dateRange, setDateRange, rawRange] = useUrlDateRange();
+  const { start, end, value, rawRange, setRange } = useDateRangeWithDefault(1);
   const [rawMode, setRawMode] = useUrlParam("mode");
   const mode: TargetMode = isTargetMode(rawMode) ? rawMode : DEFAULT_MODE;
 
@@ -24,14 +28,12 @@ export const TargetAbove2Page = () => {
     () => marketingApi.target({ dateRange: rawRange }),
   );
 
-  const hasRange = Boolean(dateRange?.[0] && dateRange?.[1]);
-
   return (
     <>
       <PageHeader
         title="Target above 2 % quantity"
-        datePill={hasRange ? rawRange : undefined}
-        filters={<DateRangeFilter value={dateRange} onChange={setDateRange} />}
+        datePill={formatDateRangePill(start, end)}
+        filters={<DateRangeFilter value={value} onChange={setRange} />}
       />
 
       <TargetModeSegmented
