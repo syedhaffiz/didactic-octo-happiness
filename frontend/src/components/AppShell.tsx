@@ -84,9 +84,10 @@ export const AppShell = () => {
   const selectedKeys = [
     location.pathname.startsWith("/inventory") ? "/inventory/index" : location.pathname,
   ];
-  const [openKeys, setOpenKeys] = useState<string[]>(() =>
-    location.pathname.startsWith("/marketing") ? ["marketing"] : ["finance"],
-  );
+  const [openKeys, setOpenKeys] = useState<string[]>(() => {
+    if (location.pathname.startsWith("/marketing")) return ["marketing"];
+    return ["finance"];
+  });
 
   return (
     <Layout style={{ minHeight: "100vh" }}>

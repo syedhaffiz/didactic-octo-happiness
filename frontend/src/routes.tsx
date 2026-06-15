@@ -44,6 +44,9 @@ const MarketingOceanFreight = lazy(() =>
 const MarketingTarget = lazy(() =>
   import("./pages/marketing/TargetAbove2Page").then((m) => ({ default: m.TargetAbove2Page })),
 );
+const LegalPage = lazy(() =>
+  import("./pages/legal/LegalPage").then((m) => ({ default: m.LegalPage })),
+);
 const Placeholder = lazy(() =>
   import("./pages/Placeholder").then((m) => ({ default: m.Placeholder })),
 );
@@ -81,7 +84,7 @@ export const createAppRouter = (basename: string = "/") =>
           { path: "marketing/market-share", element: <MarketingMarketShare /> },
           { path: "marketing/ocean-freight", element: <MarketingOceanFreight /> },
           { path: "marketing/target", element: <MarketingTarget /> },
-          { path: "legal", element: <Placeholder title="Legal" /> },
+          { path: "legal", element: <LegalPage /> },
           { path: "planning", element: <Placeholder title="Planning" /> },
           { path: "sourcing", element: <Placeholder title="Sourcing" /> },
           { path: "customs", element: <Placeholder title="Customs" /> },
