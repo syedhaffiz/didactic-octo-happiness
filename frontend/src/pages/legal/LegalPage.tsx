@@ -1,5 +1,4 @@
-import { useMemo } from "react";
-import dayjs, { type Dayjs } from "dayjs";
+import { useState } from "react";
 import { PageHeader } from "../../components/PageHeader";
 import { DateRangeFilter } from "../../components/DateRangeFilter";
 import { ErrorRetry } from "../../components/ErrorRetry";
@@ -10,48 +9,32 @@ import { CriticalIssuesCard } from "../../components/legal/CriticalIssuesCard";
 import { CaseDetailsModal } from "../../components/legal/CaseDetailsModal";
 import { legalApi } from "../../api/legal";
 import { useApi } from "../../api/useApi";
-import { useUrlDateRange, useUrlParam } from "../../utils/useUrlParam";
+import {
+  formatDateRangePill,
+  useDateRangeWithDefault,
+} from "../../utils/useDateRangeWithDefault";
 
-// Single Legal page — segmented control switches between "Critical Cases"
-// and "Critical Issues" via the `?tab=` URL param (default = critical-cases).
-// Page chrome (header, summary, tabs) renders once; only the table card
-// swaps. The Case Details modal coexists via `?case=`.
+// Single Legal page — segmented control switches between "Critical Cases" and
+// "Critical Issues" via the `?tab=` URL param. Page chrome (header, summary,
+// tabs) renders once; only the table card swaps. The Case Details modal is
+// opened/closed via local state — not URL-wired.
 //
-// Date range: defaults to "today − 1 month → today" when the user hasn't set
-// one (URL stays clean). Setting the picker writes to the URL; clearing it
-// reverts to the default.
-
-const RANGE_FORMAT = "YYYY-MM-DD";
-const PILL_FORMAT = "DD MMM YY";
-
-const formatPill = (start: Dayjs, end: Dayjs) =>
-  `${start.format(PILL_FORMAT)} – ${end.format(PILL_FORMAT)}`;
+// Date range defaults to "today − 1 month → today" when the user hasn't set
+// one; setting the picker writes to the URL, clearing it reverts to default.
 
 export const LegalPage = () => {
-  const [dateRange, setDateRange, rawRange] = useUrlDateRange();
+  const { start, end, value, rawRange, setRange } = useDateRangeWithDefault(1);
   const [tab] = useLegalTab();
-  const [caseNo, setCaseNo] = useUrlParam("case");
+  const [selectedCase, setSelectedCase] = useState<string | undefined>(undefined);
 
-  // Stable "now" so the default range doesn't drift across re-renders.
-  const today = useMemo(() => dayjs(), []);
-  const defaultStart = useMemo(() => today.subtract(1, "month"), [today]);
-
-  const effectiveStart = dateRange?.[0] ?? defaultStart;
-  const effectiveEnd = dateRange?.[1] ?? today;
-  const effectiveRangeRaw =
-    rawRange ??
-    `${defaultStart.format(RANGE_FORMAT)}:${today.format(RANGE_FORMAT)}`;
-
-  // Both queries fire regardless of active tab — payloads are tiny and we
-  // avoid a fetch-on-switch lag when the user toggles tabs.
-  const summary = useApi(["legal", "summary", effectiveRangeRaw], () =>
-    legalApi.summary({ dateRange: effectiveRangeRaw }),
+  const summary = useApi(["legal", "summary", rawRange], () =>
+    legalApi.summary({ dateRange: rawRange }),
   );
-  const cases = useApi(["legal", "critical-cases", effectiveRangeRaw], () =>
-    legalApi.criticalCases({ dateRange: effectiveRangeRaw }),
+  const cases = useApi(["legal", "critical-cases", rawRange], () =>
+    legalApi.criticalCases({ dateRange: rawRange }),
   );
-  const issues = useApi(["legal", "critical-issues", effectiveRangeRaw], () =>
-    legalApi.criticalIssues({ dateRange: effectiveRangeRaw }),
+  const issues = useApi(["legal", "critical-issues", rawRange], () =>
+    legalApi.criticalIssues({ dateRange: rawRange }),
   );
 
   const isIssues = tab === "critical-issues";
@@ -60,13 +43,8 @@ export const LegalPage = () => {
     <>
       <PageHeader
         title="Legal"
-        datePill={formatPill(effectiveStart, effectiveEnd)}
-        filters={
-          <DateRangeFilter
-            value={[effectiveStart, effectiveEnd]}
-            onChange={setDateRange}
-          />
-        }
+        datePill={formatDateRangePill(start, end)}
+        filters={<DateRangeFilter value={value} onChange={setRange} />}
       />
 
       <LegalSummaryCards summary={summary.data} loading={summary.isLoading} />
@@ -93,11 +71,14 @@ export const LegalPage = () => {
         <CriticalCasesListCard
           items={cases.data?.items}
           loading={cases.isLoading}
-          onOpenDetails={(no) => setCaseNo(no)}
+          onOpenDetails={setSelectedCase}
         />
       )}
 
-      <CaseDetailsModal caseNo={caseNo} onClose={() => setCaseNo(undefined)} />
+      <CaseDetailsModal
+        caseNo={selectedCase}
+        onClose={() => setSelectedCase(undefined)}
+      />
     </>
   );
 };
