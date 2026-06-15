@@ -37,6 +37,7 @@ export const openApiSpec = {
     { name: "Finance" },
     { name: "Inventory" },
     { name: "Marketing" },
+    { name: "Legal" },
     { name: "Filters", description: "Reference data for dropdowns" },
   ],
 
@@ -372,6 +373,61 @@ export const openApiSpec = {
         summary: "Target above 2% — port-wise, origin-wise, segment-wise",
         parameters: [{ $ref: "#/components/parameters/DateRange" }],
         responses: { "200": envelopeResponse("TargetResponse") },
+      },
+    },
+
+    // --- Legal ------------------------------------------------------------
+    "/legal/summary": {
+      get: {
+        tags: ["Legal"],
+        summary: "Counts for the Legal Case / Critical Issue summary cards",
+        parameters: [{ $ref: "#/components/parameters/DateRange" }],
+        responses: { "200": envelopeResponse("LegalSummary") },
+      },
+    },
+    "/legal/critical-cases": {
+      get: {
+        tags: ["Legal"],
+        summary: "Critical cases list (table on the Critical Cases page)",
+        description:
+          "Each row carries the modal-only fields (briefFacts, currentStatus, …) so " +
+          "the Details modal renders without a second fetch.",
+        parameters: [{ $ref: "#/components/parameters/DateRange" }],
+        responses: { "200": envelopeResponse("CriticalCasesResponse") },
+      },
+    },
+    "/legal/critical-cases/{caseNo}": {
+      get: {
+        tags: ["Legal"],
+        summary: "Single case detail (used when deep-linking the modal)",
+        parameters: [
+          {
+            name: "caseNo",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "URL-encoded case number, e.g. `EC%2F103%2F2022`",
+          },
+        ],
+        responses: {
+          "200": envelopeResponse("CriticalCase"),
+          "404": {
+            description: "Unknown case",
+            content: {
+              "application/json": {
+                schema: envelope({ $ref: "#/components/schemas/ApiError" }),
+              },
+            },
+          },
+        },
+      },
+    },
+    "/legal/critical-issues": {
+      get: {
+        tags: ["Legal"],
+        summary: "Pre-litigation legal issues",
+        parameters: [{ $ref: "#/components/parameters/DateRange" }],
+        responses: { "200": envelopeResponse("CriticalIssuesResponse") },
       },
     },
   },
@@ -877,6 +933,79 @@ export const openApiSpec = {
           portwise: { type: "array", items: { $ref: "#/components/schemas/BarRow" } },
           originwise: { type: "array", items: { $ref: "#/components/schemas/MktBudgetActualRow" } },
           segmentwise: { type: "array", items: { $ref: "#/components/schemas/MktBudgetActualRow" } },
+        },
+      },
+
+      // --- Legal ----------------------------------------------------------
+      LegalSummary: {
+        type: "object",
+        required: ["newCases", "totalCases", "newIssues", "totalIssues"],
+        properties: {
+          newCases: { type: "integer" },
+          totalCases: { type: "integer" },
+          newIssues: { type: "integer" },
+          totalIssues: { type: "integer" },
+        },
+      },
+      CriticalCase: {
+        type: "object",
+        required: [
+          "srNo",
+          "caseNo",
+          "category",
+          "claimant",
+          "defendant",
+          "forum",
+          "claim",
+          "costIncurred",
+          "lawyer",
+          "lastDate",
+          "nextDate",
+          "caseType",
+          "title",
+          "briefFacts",
+          "currentStatus",
+        ],
+        properties: {
+          srNo: { type: "integer" },
+          caseNo: { type: "string", example: "EC/103/2022" },
+          category: { type: "string", example: "SEB" },
+          claimant: { type: "string" },
+          defendant: { type: "string" },
+          forum: { type: "string" },
+          claim: { type: "string", example: "Rs. 25 Cr. Approx + Interest" },
+          costIncurred: { type: "string", example: "2.57Cr" },
+          lawyer: { type: "string" },
+          lastDate: { type: "string", example: "07.05.2026" },
+          nextDate: { type: "string", example: "Awaited" },
+          caseType: { type: "string", example: "Arbitration" },
+          title: { type: "string", example: "WBPDCL vs. AEL" },
+          briefFacts: { type: "string" },
+          currentStatus: { type: "string" },
+        },
+      },
+      CriticalCasesResponse: {
+        type: "object",
+        required: ["items"],
+        properties: {
+          items: { type: "array", items: { $ref: "#/components/schemas/CriticalCase" } },
+        },
+      },
+      CriticalIssue: {
+        type: "object",
+        required: ["srNo", "legalIssue", "amountInvolved", "currentStatus"],
+        properties: {
+          srNo: { type: "integer" },
+          legalIssue: { type: "string" },
+          amountInvolved: { type: "string", example: "NA" },
+          currentStatus: { type: "string" },
+        },
+      },
+      CriticalIssuesResponse: {
+        type: "object",
+        required: ["items"],
+        properties: {
+          items: { type: "array", items: { $ref: "#/components/schemas/CriticalIssue" } },
         },
       },
     },
