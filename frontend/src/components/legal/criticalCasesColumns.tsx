@@ -27,7 +27,7 @@ const DetailsButton = ({ onClick }: { onClick: () => void }) => (
 );
 
 interface BuildOpts {
-  onOpenDetails: (caseNo: string) => void;
+  onOpenDetails: (row: CriticalCase) => void;
 }
 
 // Column definitions for the Critical Cases table. Pulled out so the page is
@@ -70,7 +70,7 @@ export const buildCriticalCasesColumns = ({
     key: "details",
     width: 120,
     render: (_: unknown, row: CriticalCase) => (
-      <DetailsButton onClick={() => onOpenDetails(row.caseNo)} />
+      <DetailsButton onClick={() => onOpenDetails(row)} />
     ),
   },
 ];

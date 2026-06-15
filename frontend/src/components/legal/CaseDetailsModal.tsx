@@ -1,14 +1,13 @@
-import { Alert, Button, Modal, Skeleton, Space } from "antd";
+import { Button, Modal, Space } from "antd";
 import { ErrorBoundary } from "../ErrorBoundary";
 import { CaseTextSection } from "./CaseTextSection";
 import { CaseInformation } from "./CaseInformation";
-import { legalApi } from "../../api/legal";
-import { useApi } from "../../api/useApi";
 import { brand } from "../../theme/tokens";
+import type { CriticalCase } from "../../types/legal";
 
 interface Props {
-  /** Case number to load; undefined means the modal is closed. */
-  caseNo?: string;
+  /** Case to display; undefined means the modal is closed. */
+  caseData?: CriticalCase;
   onClose: () => void;
 }
 
@@ -31,22 +30,13 @@ const Header = ({ text, onBack }: { text: string; onBack: () => void }) => (
   </div>
 );
 
-// Case Details modal — fetches its own data by caseNo so it can be opened from
-// a deep link (?case=…) without the page having to pre-load anything. The
-// header has a tinted background, a "Back" button (no X icon), and the body
-// composes three small sections.
-export const CaseDetailsModal = ({ caseNo, onClose }: Props) => {
-  const open = Boolean(caseNo);
-  const { data, isLoading, isError, error } = useApi(
-    ["legal", "case", caseNo ?? ""],
-    () =>
-      caseNo
-        ? legalApi.caseByNo(caseNo)
-        : Promise.reject(new Error("no case selected")),
-  );
-
-  const titleText = data
-    ? `Case Details - ${data.title} (Sr. No. ${data.srNo})`
+// Case Details modal — receives the row data from the table directly (no
+// extra fetch). The list endpoint already carries the modal fields
+// (briefFacts, currentStatus, …) on every row.
+export const CaseDetailsModal = ({ caseData, onClose }: Props) => {
+  const open = Boolean(caseData);
+  const titleText = caseData
+    ? `Case Details - ${caseData.title} (Sr. No. ${caseData.srNo})`
     : "Case Details";
 
   return (
@@ -59,29 +49,19 @@ export const CaseDetailsModal = ({ caseNo, onClose }: Props) => {
       // default close icon entirely.
       closable={false}
       title={<Header text={titleText} onBack={onClose} />}
-      // Tinted header bar matching the Figma. Padding is bumped slightly so
-      // the title + Back button breathe.
+      // Tinted header bar matching the Figma.
       styles={{
         header: { background: brand.cardHeader, padding: "12px 20px", marginBottom: 0 },
         body: { padding: 20 },
       }}
       destroyOnClose
     >
-      {!caseNo ? null : isLoading || !data ? (
-        <Skeleton active paragraph={{ rows: 10 }} />
-      ) : isError ? (
-        <Alert
-          type="error"
-          showIcon
-          title="Could not load case details"
-          description={error instanceof Error ? error.message : "Unknown error"}
-        />
-      ) : (
+      {!caseData ? null : (
         <ErrorBoundary level="section" label="case details">
           <Space direction="vertical" size={18} style={{ width: "100%" }}>
-            <CaseTextSection title="Brief Facts" body={data.briefFacts} />
-            <CaseTextSection title="Current Status" body={data.currentStatus} />
-            <CaseInformation data={data} />
+            <CaseTextSection title="Brief Facts" body={caseData.briefFacts} />
+            <CaseTextSection title="Current Status" body={caseData.currentStatus} />
+            <CaseInformation data={caseData} />
           </Space>
         </ErrorBoundary>
       )}

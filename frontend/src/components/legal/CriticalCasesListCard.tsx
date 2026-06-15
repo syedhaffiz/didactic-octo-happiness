@@ -5,7 +5,7 @@ import type { CriticalCase } from "../../types/legal";
 interface Props {
   items?: CriticalCase[];
   loading: boolean;
-  onOpenDetails: (caseNo: string) => void;
+  onOpenDetails: (row: CriticalCase) => void;
 }
 
 // Card wrapping the Critical Cases table. The 12 columns scroll horizontally

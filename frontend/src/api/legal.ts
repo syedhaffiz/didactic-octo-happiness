@@ -2,14 +2,12 @@ import { apiClient, unwrap } from "./client";
 import { USE_MOCK_DATA, mockDelay } from "./dataSource";
 import type { ApiEnvelope } from "../types/api";
 import type {
-  CriticalCase,
   CriticalCasesResponse,
   CriticalIssuesResponse,
   LegalFilters,
   LegalSummary,
 } from "../types/legal";
 import {
-  buildCaseByNo,
   buildCriticalCases,
   buildCriticalIssues,
   buildLegalSummary,
@@ -36,8 +34,6 @@ const httpLegalApi = {
   summary: (f: LegalFilters = {}) => get<LegalSummary>("/legal/summary", f),
   criticalCases: (f: LegalFilters = {}) =>
     get<CriticalCasesResponse>("/legal/critical-cases", f),
-  caseByNo: (caseNo: string) =>
-    get<CriticalCase>(`/legal/critical-cases/${encodeURIComponent(caseNo)}`),
   criticalIssues: (f: LegalFilters = {}) =>
     get<CriticalIssuesResponse>("/legal/critical-issues", f),
 };
@@ -45,11 +41,6 @@ const httpLegalApi = {
 const mockLegalApi = {
   summary: (f: LegalFilters = {}) => mockDelay(buildLegalSummary(f)),
   criticalCases: (f: LegalFilters = {}) => mockDelay(buildCriticalCases(f)),
-  caseByNo: (caseNo: string) => {
-    const result = buildCaseByNo(caseNo);
-    if (!result) return Promise.reject(new Error(`not_found: Unknown case: ${caseNo}`));
-    return mockDelay(result);
-  },
   criticalIssues: (f: LegalFilters = {}) => mockDelay(buildCriticalIssues(f)),
 };
 

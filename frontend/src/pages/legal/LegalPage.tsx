@@ -9,6 +9,7 @@ import { CriticalIssuesCard } from "../../components/legal/CriticalIssuesCard";
 import { CaseDetailsModal } from "../../components/legal/CaseDetailsModal";
 import { legalApi } from "../../api/legal";
 import { useApi } from "../../api/useApi";
+import type { CriticalCase } from "../../types/legal";
 import {
   formatDateRangePill,
   useDateRangeWithDefault,
@@ -25,7 +26,7 @@ import {
 export const LegalPage = () => {
   const { start, end, value, rawRange, setRange } = useDateRangeWithDefault(1);
   const [tab] = useLegalTab();
-  const [selectedCase, setSelectedCase] = useState<string | undefined>(undefined);
+  const [selectedCase, setSelectedCase] = useState<CriticalCase | undefined>(undefined);
 
   const summary = useApi(["legal", "summary", rawRange], () =>
     legalApi.summary({ dateRange: rawRange }),
@@ -76,7 +77,7 @@ export const LegalPage = () => {
       )}
 
       <CaseDetailsModal
-        caseNo={selectedCase}
+        caseData={selectedCase}
         onClose={() => setSelectedCase(undefined)}
       />
     </>
