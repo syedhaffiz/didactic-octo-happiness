@@ -4,7 +4,8 @@ import { legalService } from "../services/legalService.js";
 import { ok } from "../types/api.js";
 
 const filtersSchema = z.object({
-  dateRange: z.string().optional(),
+  fromDate: z.string().optional(),
+  toDate: z.string().optional(),
 });
 
 const parse = <T>(schema: z.ZodSchema<T>, query: unknown): T => {

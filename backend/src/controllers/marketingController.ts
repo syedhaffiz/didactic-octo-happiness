@@ -8,12 +8,14 @@ const rangeSchema = z.object({
 });
 
 const dateRangeSchema = z.object({
-  dateRange: z.string().optional(),
+  fromDate: z.string().optional(),
+  toDate: z.string().optional(),
 });
 
 const oceanFreightSchema = z.object({
   dischargePort: z.string().optional(),
-  dateRange: z.string().optional(),
+  fromDate: z.string().optional(),
+  toDate: z.string().optional(),
 });
 
 const parse = <T>(schema: z.ZodSchema<T>, query: unknown): T => {

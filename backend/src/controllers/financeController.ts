@@ -5,7 +5,8 @@ import { parseDateRange } from "../services/dateRange.js";
 import { ok } from "../types/api.js";
 
 const dateRangeSchema = z.object({
-  dateRange: z.string().optional(),
+  fromDate: z.string().optional(),
+  toDate: z.string().optional(),
 });
 
 const portFilterSchema = dateRangeSchema.extend({
@@ -39,7 +40,7 @@ const parse = <T>(schema: z.ZodSchema<T>, query: unknown): T => {
 export const getOverview: RequestHandler = async (req, res, next) => {
   try {
     const q = parse(dateRangeSchema, req.query);
-    const { from, to } = parseDateRange(q.dateRange);
+    const { from, to } = parseDateRange(q.fromDate, q.toDate);
     res.json(ok(await financeService.overview(from, to)));
   } catch (e) {
     next(e);
@@ -49,7 +50,7 @@ export const getOverview: RequestHandler = async (req, res, next) => {
 export const getKpis: RequestHandler = async (req, res, next) => {
   try {
     const q = parse(dateRangeSchema, req.query);
-    const { from, to } = parseDateRange(q.dateRange);
+    const { from, to } = parseDateRange(q.fromDate, q.toDate);
     res.json(ok(await financeService.kpis(from, to)));
   } catch (e) {
     next(e);
@@ -68,7 +69,7 @@ export const getForex: RequestHandler = async (req, res, next) => {
 export const getRevenue: RequestHandler = async (req, res, next) => {
   try {
     const q = parse(portFilterSchema, req.query);
-    const { from, to } = parseDateRange(q.dateRange);
+    const { from, to } = parseDateRange(q.fromDate, q.toDate);
     res.json(ok(await financeService.revenue(q.port, from, to)));
   } catch (e) {
     next(e);
@@ -78,7 +79,7 @@ export const getRevenue: RequestHandler = async (req, res, next) => {
 export const getWorkingCapital: RequestHandler = async (req, res, next) => {
   try {
     const q = parse(portFilterSchema, req.query);
-    const { from, to } = parseDateRange(q.dateRange);
+    const { from, to } = parseDateRange(q.fromDate, q.toDate);
     res.json(ok(await financeService.workingCapital(q.port, from, to)));
   } catch (e) {
     next(e);
@@ -88,7 +89,7 @@ export const getWorkingCapital: RequestHandler = async (req, res, next) => {
 export const getProfitability: RequestHandler = async (req, res, next) => {
   try {
     const q = parse(profitabilitySchema, req.query);
-    const { from, to } = parseDateRange(q.dateRange);
+    const { from, to } = parseDateRange(q.fromDate, q.toDate);
     const mode = q.mode ?? "port";
     const filter = mode === "port" ? q.port : q.segment;
     res.json(ok(await financeService.profitability(mode, filter, from, to)));
@@ -100,7 +101,7 @@ export const getProfitability: RequestHandler = async (req, res, next) => {
 export const getSales: RequestHandler = async (req, res, next) => {
   try {
     const q = parse(dateRangeSchema, req.query);
-    const { from, to } = parseDateRange(q.dateRange);
+    const { from, to } = parseDateRange(q.fromDate, q.toDate);
     res.json(ok(await financeService.sales(from, to)));
   } catch (e) {
     next(e);

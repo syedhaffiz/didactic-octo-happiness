@@ -72,7 +72,7 @@ export const openApiSpec = {
       get: {
         tags: ["Finance"],
         summary: "Top-of-page KPIs + forex strip for the Finance dashboard",
-        parameters: [{ $ref: "#/components/parameters/DateRange" }],
+        parameters: [{ $ref: "#/components/parameters/FromDate" }, { $ref: "#/components/parameters/ToDate" }],
         responses: { "200": envelopeResponse("OverviewResponse") },
       },
     },
@@ -80,7 +80,7 @@ export const openApiSpec = {
       get: {
         tags: ["Finance"],
         summary: "Just the KPI cards (subset of /finance/overview)",
-        parameters: [{ $ref: "#/components/parameters/DateRange" }],
+        parameters: [{ $ref: "#/components/parameters/FromDate" }, { $ref: "#/components/parameters/ToDate" }],
         responses: {
           "200": {
             description: "OK",
@@ -113,7 +113,7 @@ export const openApiSpec = {
         tags: ["Finance"],
         summary: "Revenue breakdown (cards, donut, ledger)",
         parameters: [
-          { $ref: "#/components/parameters/DateRange" },
+          { $ref: "#/components/parameters/FromDate" }, { $ref: "#/components/parameters/ToDate" },
           { $ref: "#/components/parameters/Port" },
         ],
         responses: { "200": envelopeResponse("BreakdownResponse") },
@@ -124,7 +124,7 @@ export const openApiSpec = {
         tags: ["Finance"],
         summary: "Working capital breakdown",
         parameters: [
-          { $ref: "#/components/parameters/DateRange" },
+          { $ref: "#/components/parameters/FromDate" }, { $ref: "#/components/parameters/ToDate" },
           { $ref: "#/components/parameters/Port" },
         ],
         responses: { "200": envelopeResponse("BreakdownResponse") },
@@ -135,7 +135,7 @@ export const openApiSpec = {
         tags: ["Finance"],
         summary: "Profitability bar chart + vessel ledger",
         parameters: [
-          { $ref: "#/components/parameters/DateRange" },
+          { $ref: "#/components/parameters/FromDate" }, { $ref: "#/components/parameters/ToDate" },
           {
             name: "mode",
             in: "query",
@@ -157,7 +157,7 @@ export const openApiSpec = {
       get: {
         tags: ["Finance"],
         summary: "Budget-vs-actual sales by port / zone / segment",
-        parameters: [{ $ref: "#/components/parameters/DateRange" }],
+        parameters: [{ $ref: "#/components/parameters/FromDate" }, { $ref: "#/components/parameters/ToDate" }],
         responses: { "200": envelopeResponse("SalesResponse") },
       },
     },
@@ -347,7 +347,7 @@ export const openApiSpec = {
       get: {
         tags: ["Marketing"],
         summary: "Market share (Own vs Non-Own) and Own market share by zone",
-        parameters: [{ $ref: "#/components/parameters/DateRange" }],
+        parameters: [{ $ref: "#/components/parameters/FromDate" }, { $ref: "#/components/parameters/ToDate" }],
         responses: { "200": envelopeResponse("MarketShareResponse") },
       },
     },
@@ -362,7 +362,7 @@ export const openApiSpec = {
             schema: { type: "string" },
             description: "Discharge port name; defaults to `Hazira`",
           },
-          { $ref: "#/components/parameters/DateRange" },
+          { $ref: "#/components/parameters/FromDate" }, { $ref: "#/components/parameters/ToDate" },
         ],
         responses: { "200": envelopeResponse("OceanFreightResponse") },
       },
@@ -371,7 +371,7 @@ export const openApiSpec = {
       get: {
         tags: ["Marketing"],
         summary: "Target above 2% — port-wise, origin-wise, segment-wise",
-        parameters: [{ $ref: "#/components/parameters/DateRange" }],
+        parameters: [{ $ref: "#/components/parameters/FromDate" }, { $ref: "#/components/parameters/ToDate" }],
         responses: { "200": envelopeResponse("TargetResponse") },
       },
     },
@@ -381,7 +381,7 @@ export const openApiSpec = {
       get: {
         tags: ["Legal"],
         summary: "Counts for the Legal Case / Critical Issue summary cards",
-        parameters: [{ $ref: "#/components/parameters/DateRange" }],
+        parameters: [{ $ref: "#/components/parameters/FromDate" }, { $ref: "#/components/parameters/ToDate" }],
         responses: { "200": envelopeResponse("LegalSummary") },
       },
     },
@@ -392,7 +392,7 @@ export const openApiSpec = {
         description:
           "Each row carries the modal-only fields (briefFacts, currentStatus, …) " +
           "so the Details modal renders directly from the row data — no per-case fetch.",
-        parameters: [{ $ref: "#/components/parameters/DateRange" }],
+        parameters: [{ $ref: "#/components/parameters/FromDate" }, { $ref: "#/components/parameters/ToDate" }],
         responses: { "200": envelopeResponse("CriticalCasesResponse") },
       },
     },
@@ -400,7 +400,7 @@ export const openApiSpec = {
       get: {
         tags: ["Legal"],
         summary: "Pre-litigation legal issues",
-        parameters: [{ $ref: "#/components/parameters/DateRange" }],
+        parameters: [{ $ref: "#/components/parameters/FromDate" }, { $ref: "#/components/parameters/ToDate" }],
         responses: { "200": envelopeResponse("CriticalIssuesResponse") },
       },
     },
@@ -408,11 +408,17 @@ export const openApiSpec = {
 
   components: {
     parameters: {
-      DateRange: {
-        name: "dateRange",
+      FromDate: {
+        name: "fromDate",
         in: "query",
-        schema: { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}:\\d{4}-\\d{2}-\\d{2}$" },
-        description: "Date range as `YYYY-MM-DD:YYYY-MM-DD`. Omit for default window.",
+        schema: { type: "string", format: "date", pattern: "^\\d{4}-\\d{2}-\\d{2}$" },
+        description: "Range start as `YYYY-MM-DD`. Omit (with toDate) for the default window.",
+      },
+      ToDate: {
+        name: "toDate",
+        in: "query",
+        schema: { type: "string", format: "date", pattern: "^\\d{4}-\\d{2}-\\d{2}$" },
+        description: "Range end as `YYYY-MM-DD`. Omit (with fromDate) for the default window.",
       },
       Port: {
         name: "port",

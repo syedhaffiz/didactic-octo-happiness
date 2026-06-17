@@ -54,5 +54,6 @@ export interface CriticalIssuesResponse {
 // --- Filter params ---------------------------------------------------------
 
 export interface LegalFilters {
-  dateRange?: string;
+  fromDate?: string;
+  toDate?: string;
 }

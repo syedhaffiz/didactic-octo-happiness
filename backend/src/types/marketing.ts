@@ -97,14 +97,17 @@ export interface TargetResponse {
 // --- Filters ---------------------------------------------------------------
 
 export interface MarketShareFilters {
-  dateRange?: string;
+  fromDate?: string;
+  toDate?: string;
 }
 
 export interface OceanFreightFilters {
   dischargePort?: string;
-  dateRange?: string;
+  fromDate?: string;
+  toDate?: string;
 }
 
 export interface TargetFilters {
-  dateRange?: string;
+  fromDate?: string;
+  toDate?: string;
 }

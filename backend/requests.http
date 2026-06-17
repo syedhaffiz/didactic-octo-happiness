@@ -7,7 +7,7 @@ GET {{host}}/health
 GET {{host}}/finance/overview
 
 ### Overview narrowed to a single month
-GET {{host}}/finance/overview?dateRange=2025-09-01:2025-09-30
+GET {{host}}/finance/overview?fromDate=2025-09-01&toDate=2025-09-30
 
 ### KPIs only
 GET {{host}}/finance/kpis
@@ -22,7 +22,7 @@ GET {{host}}/finance/forex?range=month
 GET {{host}}/finance/revenue
 
 ### Revenue — single port + date range
-GET {{host}}/finance/revenue?port=Hazira&dateRange=2025-10-01:2025-12-31
+GET {{host}}/finance/revenue?port=Hazira&fromDate=2025-10-01&toDate=2025-12-31
 
 ### Working capital
 GET {{host}}/finance/working-capital
@@ -34,7 +34,7 @@ GET {{host}}/finance/profitability
 GET {{host}}/finance/profitability?mode=segment
 
 ### Profitability — segment wise, filtered
-GET {{host}}/finance/profitability?mode=segment&segment=SNS&dateRange=2025-06-01:2025-08-31
+GET {{host}}/finance/profitability?mode=segment&segment=SNS&fromDate=2025-06-01&toDate=2025-08-31
 
 ### Sales overview
 GET {{host}}/finance/sales
@@ -72,5 +72,5 @@ GET {{host}}/filters/grades
 ###
 GET {{host}}/filters/origins
 
-### Validation error example (malformed dateRange)
-GET {{host}}/finance/overview?dateRange=garbage
+### Validation error example (malformed fromDate)
+GET {{host}}/finance/overview?fromDate=garbage

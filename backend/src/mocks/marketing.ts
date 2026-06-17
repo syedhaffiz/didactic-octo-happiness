@@ -94,7 +94,7 @@ export const buildMarketShare = (f: MarketShareFilters = {}): MarketShareRespons
     ] as ShareSlice[],
   };
 
-  const rng = seeded(seedFromString(`mkt-share-zone-${f.dateRange ?? "all"}`));
+  const rng = seeded(seedFromString(`mkt-share-zone-${f.fromDate ?? ""}-${f.toDate ?? ""}`));
   const raw = Array.from({ length: 8 }, () => range(rng, 5, 20));
   const sum = raw.reduce((a, b) => a + b, 0);
   const zonePcts = raw.map((v) => round((v / sum) * 100, 1));
@@ -157,7 +157,7 @@ const TARGET_SEGMENTS = ["TPH", "SNS", "SEB", "Sagarmala", "Old", "CIF Handling"
 const roundTo = (n: number, step: number) => Math.round(n / step) * step;
 
 export const buildTarget = (f: TargetFilters = {}): TargetResponse => {
-  const seed = f.dateRange ?? "all";
+  const seed = `${f.fromDate ?? ""}-${f.toDate ?? ""}`;
 
   const rngP = seeded(seedFromString(`mkt-target-port-${seed}`));
   const portwise: BarRow[] = TARGET_PORTS.map((p) => ({
