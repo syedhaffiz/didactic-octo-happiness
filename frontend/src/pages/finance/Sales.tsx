@@ -57,11 +57,13 @@ const columnOptions = (
 
 export const Sales = () => {
   const t = useBrandTokens();
-  const [range, setRange, dateRange] = useUrlDateRange();
+  const [range, setRange] = useUrlDateRange();
+  const fromDate = range?.[0]?.format("YYYY-MM-DD");
+  const toDate = range?.[1]?.format("YYYY-MM-DD");
 
   const { data, isLoading, isError, error, refetch } = useApi(
-    ["sales", dateRange],
-    () => financeApi.sales({ dateRange }),
+    ["sales", fromDate, toDate],
+    () => financeApi.sales({ fromDate, toDate }),
   );
 
   return (

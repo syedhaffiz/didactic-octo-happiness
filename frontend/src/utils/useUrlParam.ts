@@ -79,33 +79,47 @@ export const useUrlParams = (
 
 type RangeTuple = [Dayjs | null, Dayjs | null] | null;
 
-// Date range encoded as "YYYY-MM-DD:YYYY-MM-DD" — matches the format the
-// backend expects, so the URL value can flow straight into the API call.
+const FMT = "YYYY-MM-DD";
+
+// Date range as separate `fromDate` and `toDate` URL params — matches the API
+// contract (every endpoint accepts the two as independent query params, so the
+// URL value flows straight through). Both keys are written/cleared in a single
+// setSearchParams call so they can never be momentarily out of sync.
 export const useUrlDateRange = (
-  key = "dateRange",
-): [RangeTuple, (value: RangeTuple) => void, string | undefined] => {
-  const [raw, setRaw] = useUrlParam(key);
+  fromKey = "fromDate",
+  toKey = "toDate",
+): [RangeTuple, (value: RangeTuple) => void] => {
+  const [params, setParams] = useSearchParams();
+  const fromRaw = params.get(fromKey) ?? undefined;
+  const toRaw = params.get(toKey) ?? undefined;
 
   const value = useMemo<RangeTuple>(() => {
-    if (!raw) return null;
-    const [from, to] = raw.split(":");
-    if (!from || !to) return null;
-    const f = dayjs(from);
-    const t = dayjs(to);
+    if (!fromRaw || !toRaw) return null;
+    const f = dayjs(fromRaw);
+    const t = dayjs(toRaw);
     if (!f.isValid() || !t.isValid()) return null;
     return [f, t];
-  }, [raw]);
+  }, [fromRaw, toRaw]);
 
   const set = useCallback(
     (next: RangeTuple) => {
-      if (!next || !next[0] || !next[1]) {
-        setRaw(undefined);
-        return;
-      }
-      setRaw(`${next[0].format("YYYY-MM-DD")}:${next[1].format("YYYY-MM-DD")}`);
+      setParams(
+        (prev) => {
+          const out = new URLSearchParams(prev);
+          if (!next || !next[0] || !next[1]) {
+            out.delete(fromKey);
+            out.delete(toKey);
+          } else {
+            out.set(fromKey, next[0].format(FMT));
+            out.set(toKey, next[1].format(FMT));
+          }
+          return out;
+        },
+        { replace: true },
+      );
     },
-    [setRaw],
+    [setParams, fromKey, toKey],
   );
 
-  return [value, set, raw];
+  return [value, set];
 };

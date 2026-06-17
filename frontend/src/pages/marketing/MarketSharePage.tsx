@@ -12,11 +12,11 @@ import {
 } from "../../utils/useDateRangeWithDefault";
 
 export const MarketSharePage = () => {
-  const { start, end, value, rawRange, setRange } = useDateRangeWithDefault(1);
+  const { start, end, value, fromDate, toDate, setRange } = useDateRangeWithDefault(1);
 
   const { data, isLoading, isError, error, refetch } = useApi(
-    ["marketing", "market-share", rawRange],
-    () => marketingApi.marketShare({ dateRange: rawRange }),
+    ["marketing", "market-share", fromDate, toDate],
+    () => marketingApi.marketShare({ fromDate, toDate }),
   );
 
   const unit = data?.unit ?? "MMT";

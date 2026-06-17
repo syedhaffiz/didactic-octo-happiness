@@ -19,13 +19,13 @@ import {
 } from "../../utils/useDateRangeWithDefault";
 
 export const TargetAbove2Page = () => {
-  const { start, end, value, rawRange, setRange } = useDateRangeWithDefault(1);
+  const { start, end, value, fromDate, toDate, setRange } = useDateRangeWithDefault(1);
   const [rawMode, setRawMode] = useUrlParam("mode");
   const mode: TargetMode = isTargetMode(rawMode) ? rawMode : DEFAULT_MODE;
 
   const { data, isLoading, isError, error, refetch } = useApi(
-    ["marketing", "target", rawRange],
-    () => marketingApi.target({ dateRange: rawRange }),
+    ["marketing", "target", fromDate, toDate],
+    () => marketingApi.target({ fromDate, toDate }),
   );
 
   return (
@@ -48,7 +48,7 @@ export const TargetAbove2Page = () => {
           {isLoading || !data ? (
             <Skeleton active paragraph={{ rows: 8 }} />
           ) : (
-            <ErrorBoundary level="section" label={targetCardTitle[mode]} resetKeys={[mode, rawRange]}>
+            <ErrorBoundary level="section" label={targetCardTitle[mode]} resetKeys={[mode, fromDate, toDate]}>
               <TargetChart mode={mode} data={data} />
             </ErrorBoundary>
           )}

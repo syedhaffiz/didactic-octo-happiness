@@ -24,18 +24,18 @@ import {
 // one; setting the picker writes to the URL, clearing it reverts to default.
 
 export const LegalPage = () => {
-  const { start, end, value, rawRange, setRange } = useDateRangeWithDefault(1);
+  const { start, end, value, fromDate, toDate, setRange } = useDateRangeWithDefault(1);
   const [tab] = useLegalTab();
   const [selectedCase, setSelectedCase] = useState<CriticalCase | undefined>(undefined);
 
-  const summary = useApi(["legal", "summary", rawRange], () =>
-    legalApi.summary({ dateRange: rawRange }),
+  const summary = useApi(["legal", "summary", fromDate, toDate], () =>
+    legalApi.summary({ fromDate, toDate }),
   );
-  const cases = useApi(["legal", "critical-cases", rawRange], () =>
-    legalApi.criticalCases({ dateRange: rawRange }),
+  const cases = useApi(["legal", "critical-cases", fromDate, toDate], () =>
+    legalApi.criticalCases({ fromDate, toDate }),
   );
-  const issues = useApi(["legal", "critical-issues", rawRange], () =>
-    legalApi.criticalIssues({ dateRange: rawRange }),
+  const issues = useApi(["legal", "critical-issues", fromDate, toDate], () =>
+    legalApi.criticalIssues({ fromDate, toDate }),
   );
 
   const isIssues = tab === "critical-issues";

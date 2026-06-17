@@ -16,11 +16,13 @@ const subtitleFor = (range: ReturnType<typeof useUrlDateRange>[0]): string => {
 };
 
 export const FinanceOverview = () => {
-  const [range, setRange, dateRange] = useUrlDateRange();
+  const [range, setRange] = useUrlDateRange();
+  const fromDate = range?.[0]?.format("YYYY-MM-DD");
+  const toDate = range?.[1]?.format("YYYY-MM-DD");
 
   const { data, isLoading, isError, error, refetch } = useApi(
-    ["overview", dateRange],
-    () => financeApi.overview({ dateRange }),
+    ["overview", fromDate, toDate],
+    () => financeApi.overview({ fromDate, toDate }),
   );
 
   return (

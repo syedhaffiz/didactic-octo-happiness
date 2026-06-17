@@ -50,12 +50,14 @@ export const Profitability = () => {
   const setMode = (next: Mode) => setRawMode(next === "port" ? undefined : next);
   const [port, setPort] = useUrlParam("port");
   const [segment, setSegment] = useUrlParam("segment");
-  const [range, setRange, dateRange] = useUrlDateRange();
+  const [range, setRange] = useUrlDateRange();
+  const fromDate = range?.[0]?.format("YYYY-MM-DD");
+  const toDate = range?.[1]?.format("YYYY-MM-DD");
 
   const filter = mode === "port" ? port : segment;
   const { data, isLoading, isError, error, refetch } = useApi(
-    ["profitability", mode, filter, dateRange],
-    () => financeApi.profitability({ mode, port, segment, dateRange }),
+    ["profitability", mode, filter, fromDate, toDate],
+    () => financeApi.profitability({ mode, port, segment, fromDate, toDate }),
   );
 
   const vesselColumns: ColumnsType<VesselRow> = [

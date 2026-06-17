@@ -12,22 +12,24 @@ export interface DateRangeWithDefault {
   end: Dayjs;
   /** Tuple suitable for <DateRangeFilter value=…>. */
   value: [Dayjs, Dayjs];
-  /** Effective raw "YYYY-MM-DD:YYYY-MM-DD" string, never undefined. */
-  rawRange: string;
+  /** Effective fromDate "YYYY-MM-DD" for the API. */
+  fromDate: string;
+  /** Effective toDate "YYYY-MM-DD" for the API. */
+  toDate: string;
   /** Writes URL (or clears it on null → falls back to default). */
   setRange: (next: [Dayjs | null, Dayjs | null] | null) => void;
   /** True when the user has explicitly set a range via the URL. */
   isCustom: boolean;
 }
 
-// Shared default-date-range hook. Reads/writes the `dateRange` URL param via
-// useUrlDateRange and applies a sensible default (today − N months → today)
-// when no value is present. Used wherever a page has a "Date Range" filter so
-// the picker comes pre-filled and the API gets a real range on first load.
+// Shared default-date-range hook. Reads/writes the `fromDate` + `toDate` URL
+// params via useUrlDateRange and applies a default of (today − N months →
+// today) when neither is present. Consumers get `fromDate` + `toDate` for the
+// API call and a `[start, end]` tuple for the picker.
 export const useDateRangeWithDefault = (
   monthsBack = 1,
 ): DateRangeWithDefault => {
-  const [tuple, setRange, raw] = useUrlDateRange();
+  const [tuple, setRange] = useUrlDateRange();
 
   // Stable "today" so the default range doesn't drift across re-renders.
   const today = useMemo(() => dayjs(), []);
@@ -38,16 +40,15 @@ export const useDateRangeWithDefault = (
 
   const start = tuple?.[0] ?? defaultStart;
   const end = tuple?.[1] ?? today;
-  const rawRange =
-    raw ?? `${defaultStart.format(RANGE_FMT)}:${today.format(RANGE_FMT)}`;
 
   return {
     start,
     end,
     value: [start, end],
-    rawRange,
+    fromDate: start.format(RANGE_FMT),
+    toDate: end.format(RANGE_FMT),
     setRange,
-    isCustom: Boolean(raw),
+    isCustom: tuple !== null,
   };
 };
 

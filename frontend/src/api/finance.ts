@@ -28,7 +28,8 @@ const get = async <T>(
 };
 
 export interface RangeParams {
-  dateRange?: string;
+  fromDate?: string;
+  toDate?: string;
 }
 
 export interface PortRangeParams extends RangeParams {

@@ -88,12 +88,15 @@ export interface TargetResponse {
 // --- Filter params ---------------------------------------------------------
 
 export interface MarketShareParams {
-  dateRange?: string;
+  fromDate?: string;
+  toDate?: string;
 }
 export interface OceanFreightParams {
   dischargePort?: string;
-  dateRange?: string;
+  fromDate?: string;
+  toDate?: string;
 }
 export interface TargetParams {
-  dateRange?: string;
+  fromDate?: string;
+  toDate?: string;
 }

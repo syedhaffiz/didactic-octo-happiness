@@ -27,11 +27,13 @@ export const BreakdownPage = ({
 }: BreakdownPageProps) => {
   const t = useBrandTokens();
   const [port, setPort] = useUrlParam("port");
-  const [range, setRange, dateRange] = useUrlDateRange();
+  const [range, setRange] = useUrlDateRange();
+  const fromDate = range?.[0]?.format("YYYY-MM-DD");
+  const toDate = range?.[1]?.format("YYYY-MM-DD");
 
   const { data, isLoading, isError, error, refetch } = useApi(
-    [cacheKey, port, dateRange],
-    () => fetch({ port, dateRange }),
+    [cacheKey, port, fromDate, toDate],
+    () => fetch({ port, fromDate, toDate }),
   );
 
   return (
