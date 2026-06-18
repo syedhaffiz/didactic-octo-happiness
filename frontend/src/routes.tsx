@@ -67,7 +67,6 @@ export const createAppRouter = (basename: string = "/") =>
           { path: "finance/working-capital", element: <WorkingCapital /> },
           { path: "finance/profitability", element: <Profitability /> },
           { path: "finance/approved-budget", element: <ApprovedBudget /> },
-          { path: "finance/dispatch", element: <Placeholder title="Dispatch" /> },
           { path: "finance/inventory-days", element: <Placeholder title="Inventory Days" /> },
           {
             path: "inventory",

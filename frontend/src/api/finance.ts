@@ -1,4 +1,5 @@
 import { apiClient, unwrap } from "./client";
+import { USE_MOCK_DATA, mockDelay } from "./dataSource";
 import type { ApiEnvelope } from "../types/api";
 import type {
   ApprovedBudgetParams,
@@ -11,7 +12,16 @@ import type {
   ProfitabilityResponse,
   SalesResponse,
 } from "../types/finance";
+import { buildApprovedBudget } from "../mocks/finance/approvedBudget";
+import { buildBreakdown } from "../mocks/finance/breakdown";
+import { buildForex } from "../mocks/finance/forex";
+import { buildKpis } from "../mocks/finance/kpis";
+import { buildOverview } from "../mocks/finance/overview";
+import { buildProfitability } from "../mocks/finance/profitability";
+import { buildSales } from "../mocks/finance/sales";
 
+// HTTP path identical to the backend so flipping USE_MOCK_DATA is the only
+// change required to switch over to the real API.
 const get = async <T>(
   path: string,
   params?: Record<string, string | undefined> | object,
@@ -42,7 +52,7 @@ export interface ProfitabilityParams extends RangeParams {
   segment?: string;
 }
 
-export const financeApi = {
+const httpFinanceApi = {
   overview: (p: RangeParams = {}) => get<OverviewResponse>("/finance/overview", p),
   kpis: (p: RangeParams = {}) => get<KPI[]>("/finance/kpis", p),
   forex: (range: ForexRange = "week") => get<ForexResponse>("/finance/forex", { range }),
@@ -55,3 +65,21 @@ export const financeApi = {
   approvedBudget: (p: ApprovedBudgetParams = {}) =>
     get<ApprovedBudgetResponse>("/finance/approved-budget", p),
 };
+
+const mockFinanceApi = {
+  overview: (p: RangeParams = {}) => mockDelay(buildOverview(p.fromDate, p.toDate)),
+  kpis: (p: RangeParams = {}) => mockDelay(buildKpis(p.fromDate, p.toDate)),
+  forex: (range: ForexRange = "week") => mockDelay(buildForex(range, new Date())),
+  revenue: (p: PortRangeParams = {}) =>
+    mockDelay(buildBreakdown("revenue", p.port, p.fromDate, p.toDate)),
+  workingCapital: (p: PortRangeParams = {}) =>
+    mockDelay(buildBreakdown("working-capital", p.port, p.fromDate, p.toDate)),
+  profitability: (p: ProfitabilityParams) => {
+    const filter = p.mode === "port" ? p.port : p.segment;
+    return mockDelay(buildProfitability(p.mode, filter, p.fromDate, p.toDate));
+  },
+  sales: (p: RangeParams = {}) => mockDelay(buildSales(p.fromDate, p.toDate)),
+  approvedBudget: (p: ApprovedBudgetParams = {}) => mockDelay(buildApprovedBudget(p)),
+};
+
+export const financeApi = USE_MOCK_DATA ? mockFinanceApi : httpFinanceApi;

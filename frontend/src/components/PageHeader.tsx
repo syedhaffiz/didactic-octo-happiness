@@ -14,7 +14,6 @@ const labels: Record<string, string> = {
   profitability: "Gross Margin Profitability",
   sales: "Sales",
   "approved-budget": "Approved Budget",
-  dispatch: "Dispatch",
   "inventory-days": "Inventory Days",
   logistics: "Logistics",
   marketing: "Marketing",

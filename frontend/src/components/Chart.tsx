@@ -72,10 +72,16 @@ const deepMerge = <T,>(target: T, source: T): T => {
 export const Chart = ({
   options,
   height,
+  loading = false,
+  loadingText = "Loading…",
   containerProps,
 }: {
   options: Options;
   height?: number | string;
+  /** Show the Highcharts loading overlay (no skeleton swap, no layout shift). */
+  loading?: boolean;
+  /** Override the overlay label (defaults to "Loading…"). */
+  loadingText?: string;
   containerProps?: React.HTMLAttributes<HTMLDivElement>;
 }) => {
   const merged = useMemo<Options>(() => {
@@ -99,6 +105,16 @@ export const Chart = ({
       chartRef.current = null;
     };
   }, [merged]);
+
+  // Drive Highcharts' built-in loading overlay from the `loading` prop. The
+  // chart's frame and axes stay put — only the overlay fades in/out — which
+  // means data swaps don't trigger a layout shift.
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    if (loading) chart.showLoading(loadingText);
+    else chart.hideLoading();
+  }, [loading, loadingText]);
 
   return <div ref={hostRef} {...containerProps} />;
 };

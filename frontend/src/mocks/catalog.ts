@@ -80,9 +80,89 @@ export const portNameById = (id?: string) => byId(PORT_LIST, id)?.name;
 export const originNameById = (id?: string) => byId(ORIGIN_LIST, id)?.name;
 export const gradeNameById = (id?: string) => byId(GRADE_LIST, id)?.name;
 
-// Convenience name arrays — used by the inventory mock to generate random
-// vessel rows (it just wants string fixtures, no ids needed).
+// Convenience name arrays — used by the inventory + finance mocks to generate
+// random fixture rows (string fixtures only, no ids needed).
+export const PORTS: readonly string[] = PORT_LIST.map((p) => p.name);
+export const SEGMENTS: readonly string[] = SEGMENT_LIST.map((s) => s.name);
+export const ZONES: readonly string[] = ZONE_LIST.map((z) => z.name);
 export const ORIGINS: readonly string[] = ORIGIN_LIST.map((o) => o.name);
+export const GRADES: readonly string[] = GRADE_LIST.map((g) => g.name);
+
+// Vessels used by the finance profitability mock (separate from the inventory
+// vessel list so the two pages can vary independently).
+export const VESSELS = [
+  "MV ATLANTIC PRESTIGE",
+  "MV WEST TREASURE",
+  "MV ASTRO GRUMIUM",
+  "MV FAST",
+  "MV YOUNG SPIRIT",
+  "MV STAR QUEST",
+  "MV BLUE HORIZON",
+  "MV NORTHERN LIGHT",
+  "MV PACIFIC DAWN",
+  "MV OCEAN VOYAGER",
+  "MV SILVER WAVE",
+  "MV GOLDEN GATE",
+  "MV CRYSTAL BAY",
+  "MV CORAL REEF",
+  "MV EMERALD ISLE",
+] as const;
+
+// Profit-centre codes shown in the Breakdown ledger.
+export const PROFIT_CENTRES = [
+  "AEL-COAL-DAHE-TPH",
+  "AEL-COAL-DHAM-TPH",
+  "AEL-COAL-OHAM-TPH",
+  "AEL-COAL-OHMT-TPH",
+  "AEL-COAL-MUND-SNS",
+  "AEL-COAL-HAZI-SEB",
+  "AEL-COAL-GOPI-DOM",
+  "AEL-COAL-KRIS-SAG",
+] as const;
+
+// Account-grouping labels shown in the Breakdown ledger.
+export const GROUPINGS = [
+  "Sale Revenue",
+  "Plot Rent",
+  "Handing Revenue",
+  "Demurrage",
+  "Service Charges",
+  "Logistics",
+] as const;
+
+// Month catalogue — Apr 2025 → Feb 2026 inclusive (11 months). Mirrored from
+// backend so date-range slicing matches what the real API would return.
+export interface MonthKey {
+  year: number;
+  month: number; // 1-indexed
+  label: string; // e.g. "2025-04"
+}
+
+export const MONTHS: MonthKey[] = [
+  { year: 2025, month: 4, label: "2025-04" },
+  { year: 2025, month: 5, label: "2025-05" },
+  { year: 2025, month: 6, label: "2025-06" },
+  { year: 2025, month: 7, label: "2025-07" },
+  { year: 2025, month: 8, label: "2025-08" },
+  { year: 2025, month: 9, label: "2025-09" },
+  { year: 2025, month: 10, label: "2025-10" },
+  { year: 2025, month: 11, label: "2025-11" },
+  { year: 2025, month: 12, label: "2025-12" },
+  { year: 2026, month: 1, label: "2026-01" },
+  { year: 2026, month: 2, label: "2026-02" },
+];
+
+export const monthsInRange = (from: Date, to: Date): MonthKey[] =>
+  MONTHS.filter((m) => {
+    const start = new Date(Date.UTC(m.year, m.month - 1, 1));
+    const end = new Date(Date.UTC(m.year, m.month, 0));
+    return end >= from && start <= to;
+  });
+
+export const DEFAULT_RANGE = {
+  from: new Date(Date.UTC(2025, 3, 1)), // Apr 1 2025
+  to: new Date(Date.UTC(2026, 1, 28)), // Feb 28 2026
+};
 
 // Coal calorific grades displayed on vessel rows. Distinct from trading
 // grades (GRADE_LIST) which are the filter values.

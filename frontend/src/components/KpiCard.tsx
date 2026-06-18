@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { Card, Tooltip } from "antd";
+import { Card, Skeleton, Tooltip } from "antd";
 import {
   ArrowDownOutlined,
   ArrowUpOutlined,
@@ -8,7 +8,6 @@ import {
   RiseOutlined,
   LineChartOutlined,
   WalletOutlined,
-  TruckOutlined,
   ClockCircleOutlined,
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
@@ -23,15 +22,27 @@ const iconMap: Record<IconKey, ReactElement> = {
   sales: <LineChartOutlined />,
   profitability: <RiseOutlined />,
   workingCapital: <WalletOutlined />,
-  dispatch: <TruckOutlined />,
   inventoryDays: <ClockCircleOutlined />,
 };
 
-export const KpiCard = ({ kpi }: { kpi: KPI }) => {
+interface Props {
+  /** KPI data; undefined while loading or when the API hasn't delivered yet. */
+  kpi?: KPI;
+  /** Hide value/spark/delta behind the antd Skeleton primitives. */
+  loading?: boolean;
+}
+
+// One KPI tile. While loading, the icon tile, label slot, value placeholder
+// and spark area all render in their final positions — only the actual numbers
+// and chart data fill in once the API resolves. This keeps the Card frame
+// completely stable; no layout shift when data arrives.
+export const KpiCard = ({ kpi, loading = false }: Props) => {
   const t = useBrandTokens();
-  const isUp = kpi.trend === "up";
+  const icon = kpi ? iconMap[kpi.id] : null;
+  const sparkColor = kpi ? kpiSparkColors[kpi.id] ?? brand.purple : brand.accent;
+  const isUp = kpi?.trend === "up";
   const deltaColor = isUp ? t.deltaUp : t.deltaDown;
-  const sparkColor = kpiSparkColors[kpi.id] ?? brand.purple;
+  const showSpark = !loading && kpi && Array.isArray(kpi.spark) && kpi.spark.length > 0;
 
   const sparkOptions: Highcharts.Options = {
     chart: { type: "areaspline", height: 48, margin: [4, 0, 4, 0] },
@@ -47,7 +58,7 @@ export const KpiCard = ({ kpi }: { kpi: KPI }) => {
         color: sparkColor,
       },
     },
-    series: [{ type: "areaspline", data: kpi.spark, name: kpi.label }],
+    series: [{ type: "areaspline", data: kpi?.spark ?? [], name: kpi?.label ?? "" }],
   };
 
   return (
@@ -58,36 +69,49 @@ export const KpiCard = ({ kpi }: { kpi: KPI }) => {
             width: 38,
             height: 38,
             borderRadius: 10,
-            background: t.accentBg,
-            color: t.accentText,
+            background: brand.accent,
+            color: brand.white,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             fontSize: 18,
           }}
         >
-          {iconMap[kpi.id]}
+          {icon}
         </div>
-        <Link
-          to={kpi.href}
-          aria-label={`Open ${kpi.label}`}
-          style={{
-            width: 26,
-            height: 26,
-            borderRadius: 7,
-            background: brand.accent,
-            color: brand.white,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 12,
-          }}
-        >
-          <ExportOutlined />
-        </Link>
+        {kpi ? (
+          <Link
+            to={kpi.href}
+            aria-label={`Open ${kpi.label}`}
+            style={{
+              width: 26,
+              height: 26,
+              borderRadius: 7,
+              background: brand.accentSoft,
+              color: brand.accent,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 12,
+            }}
+          >
+            <ExportOutlined />
+          </Link>
+        ) : (
+          <div
+            style={{
+              width: 26,
+              height: 26,
+              borderRadius: 7,
+              background: brand.accentSoft,
+            }}
+          />
+        )}
       </div>
 
-      <div style={{ marginTop: 14, color: t.textSecondary, fontSize: 13 }}>{kpi.label}</div>
+      <div style={{ marginTop: 14, color: t.textSecondary, fontSize: 13, minHeight: 18 }}>
+        {kpi?.label ?? <Skeleton.Input active size="small" style={{ width: 90, height: 14 }} />}
+      </div>
 
       <div
         style={{
@@ -96,37 +120,59 @@ export const KpiCard = ({ kpi }: { kpi: KPI }) => {
           justifyContent: "space-between",
           gap: 8,
           marginTop: 2,
+          minHeight: 36,
         }}
       >
-        <Tooltip title={formatRawWithCommas(kpi.value, kpi.unit)}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
-            <span style={{ fontSize: 30, fontWeight: 700, color: t.headline, lineHeight: 1.1 }}>
-              {kpi.value}
-            </span>
-            <span style={{ fontSize: 12, fontWeight: 600, color: t.textSecondary }}>
-              {kpi.unit}
-            </span>
-          </div>
-        </Tooltip>
-        <div style={{ flex: 1, minWidth: 80, maxWidth: 116 }}>
-          <Chart options={sparkOptions} />
+        {loading || !kpi ? (
+          <Skeleton.Input active style={{ width: 80, height: 28 }} />
+        ) : (
+          <Tooltip title={formatRawWithCommas(kpi.value, kpi.unit)}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
+              <span style={{ fontSize: 30, fontWeight: 700, color: t.headline, lineHeight: 1.1 }}>
+                {kpi.value}
+              </span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: t.textSecondary }}>
+                {kpi.unit}
+              </span>
+            </div>
+          </Tooltip>
+        )}
+        <div style={{ flex: 1, minWidth: 80, maxWidth: 116, minHeight: 48 }}>
+          {showSpark ? <Chart options={sparkOptions} loading={loading} /> : null}
         </div>
       </div>
 
-      <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
-        <span
-          style={{
-            color: deltaColor,
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 2,
-            fontWeight: 600,
-          }}
-        >
-          {isUp ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
-          {formatSigned(kpi.deltaPct)}
-        </span>
-        <span style={{ color: t.textSecondary }}>vs last week</span>
+      <div
+        style={{
+          marginTop: 10,
+          paddingTop: 8,
+          borderTop: `1px solid ${brand.border}`,
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          fontSize: 12,
+          minHeight: 18,
+        }}
+      >
+        {loading || !kpi ? (
+          <Skeleton.Input active size="small" style={{ width: 110, height: 12 }} />
+        ) : (
+          <>
+            <span
+              style={{
+                color: deltaColor,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 2,
+                fontWeight: 600,
+              }}
+            >
+              {isUp ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
+              {formatSigned(kpi.deltaPct)}
+            </span>
+            <span style={{ color: t.textSecondary }}>vs last week</span>
+          </>
+        )}
       </div>
     </Card>
   );

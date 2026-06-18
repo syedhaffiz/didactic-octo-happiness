@@ -109,7 +109,6 @@ export const kpiSparkColors: Record<string, string> = {
   revenue: "#8E5BC4",
   workingCapital: "#8E5BC4",
   sales: "#F4795F",
-  dispatch: "#F4795F",
   profitability: "#46C4D4",
   inventoryDays: "#46C4D4",
 };

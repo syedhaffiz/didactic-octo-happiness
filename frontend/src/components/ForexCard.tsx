@@ -1,4 +1,4 @@
-import { Card, Select, Space, Tooltip } from "antd";
+import { Card, Select, Skeleton, Space, Tooltip } from "antd";
 import { LineChartOutlined } from "@ant-design/icons";
 import { Chart } from "./Chart";
 import { financeApi } from "../api/finance";
@@ -20,9 +20,11 @@ export const ForexCard = () => {
   const t = useBrandTokens();
   const [rawRange, setRange] = useUrlParam("forexRange");
   const range: ForexRange = isForexRange(rawRange) ? rawRange : "all";
-  const { data, isLoading, error } = useApi(["forex", range], () =>
+  const { data, isLoading, isError } = useApi(["forex", range], () =>
     financeApi.forex(range),
   );
+
+  const points = data?.points ?? [];
 
   return (
     <Card
@@ -43,14 +45,15 @@ export const ForexCard = () => {
       style={{ height: "100%", background: t.forexCardBg }}
       styles={{ header: { borderBottom: "none" }, body: { paddingTop: 4 } }}
     >
-      {error ? (
+      {isError ? (
         <span style={{ color: t.deltaDown }}>Could not load forex data.</span>
       ) : (
         <>
           <Chart
+            loading={isLoading}
             options={{
               chart: { type: "spline", height: 230, backgroundColor: "transparent" },
-              xAxis: { categories: data?.points.map((p) => p.day) ?? [] },
+              xAxis: { categories: points.map((p) => p.day) },
               yAxis: { tickAmount: 5 },
               tooltip: {
                 pointFormat:
@@ -61,7 +64,7 @@ export const ForexCard = () => {
                 {
                   type: "spline",
                   name: "USD/INR",
-                  data: data?.points.map((p) => p.rate) ?? [],
+                  data: points.map((p) => p.rate),
                   color: t.accentText,
                   marker: { enabled: false },
                   lineWidth: 2.5,
@@ -103,6 +106,8 @@ interface StatProps {
   color: string;
 }
 
+// Small stat tile inside the Forex card. While loading we show an antd
+// Skeleton.Input where the value would be — the tile itself stays put.
 const Stat = ({ label, value, loading, bg, color }: StatProps) => (
   <div
     style={{
@@ -115,8 +120,16 @@ const Stat = ({ label, value, loading, bg, color }: StatProps) => (
     }}
   >
     <div style={{ fontSize: 11, color, opacity: 0.8 }}>{label}</div>
-    <div style={{ fontSize: 17, fontWeight: 700, color, marginTop: 2 }}>
-      {loading || value === undefined ? "—" : value.toFixed(value < 100 ? 4 : 2)}
+    <div style={{ marginTop: 2, minHeight: 22, display: "flex", justifyContent: "center" }}>
+      {loading ? (
+        <Skeleton.Input active size="small" style={{ width: 70, height: 18 }} />
+      ) : (
+        <span style={{ fontSize: 17, fontWeight: 700, color }}>
+          {value === undefined || !Number.isFinite(value)
+            ? "—"
+            : value.toFixed(value < 100 ? 4 : 2)}
+        </span>
+      )}
     </div>
   </div>
 );

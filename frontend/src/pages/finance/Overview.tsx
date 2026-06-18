@@ -1,27 +1,27 @@
-import { Col, Row, Skeleton } from "antd";
+import { Col, Row } from "antd";
+import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { ErrorRetry } from "../../components/ErrorRetry";
 import { PageHeader } from "../../components/PageHeader";
-import { KpiCard } from "../../components/KpiCard";
-import { ForexCard } from "../../components/ForexCard";
 import { DateRangeFilter } from "../../components/DateRangeFilter";
-import { useUrlDateRange } from "../../utils/useUrlParam";
+import { ForexCard } from "../../components/ForexCard";
+import { KpiCardsGrid } from "../../components/finance/KpiCardsGrid";
 import { financeApi } from "../../api/finance";
 import { useApi } from "../../api/useApi";
+import {
+  formatDateRangePill,
+  useDateRangeWithDefault,
+} from "../../utils/useDateRangeWithDefault";
 
-const subtitleFor = (range: ReturnType<typeof useUrlDateRange>[0]): string => {
-  if (range && range[0] && range[1]) {
-    return `${range[0].format("DD MMM YY")} – ${range[1].format("DD MMM YY")}`;
-  }
-  return "Apr 25 – Feb 26";
-};
-
+// Finance Overview — thin page container. Each section (KPI grid + Forex card)
+// is wrapped in its own ErrorBoundary so a render exception in one doesn't
+// blank the page, and each child component handles its own loading state via
+// antd Card.loading + Highcharts.showLoading instead of swapping the layout
+// for a Skeleton.
 export const FinanceOverview = () => {
-  const [range, setRange] = useUrlDateRange();
-  const fromDate = range?.[0]?.format("YYYY-MM-DD");
-  const toDate = range?.[1]?.format("YYYY-MM-DD");
+  const { start, end, value, fromDate, toDate, setRange } = useDateRangeWithDefault(1);
 
   const { data, isLoading, isError, error, refetch } = useApi(
-    ["overview", fromDate, toDate],
+    ["finance", "overview", fromDate, toDate],
     () => financeApi.overview({ fromDate, toDate }),
   );
 
@@ -29,8 +29,8 @@ export const FinanceOverview = () => {
     <>
       <PageHeader
         title="Finance"
-        datePill={subtitleFor(range)}
-        filters={<DateRangeFilter value={range} onChange={setRange} />}
+        datePill={formatDateRangePill(start, end)}
+        filters={<DateRangeFilter value={value} onChange={setRange} />}
       />
 
       {isError ? (
@@ -38,20 +38,14 @@ export const FinanceOverview = () => {
       ) : (
         <Row gutter={[16, 16]}>
           <Col xs={24} lg={16}>
-            <Row gutter={[16, 16]}>
-              {(isLoading ? Array.from({ length: 6 }) : data?.kpis ?? []).map((kpi, idx) => (
-                <Col xs={24} sm={12} md={8} key={kpi ? (kpi as { id: string }).id : `s${idx}`}>
-                  {isLoading || !kpi ? (
-                    <Skeleton active paragraph={{ rows: 3 }} />
-                  ) : (
-                    <KpiCard kpi={kpi as Parameters<typeof KpiCard>[0]["kpi"]} />
-                  )}
-                </Col>
-              ))}
-            </Row>
+            <ErrorBoundary level="section" label="KPI cards">
+              <KpiCardsGrid kpis={data?.kpis} loading={isLoading} />
+            </ErrorBoundary>
           </Col>
           <Col xs={24} lg={8}>
-            <ForexCard />
+            <ErrorBoundary level="section" label="Forex Movement">
+              <ForexCard />
+            </ErrorBoundary>
           </Col>
         </Row>
       )}
