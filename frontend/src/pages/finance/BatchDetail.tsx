@@ -4,7 +4,6 @@ import { useParams } from "react-router-dom";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { ErrorRetry } from "../../components/ErrorRetry";
 import { PageHeader } from "../../components/PageHeader";
-import { VesselTabsNav, useVesselTab } from "../../components/finance/VesselTabsNav";
 import {
   buildHandlingBatchDetailColumns,
   buildSalesBatchDetailColumns,
@@ -16,60 +15,73 @@ import type {
   SalesBatchDetailRow,
 } from "../../types/finance";
 
-export const BatchDetail = () => {
+interface Props {
+  mode: "sales" | "handling";
+}
+
+// Single batch-detail page, parameterised by mode. The Sales and Handling
+// routes each mount this with their respective mode — no in-page tab.
+export const BatchDetail = ({ mode }: Props) => {
   const params = useParams<{ batchId: string }>();
   const batchId = decodeURIComponent(params.batchId ?? "");
-  const [tab] = useVesselTab();
 
-  const salesQ = useApi(
+  if (mode === "sales") return <SalesView batchId={batchId} />;
+  return <HandlingView batchId={batchId} />;
+};
+
+const SalesView = ({ batchId }: { batchId: string }) => {
+  const q = useApi(
     ["finance", "sales-batch-detail", batchId],
     () => financeApi.salesBatchDetail(batchId),
   );
-  const handlingQ = useApi(
-    ["finance", "handling-batch-detail", batchId],
-    () => financeApi.handlingBatchDetail(batchId),
-  );
-
-  const salesCols = useMemo(() => buildSalesBatchDetailColumns(), []);
-  const handlingCols = useMemo(() => buildHandlingBatchDetailColumns(), []);
-
-  const isError = tab === "sales" ? salesQ.isError : handlingQ.isError;
-  const error = tab === "sales" ? salesQ.error : handlingQ.error;
-  const refetch = tab === "sales" ? salesQ.refetch : handlingQ.refetch;
-  const isLoading = tab === "sales" ? salesQ.isLoading : handlingQ.isLoading;
-
+  const cols = useMemo(() => buildSalesBatchDetailColumns(), []);
   return (
     <>
       <PageHeader title={`Batch ID - ${batchId}`} />
-
-      <VesselTabsNav />
-
-      {isError ? (
-        <ErrorRetry title="Could not load batch detail" error={error} onRetry={refetch} />
+      {q.isError ? (
+        <ErrorRetry title="Could not load batch detail" error={q.error} onRetry={q.refetch} />
       ) : (
         <Card styles={{ body: { padding: 0 } }}>
-          <ErrorBoundary level="section" label="batch detail" resetKeys={[tab, batchId]}>
-            {tab === "sales" ? (
-              <Table<SalesBatchDetailRow>
-                rowKey={(r, i) => `${r.batchId}-${i}`}
-                size="middle"
-                columns={salesCols}
-                dataSource={salesQ.data?.items ?? []}
-                loading={isLoading}
-                pagination={{ pageSize: 10, showSizeChanger: false }}
-                scroll={{ x: "max-content" }}
-              />
-            ) : (
-              <Table<HandlingBatchDetailRow>
-                rowKey={(r, i) => `${r.batchId}-${i}`}
-                size="middle"
-                columns={handlingCols}
-                dataSource={handlingQ.data?.items ?? []}
-                loading={isLoading}
-                pagination={{ pageSize: 10, showSizeChanger: false }}
-                scroll={{ x: "max-content" }}
-              />
-            )}
+          <ErrorBoundary level="section" label="batch detail" resetKeys={[batchId]}>
+            <Table<SalesBatchDetailRow>
+              rowKey={(r, i) => `${r.batchId}-${i}`}
+              size="middle"
+              columns={cols}
+              dataSource={q.data?.items ?? []}
+              loading={q.isLoading}
+              pagination={{ pageSize: 10, showSizeChanger: false }}
+              scroll={{ x: "max-content" }}
+            />
+          </ErrorBoundary>
+        </Card>
+      )}
+    </>
+  );
+};
+
+const HandlingView = ({ batchId }: { batchId: string }) => {
+  const q = useApi(
+    ["finance", "handling-batch-detail", batchId],
+    () => financeApi.handlingBatchDetail(batchId),
+  );
+  const cols = useMemo(() => buildHandlingBatchDetailColumns(), []);
+  return (
+    <>
+      <PageHeader title={`Batch ID - ${batchId}`} />
+      {q.isError ? (
+        <ErrorRetry title="Could not load batch detail" error={q.error} onRetry={q.refetch} />
+      ) : (
+        <Card styles={{ body: { padding: 0 } }}>
+          <ErrorBoundary level="section" label="batch detail" resetKeys={[batchId]}>
+            <Table<HandlingBatchDetailRow>
+              rowKey={(r, i) => `${r.batchId}-${i}`}
+              size="middle"
+              columns={cols}
+              dataSource={q.data?.items ?? []}
+              loading={q.isLoading}
+              pagination={{ pageSize: 10, showSizeChanger: false }}
+              scroll={{ x: "max-content" }}
+            />
           </ErrorBoundary>
         </Card>
       )}

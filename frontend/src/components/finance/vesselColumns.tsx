@@ -3,7 +3,8 @@ import { BatchIdLink } from "./BatchIdLink";
 import { brand } from "../../theme/tokens";
 import type { VesselHandlingRow, VesselSalesRow } from "../../types/finance";
 
-const VESSEL_BASE = "/finance/overview/profitability/vessels";
+const SALES_BASE = "/finance/overview/profitability/vessels/sales";
+const HANDLING_BASE = "/finance/overview/profitability/vessels/handling";
 
 // Cell-only helpers ------------------------------------------------------
 
@@ -16,13 +17,14 @@ const NumberCell = ({ value }: { value: number }) =>
 
 // Sales tab columns -----------------------------------------------------
 export const buildVesselSalesColumns = (
-  basePath = VESSEL_BASE,
+  basePath = SALES_BASE,
 ): ColumnsType<VesselSalesRow> => [
   {
     title: "Batch ID",
     dataIndex: "batchId",
     key: "batchId",
     width: 160,
+    fixed: "left",
     sorter: (a, b) => a.batchId.localeCompare(b.batchId),
     render: (v: string) => <BatchIdLink batchId={v} basePath={basePath} />,
   },
@@ -30,6 +32,8 @@ export const buildVesselSalesColumns = (
     title: "Vessel",
     dataIndex: "vessel",
     key: "vessel",
+    width: 200,
+    fixed: "left",
     sorter: (a, b) => a.vessel.localeCompare(b.vessel),
     render: (v: string) => <VesselCell value={v} />,
   },
@@ -71,13 +75,14 @@ export const buildVesselSalesColumns = (
 
 // Handling tab columns --------------------------------------------------
 export const buildVesselHandlingColumns = (
-  basePath = VESSEL_BASE,
+  basePath = HANDLING_BASE,
 ): ColumnsType<VesselHandlingRow> => [
   {
     title: "Batch ID",
     dataIndex: "batchId",
     key: "batchId",
     width: 160,
+    fixed: "left",
     sorter: (a, b) => a.batchId.localeCompare(b.batchId),
     render: (v: string) => <BatchIdLink batchId={v} basePath={basePath} />,
   },
@@ -85,6 +90,8 @@ export const buildVesselHandlingColumns = (
     title: "Vessel",
     dataIndex: "vessel",
     key: "vessel",
+    width: 200,
+    fixed: "left",
     sorter: (a, b) => a.vessel.localeCompare(b.vessel),
     render: (v: string) => <VesselCell value={v} />,
   },

@@ -5,20 +5,22 @@ import type {
   SalesBatchDetailRow,
 } from "../../types/finance";
 
-const VESSEL_BASE = "/finance/overview/profitability/vessels";
+const SALES_BASE = "/finance/overview/profitability/vessels/sales";
+const HANDLING_BASE = "/finance/overview/profitability/vessels/handling";
 
 const Number0 = ({ value }: { value: number }) =>
   Number.isFinite(value) ? <>{value.toLocaleString()}</> : <>—</>;
 
 // Sales batch detail columns -------------------------------------------
 export const buildSalesBatchDetailColumns = (
-  basePath = VESSEL_BASE,
+  basePath = SALES_BASE,
 ): ColumnsType<SalesBatchDetailRow> => [
   {
     title: "Batch No",
     dataIndex: "batchId",
     key: "batchId",
     width: 160,
+    fixed: "left",
     sorter: (a, b) => a.batchId.localeCompare(b.batchId),
     render: (v: string) => <BatchIdLink batchId={v} basePath={basePath} />,
   },
@@ -26,6 +28,8 @@ export const buildSalesBatchDetailColumns = (
     title: "Customer Name",
     dataIndex: "customerName",
     key: "customerName",
+    width: 200,
+    fixed: "left",
     sorter: (a, b) => a.customerName.localeCompare(b.customerName),
   },
   {
@@ -72,13 +76,14 @@ export const buildSalesBatchDetailColumns = (
 
 // Handling batch detail columns ----------------------------------------
 export const buildHandlingBatchDetailColumns = (
-  basePath = VESSEL_BASE,
+  basePath = HANDLING_BASE,
 ): ColumnsType<HandlingBatchDetailRow> => [
   {
     title: "Batch No",
     dataIndex: "batchId",
     key: "batchId",
     width: 160,
+    fixed: "left",
     sorter: (a, b) => a.batchId.localeCompare(b.batchId),
     render: (v: string) => <BatchIdLink batchId={v} basePath={basePath} />,
   },
@@ -86,6 +91,8 @@ export const buildHandlingBatchDetailColumns = (
     title: "Customer Name",
     dataIndex: "customerName",
     key: "customerName",
+    width: 200,
+    fixed: "left",
     sorter: (a, b) => a.customerName.localeCompare(b.customerName),
   },
   {
