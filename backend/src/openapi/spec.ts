@@ -133,24 +133,72 @@ export const openApiSpec = {
     "/finance/profitability": {
       get: {
         tags: ["Finance"],
-        summary: "Profitability bar chart + vessel ledger",
+        summary: "Net Margin Profitability — port bars + total + segment treemap",
         parameters: [
           { $ref: "#/components/parameters/FromDate" }, { $ref: "#/components/parameters/ToDate" },
-          {
-            name: "mode",
-            in: "query",
-            schema: { type: "string", enum: ["port", "segment"] },
-            description: "Defaults to `port`",
-          },
           { $ref: "#/components/parameters/Port" },
           {
-            name: "segment",
+            name: "currency",
             in: "query",
-            schema: { type: "string" },
-            description: "Used when mode=segment",
+            schema: { type: "string", enum: ["INR", "USD"] },
+            description: "Defaults to `INR`. Affects the Port-Wise chart values.",
           },
         ],
-        responses: { "200": envelopeResponse("ProfitabilityResponse") },
+        responses: { "200": envelopeResponse("NetMarginProfitabilityResponse") },
+      },
+    },
+    "/finance/profitability/vessels/sales": {
+      get: {
+        tags: ["Finance"],
+        summary: "Vessel Profitability — Sales tab table",
+        parameters: [
+          { $ref: "#/components/parameters/FromDate" }, { $ref: "#/components/parameters/ToDate" },
+          { $ref: "#/components/parameters/Port" },
+        ],
+        responses: { "200": envelopeResponse("VesselSalesResponse") },
+      },
+    },
+    "/finance/profitability/vessels/handling": {
+      get: {
+        tags: ["Finance"],
+        summary: "Vessel Profitability — Handling tab table",
+        parameters: [
+          { $ref: "#/components/parameters/FromDate" }, { $ref: "#/components/parameters/ToDate" },
+          { $ref: "#/components/parameters/Port" },
+        ],
+        responses: { "200": envelopeResponse("VesselHandlingResponse") },
+      },
+    },
+    "/finance/profitability/vessels/sales/{batchId}": {
+      get: {
+        tags: ["Finance"],
+        summary: "Sales batch detail (drilldown from vessel table row)",
+        parameters: [
+          {
+            name: "batchId",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "URL-encoded batch id, e.g. `125260503A`",
+          },
+        ],
+        responses: { "200": envelopeResponse("SalesBatchDetailResponse") },
+      },
+    },
+    "/finance/profitability/vessels/handling/{batchId}": {
+      get: {
+        tags: ["Finance"],
+        summary: "Handling batch detail (drilldown from vessel table row)",
+        parameters: [
+          {
+            name: "batchId",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "URL-encoded batch id, e.g. `125260503A`",
+          },
+        ],
+        responses: { "200": envelopeResponse("HandlingBatchDetailResponse") },
       },
     },
     "/finance/sales": {
@@ -575,18 +623,70 @@ export const openApiSpec = {
         },
       },
 
-      // --- Finance: Profitability --------------------------------------
-      ProfitabilityBar: {
+      // --- Finance: Profitability suite --------------------------------
+      PortBar: {
         type: "object",
-        required: ["category", "value"],
+        required: ["port", "value"],
         properties: {
-          category: { type: "string" },
+          port: { type: "string" },
           value: { type: "number" },
         },
       },
-      ProfitabilityVesselRow: {
+      SegmentSlice: {
         type: "object",
-        required: ["batchId", "vessel", "grade", "origin", "port", "segment", "profit"],
+        required: ["segment", "value"],
+        properties: {
+          segment: { type: "string" },
+          value: { type: "number" },
+        },
+      },
+      NetMarginProfitabilityResponse: {
+        type: "object",
+        required: ["total", "portwise", "segmentwise"],
+        properties: {
+          total: {
+            type: "object",
+            required: ["value", "unit", "deltaPct", "trend"],
+            properties: {
+              value: { type: "number" },
+              unit: { type: "string", example: "Cr" },
+              deltaPct: { type: "number" },
+              trend: { type: "string", enum: ["up", "down"] },
+            },
+          },
+          portwise: {
+            type: "object",
+            required: ["currency", "rows"],
+            properties: {
+              currency: { type: "string", enum: ["INR", "USD"] },
+              rows: { type: "array", items: { $ref: "#/components/schemas/PortBar" } },
+            },
+          },
+          segmentwise: { type: "array", items: { $ref: "#/components/schemas/SegmentSlice" } },
+        },
+      },
+      VesselSalesRow: {
+        type: "object",
+        required: ["batchId", "vessel", "segment", "volume", "profit", "pmtProfit"],
+        properties: {
+          batchId: { type: "string" },
+          vessel: { type: "string" },
+          segment: { type: "string" },
+          volume: { type: "number" },
+          profit: { type: "number" },
+          pmtProfit: { type: "number" },
+        },
+      },
+      VesselSalesResponse: {
+        type: "object",
+        required: ["items"],
+        properties: {
+          items: { type: "array", items: { $ref: "#/components/schemas/VesselSalesRow" } },
+        },
+      },
+      VesselHandlingRow: {
+        type: "object",
+        required: ["batchId", "vessel", "grade", "origin", "port", "segment", "volume", "profit", "pmtProfit"],
         properties: {
           batchId: { type: "string" },
           vessel: { type: "string" },
@@ -594,16 +694,59 @@ export const openApiSpec = {
           origin: { type: "string" },
           port: { type: "string" },
           segment: { type: "string" },
+          volume: { type: "number" },
           profit: { type: "number" },
+          pmtProfit: { type: "number" },
         },
       },
-      ProfitabilityResponse: {
+      VesselHandlingResponse: {
         type: "object",
-        required: ["mode", "chart", "vessels"],
+        required: ["items"],
         properties: {
-          mode: { type: "string", enum: ["port", "segment"] },
-          chart: { type: "array", items: { $ref: "#/components/schemas/ProfitabilityBar" } },
-          vessels: { type: "array", items: { $ref: "#/components/schemas/ProfitabilityVesselRow" } },
+          items: { type: "array", items: { $ref: "#/components/schemas/VesselHandlingRow" } },
+        },
+      },
+      SalesBatchDetailRow: {
+        type: "object",
+        required: ["batchId", "customerName", "plantName", "tradeContractNo", "billAmount", "billQuantity", "cogsValue"],
+        properties: {
+          batchId: { type: "string" },
+          customerName: { type: "string" },
+          plantName: { type: "string" },
+          tradeContractNo: { type: "string" },
+          billAmount: { type: "number" },
+          billQuantity: { type: "number" },
+          cogsValue: { type: "number" },
+        },
+      },
+      SalesBatchDetailResponse: {
+        type: "object",
+        required: ["batchId", "items"],
+        properties: {
+          batchId: { type: "string" },
+          items: { type: "array", items: { $ref: "#/components/schemas/SalesBatchDetailRow" } },
+        },
+      },
+      HandlingBatchDetailRow: {
+        type: "object",
+        required: ["batchId", "customerName", "plantName", "tradeContractNo", "tphCifCoalHandlingQty", "tphCoalHandlingQty", "sagarmalaHandlingCalculatedQty", "sagarmalaHandlingPostedQty"],
+        properties: {
+          batchId: { type: "string" },
+          customerName: { type: "string" },
+          plantName: { type: "string" },
+          tradeContractNo: { type: "string" },
+          tphCifCoalHandlingQty: { type: "number" },
+          tphCoalHandlingQty: { type: "number" },
+          sagarmalaHandlingCalculatedQty: { type: "number" },
+          sagarmalaHandlingPostedQty: { type: "number" },
+        },
+      },
+      HandlingBatchDetailResponse: {
+        type: "object",
+        required: ["batchId", "items"],
+        properties: {
+          batchId: { type: "string" },
+          items: { type: "array", items: { $ref: "#/components/schemas/HandlingBatchDetailRow" } },
         },
       },
 

@@ -2,17 +2,28 @@ import type {
   ApprovedBudgetFilters,
   ApprovedBudgetResponse,
   BreakdownResponse,
+  Currency,
   ForexRange,
   ForexResponse,
+  HandlingBatchDetailResponse,
   KPI,
+  NetMarginProfitabilityResponse,
   OverviewResponse,
-  ProfitabilityResponse,
+  SalesBatchDetailResponse,
   SalesResponse,
+  VesselHandlingResponse,
+  VesselSalesResponse,
 } from "../types/finance.js";
 import { buildKpis } from "../mocks/kpis.js";
 import { buildForex } from "../mocks/forex.js";
 import { buildBreakdown } from "../mocks/breakdown.js";
-import { buildProfitability } from "../mocks/profitability.js";
+import {
+  buildHandlingBatchDetail,
+  buildNetMarginProfitability,
+  buildSalesBatchDetail,
+  buildVesselHandling,
+  buildVesselSales,
+} from "../mocks/profitability.js";
 import { buildSales } from "../mocks/sales.js";
 import { buildApprovedBudget } from "../mocks/approvedBudget.js";
 
@@ -22,12 +33,18 @@ export interface FinanceRepository {
   getOverview(from: Date, to: Date): Promise<OverviewResponse>;
   getRevenue(port: string | undefined, from: Date, to: Date): Promise<BreakdownResponse>;
   getWorkingCapital(port: string | undefined, from: Date, to: Date): Promise<BreakdownResponse>;
-  getProfitability(
-    mode: "port" | "segment",
-    filter: string | undefined,
+  // --- New Profitability suite ---
+  getNetMarginProfitability(
+    port: string | undefined,
+    currency: Currency,
     from: Date,
     to: Date,
-  ): Promise<ProfitabilityResponse>;
+  ): Promise<NetMarginProfitabilityResponse>;
+  getVesselSales(port: string | undefined, from: Date, to: Date): Promise<VesselSalesResponse>;
+  getVesselHandling(port: string | undefined, from: Date, to: Date): Promise<VesselHandlingResponse>;
+  getSalesBatchDetail(batchId: string): Promise<SalesBatchDetailResponse>;
+  getHandlingBatchDetail(batchId: string): Promise<HandlingBatchDetailResponse>;
+  // --- Unchanged ---
   getSales(from: Date, to: Date): Promise<SalesResponse>;
   getApprovedBudget(filters: ApprovedBudgetFilters): Promise<ApprovedBudgetResponse>;
 }
@@ -51,13 +68,25 @@ class MockFinanceRepository implements FinanceRepository {
   async getWorkingCapital(port: string | undefined, from: Date, to: Date) {
     return buildBreakdown("working-capital", port, from, to);
   }
-  async getProfitability(
-    mode: "port" | "segment",
-    filter: string | undefined,
+  async getNetMarginProfitability(
+    port: string | undefined,
+    currency: Currency,
     from: Date,
     to: Date,
   ) {
-    return buildProfitability(mode, filter, from, to);
+    return buildNetMarginProfitability(port, currency, from, to);
+  }
+  async getVesselSales(port: string | undefined, from: Date, to: Date) {
+    return buildVesselSales(port, from, to);
+  }
+  async getVesselHandling(port: string | undefined, from: Date, to: Date) {
+    return buildVesselHandling(port, from, to);
+  }
+  async getSalesBatchDetail(batchId: string) {
+    return buildSalesBatchDetail(batchId);
+  }
+  async getHandlingBatchDetail(batchId: string) {
+    return buildHandlingBatchDetail(batchId);
   }
   async getSales(from: Date, to: Date) {
     return buildSales(from, to);
@@ -67,6 +96,4 @@ class MockFinanceRepository implements FinanceRepository {
   }
 }
 
-// The active implementation is selected here. When DATA_SOURCE=databricks lands,
-// a DatabricksFinanceRepository will be returned instead and nothing upstream changes.
 export const financeRepository: FinanceRepository = new MockFinanceRepository();

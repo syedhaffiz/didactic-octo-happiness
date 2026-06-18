@@ -68,25 +68,97 @@ export interface BreakdownResponse {
   ledger: LedgerRow[];
 }
 
-export interface ProfitabilityBar {
-  category: string;
-  value: number;
+// --- Profitability (Net Margin) -----------------------------------------
+// Cards on /finance/overview/profitability:
+//   - Port Wise horizontal bar chart (currency-switchable INR/USD)
+//   - Total Profitability headline
+//   - Vessel Wise drilldown link
+//   - Segment Wise treemap
+
+export type Currency = "INR" | "USD";
+
+export interface PortBar {
+  port: string;
+  value: number; // displayed in Cr/M depending on currency
 }
 
-export interface VesselRow {
+export interface SegmentSlice {
+  segment: string;
+  value: number; // arbitrary unit (relative size in the treemap)
+}
+
+export interface NetMarginProfitabilityResponse {
+  total: { value: number; unit: "Cr"; deltaPct: number; trend: "up" | "down" };
+  portwise: { currency: Currency; rows: PortBar[] };
+  segmentwise: SegmentSlice[];
+}
+
+// --- Vessel Profitability — Sales tab table ------------------------------
+
+export interface VesselSalesRow {
+  batchId: string;
+  vessel: string;
+  segment: string;
+  volume: number;
+  profit: number;
+  pmtProfit: number;
+}
+
+export interface VesselSalesResponse {
+  items: VesselSalesRow[];
+}
+
+// --- Vessel Profitability — Handling tab table ---------------------------
+
+export interface VesselHandlingRow {
   batchId: string;
   vessel: string;
   grade: string;
   origin: string;
   port: string;
   segment: string;
+  volume: number;
   profit: number;
+  pmtProfit: number;
 }
 
-export interface ProfitabilityResponse {
-  mode: "port" | "segment";
-  chart: ProfitabilityBar[];
-  vessels: VesselRow[];
+export interface VesselHandlingResponse {
+  items: VesselHandlingRow[];
+}
+
+// --- Batch ID drilldown — Sales ------------------------------------------
+
+export interface SalesBatchDetailRow {
+  batchId: string;
+  customerName: string;
+  plantName: string;
+  tradeContractNo: string;
+  billAmount: number;
+  billQuantity: number;
+  cogsValue: number;
+}
+
+export interface SalesBatchDetailResponse {
+  batchId: string;
+  items: SalesBatchDetailRow[];
+}
+
+// --- Batch ID drilldown — Handling ---------------------------------------
+
+export interface HandlingBatchDetailRow {
+  batchId: string;
+  customerName: string;
+  plantName: string;
+  tradeContractNo: string;
+  tphCifCoalHandlingQty: number;
+  tphCoalHandlingQty: number;
+  sagarmalaHandlingCalculatedQty: number;
+  sagarmalaHandlingPostedQty: number;
+}
+
+export interface HandlingBatchDetailResponse {
+  batchId: string;
+  items: HandlingBatchDetailRow[];
 }
 
 export interface BudgetActualRow {

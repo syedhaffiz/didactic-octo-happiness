@@ -2,7 +2,8 @@ import type { RequestHandler } from "express";
 import { z } from "zod";
 import { financeService } from "../services/financeService.js";
 import { parseDateRange } from "../services/dateRange.js";
-import { ok } from "../types/api.js";
+import { fail, ok } from "../types/api.js";
+import type { Currency } from "../types/finance.js";
 
 const dateRangeSchema = z.object({
   fromDate: z.string().optional(),
@@ -13,10 +14,8 @@ const portFilterSchema = dateRangeSchema.extend({
   port: z.string().optional(),
 });
 
-const profitabilitySchema = dateRangeSchema.extend({
-  mode: z.enum(["port", "segment"]).optional(),
-  port: z.string().optional(),
-  segment: z.string().optional(),
+const netMarginSchema = portFilterSchema.extend({
+  currency: z.enum(["INR", "USD"]).optional(),
 });
 
 const forexSchema = z.object({
@@ -86,13 +85,60 @@ export const getWorkingCapital: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const getProfitability: RequestHandler = async (req, res, next) => {
+// --- Profitability suite -------------------------------------------------
+
+export const getNetMarginProfitability: RequestHandler = async (req, res, next) => {
   try {
-    const q = parse(profitabilitySchema, req.query);
+    const q = parse(netMarginSchema, req.query);
     const { from, to } = parseDateRange(q.fromDate, q.toDate);
-    const mode = q.mode ?? "port";
-    const filter = mode === "port" ? q.port : q.segment;
-    res.json(ok(await financeService.profitability(mode, filter, from, to)));
+    const currency: Currency = q.currency ?? "INR";
+    res.json(ok(await financeService.netMarginProfitability(q.port, currency, from, to)));
+  } catch (e) {
+    next(e);
+  }
+};
+
+export const getVesselSales: RequestHandler = async (req, res, next) => {
+  try {
+    const q = parse(portFilterSchema, req.query);
+    const { from, to } = parseDateRange(q.fromDate, q.toDate);
+    res.json(ok(await financeService.vesselSales(q.port, from, to)));
+  } catch (e) {
+    next(e);
+  }
+};
+
+export const getVesselHandling: RequestHandler = async (req, res, next) => {
+  try {
+    const q = parse(portFilterSchema, req.query);
+    const { from, to } = parseDateRange(q.fromDate, q.toDate);
+    res.json(ok(await financeService.vesselHandling(q.port, from, to)));
+  } catch (e) {
+    next(e);
+  }
+};
+
+export const getSalesBatchDetail: RequestHandler = async (req, res, next) => {
+  try {
+    const batchId = decodeURIComponent(req.params.batchId ?? "");
+    if (!batchId) {
+      res.status(400).json(fail("bad_request", "batchId is required"));
+      return;
+    }
+    res.json(ok(await financeService.salesBatchDetail(batchId)));
+  } catch (e) {
+    next(e);
+  }
+};
+
+export const getHandlingBatchDetail: RequestHandler = async (req, res, next) => {
+  try {
+    const batchId = decodeURIComponent(req.params.batchId ?? "");
+    if (!batchId) {
+      res.status(400).json(fail("bad_request", "batchId is required"));
+      return;
+    }
+    res.json(ok(await financeService.handlingBatchDetail(batchId)));
   } catch (e) {
     next(e);
   }

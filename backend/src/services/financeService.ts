@@ -1,5 +1,5 @@
 import { financeRepository } from "../repositories/financeRepository.js";
-import type { ApprovedBudgetFilters, ForexRange } from "../types/finance.js";
+import type { ApprovedBudgetFilters, Currency, ForexRange } from "../types/finance.js";
 
 export const financeService = {
   overview: (from: Date, to: Date) => financeRepository.getOverview(from, to),
@@ -9,12 +9,18 @@ export const financeService = {
     financeRepository.getRevenue(port, from, to),
   workingCapital: (port: string | undefined, from: Date, to: Date) =>
     financeRepository.getWorkingCapital(port, from, to),
-  profitability: (
-    mode: "port" | "segment",
-    filter: string | undefined,
+  netMarginProfitability: (
+    port: string | undefined,
+    currency: Currency,
     from: Date,
     to: Date,
-  ) => financeRepository.getProfitability(mode, filter, from, to),
+  ) => financeRepository.getNetMarginProfitability(port, currency, from, to),
+  vesselSales: (port: string | undefined, from: Date, to: Date) =>
+    financeRepository.getVesselSales(port, from, to),
+  vesselHandling: (port: string | undefined, from: Date, to: Date) =>
+    financeRepository.getVesselHandling(port, from, to),
+  salesBatchDetail: (batchId: string) => financeRepository.getSalesBatchDetail(batchId),
+  handlingBatchDetail: (batchId: string) => financeRepository.getHandlingBatchDetail(batchId),
   sales: (from: Date, to: Date) => financeRepository.getSales(from, to),
   approvedBudget: (filters: ApprovedBudgetFilters) =>
     financeRepository.getApprovedBudget(filters),
