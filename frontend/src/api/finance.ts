@@ -5,19 +5,30 @@ import type {
   ApprovedBudgetParams,
   ApprovedBudgetResponse,
   BreakdownResponse,
+  Currency,
   ForexRange,
   ForexResponse,
+  HandlingBatchDetailResponse,
   KPI,
+  NetMarginProfitabilityResponse,
   OverviewResponse,
-  ProfitabilityResponse,
+  SalesBatchDetailResponse,
   SalesResponse,
+  VesselHandlingResponse,
+  VesselSalesResponse,
 } from "../types/finance";
 import { buildApprovedBudget } from "../mocks/finance/approvedBudget";
 import { buildBreakdown } from "../mocks/finance/breakdown";
 import { buildForex } from "../mocks/finance/forex";
 import { buildKpis } from "../mocks/finance/kpis";
 import { buildOverview } from "../mocks/finance/overview";
-import { buildProfitability } from "../mocks/finance/profitability";
+import {
+  buildHandlingBatchDetail,
+  buildNetMarginProfitability,
+  buildSalesBatchDetail,
+  buildVesselHandling,
+  buildVesselSales,
+} from "../mocks/finance/profitability";
 import { buildSales } from "../mocks/finance/sales";
 
 // HTTP path identical to the backend so flipping USE_MOCK_DATA is the only
@@ -46,10 +57,8 @@ export interface PortRangeParams extends RangeParams {
   port?: string;
 }
 
-export interface ProfitabilityParams extends RangeParams {
-  mode: "port" | "segment";
-  port?: string;
-  segment?: string;
+export interface NetMarginParams extends PortRangeParams {
+  currency?: Currency;
 }
 
 const httpFinanceApi = {
@@ -59,8 +68,20 @@ const httpFinanceApi = {
   revenue: (p: PortRangeParams = {}) => get<BreakdownResponse>("/finance/revenue", p),
   workingCapital: (p: PortRangeParams = {}) =>
     get<BreakdownResponse>("/finance/working-capital", p),
-  profitability: (p: ProfitabilityParams) =>
-    get<ProfitabilityResponse>("/finance/profitability", p),
+  netMarginProfitability: (p: NetMarginParams = {}) =>
+    get<NetMarginProfitabilityResponse>("/finance/profitability", p),
+  vesselSales: (p: PortRangeParams = {}) =>
+    get<VesselSalesResponse>("/finance/profitability/vessels/sales", p),
+  vesselHandling: (p: PortRangeParams = {}) =>
+    get<VesselHandlingResponse>("/finance/profitability/vessels/handling", p),
+  salesBatchDetail: (batchId: string) =>
+    get<SalesBatchDetailResponse>(
+      `/finance/profitability/vessels/sales/${encodeURIComponent(batchId)}`,
+    ),
+  handlingBatchDetail: (batchId: string) =>
+    get<HandlingBatchDetailResponse>(
+      `/finance/profitability/vessels/handling/${encodeURIComponent(batchId)}`,
+    ),
   sales: (p: RangeParams = {}) => get<SalesResponse>("/finance/sales", p),
   approvedBudget: (p: ApprovedBudgetParams = {}) =>
     get<ApprovedBudgetResponse>("/finance/approved-budget", p),
@@ -74,10 +95,14 @@ const mockFinanceApi = {
     mockDelay(buildBreakdown("revenue", p.port, p.fromDate, p.toDate)),
   workingCapital: (p: PortRangeParams = {}) =>
     mockDelay(buildBreakdown("working-capital", p.port, p.fromDate, p.toDate)),
-  profitability: (p: ProfitabilityParams) => {
-    const filter = p.mode === "port" ? p.port : p.segment;
-    return mockDelay(buildProfitability(p.mode, filter, p.fromDate, p.toDate));
-  },
+  netMarginProfitability: (p: NetMarginParams = {}) =>
+    mockDelay(buildNetMarginProfitability(p.port, p.currency ?? "INR", p.fromDate, p.toDate)),
+  vesselSales: (p: PortRangeParams = {}) =>
+    mockDelay(buildVesselSales(p.port, p.fromDate, p.toDate)),
+  vesselHandling: (p: PortRangeParams = {}) =>
+    mockDelay(buildVesselHandling(p.port, p.fromDate, p.toDate)),
+  salesBatchDetail: (batchId: string) => mockDelay(buildSalesBatchDetail(batchId)),
+  handlingBatchDetail: (batchId: string) => mockDelay(buildHandlingBatchDetail(batchId)),
   sales: (p: RangeParams = {}) => mockDelay(buildSales(p.fromDate, p.toDate)),
   approvedBudget: (p: ApprovedBudgetParams = {}) => mockDelay(buildApprovedBudget(p)),
 };

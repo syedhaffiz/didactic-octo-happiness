@@ -1,4 +1,4 @@
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Avatar,
@@ -70,6 +70,29 @@ const menuItems: MenuProps["items"] = [
   { key: "/settings", icon: <SettingOutlined />, label: "Settings" },
 ];
 
+// Walks menuItems to find the submenu (a parent with `children`) that
+// contains a given leaf key. Returns the submenu's key, or null if the leaf
+// is a top-level item with no parent. Used to keep `openKeys` in lockstep
+// with the active route — leaf clicks naturally collapse other open
+// submenus.
+type MenuChild = { key?: React.Key; children?: MenuChild[] };
+const findParentSubmenuFor = (
+  items: MenuProps["items"],
+  targetKey: string,
+): string | null => {
+  for (const item of items ?? []) {
+    if (!item) continue;
+    const node = item as MenuChild;
+    if (!node.children) continue;
+    for (const child of node.children) {
+      if (child && String(child.key) === targetKey) {
+        return node.key !== undefined ? String(node.key) : null;
+      }
+    }
+  }
+  return null;
+};
+
 export const AppShell = () => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
@@ -80,14 +103,32 @@ export const AppShell = () => {
   // responsibility — the remote has no sign-out.
   const { name: accountName } = useIdentity();
 
-  // Normalise inventory paths to the parent menu key so any tab highlights the item.
-  const selectedKeys = [
-    location.pathname.startsWith("/inventory") ? "/inventory/index" : location.pathname,
-  ];
-  const [openKeys, setOpenKeys] = useState<string[]>(() => {
-    if (location.pathname.startsWith("/marketing")) return ["marketing"];
-    return ["finance"];
-  });
+  // Normalise certain paths to the parent menu key so any sub-page highlights
+  // the right item in the sidebar.
+  const selectedKey =
+    location.pathname.startsWith("/inventory")
+      ? "/inventory/index"
+      : location.pathname.startsWith("/finance/overview")
+        ? "/finance/overview"
+        : location.pathname;
+  const selectedKeys = [selectedKey];
+
+  // The submenu (if any) that contains the active route. Derived from
+  // menuItems so we don't hardcode a path → submenu map.
+  const activeParentSubmenu = useMemo(
+    () => findParentSubmenuFor(menuItems, selectedKey),
+    [selectedKey],
+  );
+
+  // Open exactly the parent submenu of the active route — nothing else.
+  // Whenever the route changes (click, browser back/forward, etc.), this
+  // recomputes and any previously open submenu auto-collapses.
+  const [openKeys, setOpenKeys] = useState<string[]>(
+    activeParentSubmenu ? [activeParentSubmenu] : [],
+  );
+  useEffect(() => {
+    setOpenKeys(activeParentSubmenu ? [activeParentSubmenu] : []);
+  }, [activeParentSubmenu]);
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -159,10 +200,23 @@ export const AppShell = () => {
             mode="inline"
             selectedKeys={selectedKeys}
             openKeys={openKeys}
-            onOpenChange={(keys) => setOpenKeys(keys as string[])}
+            // Accordion behaviour: only one submenu open at a time. Antd
+            // reports the full set after a toggle — we keep just the latest
+            // key (if the user opened something), so any previously expanded
+            // submenu collapses on its own.
+            onOpenChange={(keys) => {
+              const next = (keys as string[]).find((k) => !openKeys.includes(k));
+              setOpenKeys(next ? [next] : []);
+            }}
             items={menuItems}
-            onClick={({ key }) => {
-              if (key.startsWith("/")) navigate(key);
+            onClick={({ key, keyPath }) => {
+              if (!key.startsWith("/")) return;
+              // Collapse every submenu except the one containing the clicked
+              // leaf. Done here too (not just via the route-sync effect) so
+              // clicking the active item still collapses any peeked submenu.
+              const parent = (keyPath ?? []).find((k) => !k.startsWith("/"));
+              setOpenKeys(parent ? [parent] : []);
+              navigate(key);
             }}
             style={{ borderInlineEnd: "none", padding: "0 10px" }}
           />

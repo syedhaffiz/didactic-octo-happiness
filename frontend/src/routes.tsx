@@ -17,11 +17,17 @@ const Revenue = lazy(() =>
 const WorkingCapital = lazy(() =>
   import("./pages/finance/WorkingCapital").then((m) => ({ default: m.WorkingCapital })),
 );
+const ApprovedBudget = lazy(() =>
+  import("./pages/finance/ApprovedBudget").then((m) => ({ default: m.ApprovedBudget })),
+);
 const Profitability = lazy(() =>
   import("./pages/finance/Profitability").then((m) => ({ default: m.Profitability })),
 );
-const ApprovedBudget = lazy(() =>
-  import("./pages/finance/ApprovedBudget").then((m) => ({ default: m.ApprovedBudget })),
+const VesselProfitability = lazy(() =>
+  import("./pages/finance/VesselProfitability").then((m) => ({ default: m.VesselProfitability })),
+);
+const BatchDetail = lazy(() =>
+  import("./pages/finance/BatchDetail").then((m) => ({ default: m.BatchDetail })),
 );
 const InventoryShell = lazy(() =>
   import("./pages/inventory/InventoryShell").then((m) => ({ default: m.InventoryShell })),
@@ -62,10 +68,12 @@ export const createAppRouter = (basename: string = "/") =>
         children: [
           { index: true, element: <Navigate to="/finance/overview" replace /> },
           { path: "finance/overview", element: <FinanceOverview /> },
+          { path: "finance/overview/profitability", element: <Profitability /> },
+          { path: "finance/overview/profitability/vessels", element: <VesselProfitability /> },
+          { path: "finance/overview/profitability/vessels/:batchId", element: <BatchDetail /> },
           { path: "finance/sales", element: <Sales /> },
           { path: "finance/revenue", element: <Revenue /> },
           { path: "finance/working-capital", element: <WorkingCapital /> },
-          { path: "finance/profitability", element: <Profitability /> },
           { path: "finance/approved-budget", element: <ApprovedBudget /> },
           { path: "finance/inventory-days", element: <Placeholder title="Inventory Days" /> },
           {
