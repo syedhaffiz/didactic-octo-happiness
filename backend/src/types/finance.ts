@@ -3,7 +3,6 @@ export type IconKey =
   | "sales"
   | "profitability"
   | "workingCapital"
-  | "dispatch"
   | "inventoryDays";
 
 export type Trend = "up" | "down";

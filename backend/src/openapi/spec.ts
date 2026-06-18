@@ -486,7 +486,7 @@ export const openApiSpec = {
         properties: {
           id: {
             type: "string",
-            enum: ["revenue", "sales", "profitability", "workingCapital", "dispatch", "inventoryDays"],
+            enum: ["revenue", "sales", "profitability", "workingCapital", "inventoryDays"],
           },
           label: { type: "string" },
           value: { type: "number" },
