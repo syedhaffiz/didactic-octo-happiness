@@ -10,6 +10,8 @@ const labels: Record<string, string> = {
   finance: "Finance",
   overview: "Overview",
   revenue: "Revenue",
+  port: "Port",
+  segment: "Segment",
   "working-capital": "Working Capital",
   profitability: "Gross Margin Profitability",
   sales: "Sales",

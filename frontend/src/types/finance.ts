@@ -70,6 +70,49 @@ export interface BreakdownResponse {
   ledger: LedgerRow[];
 }
 
+// --- Revenue suite -------------------------------------------------------
+
+export type RevenuePeriod = "YTD" | "MTD";
+
+export interface RevenueBreakdownCard {
+  segment: string;
+  value: number;
+  unit: "Cr";
+  color: string;
+}
+
+export interface RevenueBreakdownResponse {
+  period: RevenuePeriod;
+  total: number;
+  unit: "Cr";
+  cards: RevenueBreakdownCard[];
+  slices: DonutSlice[];
+}
+
+export interface RevenuePortRow {
+  port: string;
+  companyCode: string;
+  accountNumber: string;
+  profitCentre: string;
+  accumulatedBalance: number;
+}
+
+export interface RevenuePortResponse {
+  items: RevenuePortRow[];
+}
+
+export interface RevenueSegmentRow {
+  segment: string;
+  companyCode: string;
+  accountNumber: string;
+  profitCentre: string;
+  accumulatedBalance: number;
+}
+
+export interface RevenueSegmentResponse {
+  items: RevenueSegmentRow[];
+}
+
 // --- Profitability (Net Margin) -----------------------------------------
 
 export type Currency = "INR" | "USD";

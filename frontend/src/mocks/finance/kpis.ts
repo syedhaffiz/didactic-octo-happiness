@@ -15,7 +15,7 @@ interface Definition {
 }
 
 const DEFINITIONS: readonly Definition[] = [
-  { id: "revenue",        label: "Revenue",         unit: "Cr",   value: 970, deltaPct: 12, href: "/finance/revenue" },
+  { id: "revenue",        label: "Revenue",         unit: "Cr",   value: 970, deltaPct: 12, href: "/finance/overview/revenue" },
   { id: "sales",          label: "Sales",           unit: "MMT",  value: 5.1, deltaPct: -7, href: "/finance/sales" },
   { id: "profitability",  label: "Profitability",   unit: "Cr",   value: 114, deltaPct: 8,  href: "/finance/overview/profitability" },
   { id: "workingCapital", label: "Working Capital", unit: "Cr",   value: 970, deltaPct: 12, href: "/finance/working-capital" },

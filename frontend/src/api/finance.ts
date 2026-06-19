@@ -12,6 +12,10 @@ import type {
   KPI,
   NetMarginProfitabilityResponse,
   OverviewResponse,
+  RevenueBreakdownResponse,
+  RevenuePeriod,
+  RevenuePortResponse,
+  RevenueSegmentResponse,
   SalesBatchDetailResponse,
   SalesResponse,
   VesselHandlingResponse,
@@ -29,6 +33,11 @@ import {
   buildVesselHandling,
   buildVesselSales,
 } from "../mocks/finance/profitability";
+import {
+  buildRevenueBreakdown,
+  buildRevenuePort,
+  buildRevenueSegment,
+} from "../mocks/finance/revenue";
 import { buildSales } from "../mocks/finance/sales";
 
 // HTTP path identical to the backend so flipping USE_MOCK_DATA is the only
@@ -61,11 +70,28 @@ export interface NetMarginParams extends PortRangeParams {
   currency?: Currency;
 }
 
+export interface RevenuePeriodParams {
+  period?: RevenuePeriod;
+}
+
+export interface PortOnlyParams {
+  port?: string;
+}
+
+export interface SegmentOnlyParams {
+  segment?: string;
+}
+
 const httpFinanceApi = {
   overview: (p: RangeParams = {}) => get<OverviewResponse>("/finance/overview", p),
   kpis: (p: RangeParams = {}) => get<KPI[]>("/finance/kpis", p),
   forex: (range: ForexRange = "week") => get<ForexResponse>("/finance/forex", { range }),
-  revenue: (p: PortRangeParams = {}) => get<BreakdownResponse>("/finance/revenue", p),
+  revenueBreakdown: (p: RevenuePeriodParams = {}) =>
+    get<RevenueBreakdownResponse>("/finance/revenue", p),
+  revenuePort: (p: PortOnlyParams = {}) =>
+    get<RevenuePortResponse>("/finance/revenue/port", p),
+  revenueSegment: (p: SegmentOnlyParams = {}) =>
+    get<RevenueSegmentResponse>("/finance/revenue/segment", p),
   workingCapital: (p: PortRangeParams = {}) =>
     get<BreakdownResponse>("/finance/working-capital", p),
   netMarginProfitability: (p: NetMarginParams = {}) =>
@@ -91,8 +117,10 @@ const mockFinanceApi = {
   overview: (p: RangeParams = {}) => mockDelay(buildOverview(p.fromDate, p.toDate)),
   kpis: (p: RangeParams = {}) => mockDelay(buildKpis(p.fromDate, p.toDate)),
   forex: (range: ForexRange = "week") => mockDelay(buildForex(range, new Date())),
-  revenue: (p: PortRangeParams = {}) =>
-    mockDelay(buildBreakdown("revenue", p.port, p.fromDate, p.toDate)),
+  revenueBreakdown: (p: RevenuePeriodParams = {}) =>
+    mockDelay(buildRevenueBreakdown(p.period ?? "YTD")),
+  revenuePort: (p: PortOnlyParams = {}) => mockDelay(buildRevenuePort(p.port)),
+  revenueSegment: (p: SegmentOnlyParams = {}) => mockDelay(buildRevenueSegment(p.segment)),
   workingCapital: (p: PortRangeParams = {}) =>
     mockDelay(buildBreakdown("working-capital", p.port, p.fromDate, p.toDate)),
   netMarginProfitability: (p: NetMarginParams = {}) =>

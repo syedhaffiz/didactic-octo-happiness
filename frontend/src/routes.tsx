@@ -14,6 +14,12 @@ const Sales = lazy(() =>
 const Revenue = lazy(() =>
   import("./pages/finance/Revenue").then((m) => ({ default: m.Revenue })),
 );
+const RevenuePort = lazy(() =>
+  import("./pages/finance/RevenuePort").then((m) => ({ default: m.RevenuePort })),
+);
+const RevenueSegment = lazy(() =>
+  import("./pages/finance/RevenueSegment").then((m) => ({ default: m.RevenueSegment })),
+);
 const WorkingCapital = lazy(() =>
   import("./pages/finance/WorkingCapital").then((m) => ({ default: m.WorkingCapital })),
 );
@@ -73,7 +79,9 @@ export const createAppRouter = (basename: string = "/") =>
           { path: "finance/overview/profitability/vessels/sales/:batchId", element: <BatchDetail mode="sales" /> },
           { path: "finance/overview/profitability/vessels/handling/:batchId", element: <BatchDetail mode="handling" /> },
           { path: "finance/sales", element: <Sales /> },
-          { path: "finance/revenue", element: <Revenue /> },
+          { path: "finance/overview/revenue", element: <Revenue /> },
+          { path: "finance/overview/revenue/port", element: <RevenuePort /> },
+          { path: "finance/overview/revenue/segment", element: <RevenueSegment /> },
           { path: "finance/working-capital", element: <WorkingCapital /> },
           { path: "finance/approved-budget", element: <ApprovedBudget /> },
           { path: "finance/inventory-days", element: <Placeholder title="Inventory Days" /> },
