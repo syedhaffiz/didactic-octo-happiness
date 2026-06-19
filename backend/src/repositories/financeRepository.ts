@@ -9,6 +9,10 @@ import type {
   KPI,
   NetMarginProfitabilityResponse,
   OverviewResponse,
+  RevenueBreakdownResponse,
+  RevenuePeriod,
+  RevenuePortResponse,
+  RevenueSegmentResponse,
   SalesBatchDetailResponse,
   SalesResponse,
   VesselHandlingResponse,
@@ -24,6 +28,11 @@ import {
   buildVesselHandling,
   buildVesselSales,
 } from "../mocks/profitability.js";
+import {
+  buildRevenueBreakdown,
+  buildRevenuePort,
+  buildRevenueSegment,
+} from "../mocks/revenue.js";
 import { buildSales } from "../mocks/sales.js";
 import { buildApprovedBudget } from "../mocks/approvedBudget.js";
 
@@ -31,7 +40,9 @@ export interface FinanceRepository {
   getKpis(from: Date, to: Date): Promise<KPI[]>;
   getForex(range: ForexRange, anchor: Date): Promise<ForexResponse>;
   getOverview(from: Date, to: Date): Promise<OverviewResponse>;
-  getRevenue(port: string | undefined, from: Date, to: Date): Promise<BreakdownResponse>;
+  getRevenueBreakdown(period: RevenuePeriod): Promise<RevenueBreakdownResponse>;
+  getRevenuePort(port: string | undefined): Promise<RevenuePortResponse>;
+  getRevenueSegment(segment: string | undefined): Promise<RevenueSegmentResponse>;
   getWorkingCapital(port: string | undefined, from: Date, to: Date): Promise<BreakdownResponse>;
   // --- New Profitability suite ---
   getNetMarginProfitability(
@@ -62,8 +73,14 @@ class MockFinanceRepository implements FinanceRepository {
       forex: buildForex("week", to),
     };
   }
-  async getRevenue(port: string | undefined, from: Date, to: Date) {
-    return buildBreakdown("revenue", port, from, to);
+  async getRevenueBreakdown(period: RevenuePeriod) {
+    return buildRevenueBreakdown(period);
+  }
+  async getRevenuePort(port: string | undefined) {
+    return buildRevenuePort(port);
+  }
+  async getRevenueSegment(segment: string | undefined) {
+    return buildRevenueSegment(segment);
   }
   async getWorkingCapital(port: string | undefined, from: Date, to: Date) {
     return buildBreakdown("working-capital", port, from, to);

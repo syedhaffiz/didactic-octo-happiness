@@ -111,12 +111,39 @@ export const openApiSpec = {
     "/finance/revenue": {
       get: {
         tags: ["Finance"],
-        summary: "Revenue breakdown (cards, donut, ledger)",
+        summary: "Revenue breakdown (cards + donut, YTD/MTD)",
         parameters: [
-          { $ref: "#/components/parameters/FromDate" }, { $ref: "#/components/parameters/ToDate" },
-          { $ref: "#/components/parameters/Port" },
+          {
+            name: "period",
+            in: "query",
+            schema: { type: "string", enum: ["YTD", "MTD"] },
+            description: "Defaults to `YTD`.",
+          },
         ],
-        responses: { "200": envelopeResponse("BreakdownResponse") },
+        responses: { "200": envelopeResponse("RevenueBreakdownResponse") },
+      },
+    },
+    "/finance/revenue/port": {
+      get: {
+        tags: ["Finance"],
+        summary: "Revenue ledger by port",
+        parameters: [{ $ref: "#/components/parameters/Port" }],
+        responses: { "200": envelopeResponse("RevenuePortResponse") },
+      },
+    },
+    "/finance/revenue/segment": {
+      get: {
+        tags: ["Finance"],
+        summary: "Revenue ledger by segment",
+        parameters: [
+          {
+            name: "segment",
+            in: "query",
+            schema: { type: "string" },
+            description: "Segment id (omit for all).",
+          },
+        ],
+        responses: { "200": envelopeResponse("RevenueSegmentResponse") },
       },
     },
     "/finance/working-capital": {
@@ -620,6 +647,65 @@ export const openApiSpec = {
           breakdown: { type: "array", items: { $ref: "#/components/schemas/BreakdownItem" } },
           donut: { $ref: "#/components/schemas/DonutResponse" },
           ledger: { type: "array", items: { $ref: "#/components/schemas/LedgerRow" } },
+        },
+      },
+
+      // --- Finance: Revenue suite --------------------------------------
+      RevenueBreakdownCard: {
+        type: "object",
+        required: ["segment", "value", "unit", "color"],
+        properties: {
+          segment: { type: "string" },
+          value: { type: "number" },
+          unit: { type: "string", enum: ["Cr"] },
+          color: { type: "string", description: "Hex color matching the donut slice." },
+        },
+      },
+      RevenueBreakdownResponse: {
+        type: "object",
+        required: ["period", "total", "unit", "cards", "slices"],
+        properties: {
+          period: { type: "string", enum: ["YTD", "MTD"] },
+          total: { type: "number" },
+          unit: { type: "string", enum: ["Cr"] },
+          cards: { type: "array", items: { $ref: "#/components/schemas/RevenueBreakdownCard" } },
+          slices: { type: "array", items: { $ref: "#/components/schemas/DonutSlice" } },
+        },
+      },
+      RevenuePortRow: {
+        type: "object",
+        required: ["port", "companyCode", "accountNumber", "profitCentre", "accumulatedBalance"],
+        properties: {
+          port: { type: "string" },
+          companyCode: { type: "string" },
+          accountNumber: { type: "string" },
+          profitCentre: { type: "string" },
+          accumulatedBalance: { type: "number" },
+        },
+      },
+      RevenuePortResponse: {
+        type: "object",
+        required: ["items"],
+        properties: {
+          items: { type: "array", items: { $ref: "#/components/schemas/RevenuePortRow" } },
+        },
+      },
+      RevenueSegmentRow: {
+        type: "object",
+        required: ["segment", "companyCode", "accountNumber", "profitCentre", "accumulatedBalance"],
+        properties: {
+          segment: { type: "string" },
+          companyCode: { type: "string" },
+          accountNumber: { type: "string" },
+          profitCentre: { type: "string" },
+          accumulatedBalance: { type: "number" },
+        },
+      },
+      RevenueSegmentResponse: {
+        type: "object",
+        required: ["items"],
+        properties: {
+          items: { type: "array", items: { $ref: "#/components/schemas/RevenueSegmentRow" } },
         },
       },
 

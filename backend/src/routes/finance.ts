@@ -6,7 +6,9 @@ import {
   getKpis,
   getNetMarginProfitability,
   getOverview,
-  getRevenue,
+  getRevenueBreakdown,
+  getRevenuePort,
+  getRevenueSegment,
   getSales,
   getSalesBatchDetail,
   getVesselHandling,
@@ -19,7 +21,9 @@ const router = Router();
 router.get("/overview", getOverview);
 router.get("/kpis", getKpis);
 router.get("/forex", getForex);
-router.get("/revenue", getRevenue);
+router.get("/revenue", getRevenueBreakdown);
+router.get("/revenue/port", getRevenuePort);
+router.get("/revenue/segment", getRevenueSegment);
 router.get("/working-capital", getWorkingCapital);
 
 // Profitability suite (Net Margin + vessel drilldowns)

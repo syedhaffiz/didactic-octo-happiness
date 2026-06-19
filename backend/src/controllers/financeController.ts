@@ -65,11 +65,35 @@ export const getForex: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const getRevenue: RequestHandler = async (req, res, next) => {
+const revenueBreakdownSchema = z.object({
+  period: z.enum(["YTD", "MTD"]).optional(),
+});
+
+const portOnlySchema = z.object({ port: z.string().optional() });
+const segmentOnlySchema = z.object({ segment: z.string().optional() });
+
+export const getRevenueBreakdown: RequestHandler = async (req, res, next) => {
   try {
-    const q = parse(portFilterSchema, req.query);
-    const { from, to } = parseDateRange(q.fromDate, q.toDate);
-    res.json(ok(await financeService.revenue(q.port, from, to)));
+    const q = parse(revenueBreakdownSchema, req.query);
+    res.json(ok(await financeService.revenueBreakdown(q.period ?? "YTD")));
+  } catch (e) {
+    next(e);
+  }
+};
+
+export const getRevenuePort: RequestHandler = async (req, res, next) => {
+  try {
+    const q = parse(portOnlySchema, req.query);
+    res.json(ok(await financeService.revenuePort(q.port)));
+  } catch (e) {
+    next(e);
+  }
+};
+
+export const getRevenueSegment: RequestHandler = async (req, res, next) => {
+  try {
+    const q = parse(segmentOnlySchema, req.query);
+    res.json(ok(await financeService.revenueSegment(q.segment)));
   } catch (e) {
     next(e);
   }

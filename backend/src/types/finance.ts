@@ -68,6 +68,51 @@ export interface BreakdownResponse {
   ledger: LedgerRow[];
 }
 
+// --- Revenue suite -------------------------------------------------------
+// Used by /finance/revenue (breakdown screen) and the Port/Segment ledger
+// drilldowns under /finance/revenue/port and /finance/revenue/segment.
+
+export type RevenuePeriod = "YTD" | "MTD";
+
+export interface RevenueBreakdownCard {
+  segment: string;
+  value: number;
+  unit: "Cr";
+  color: string;
+}
+
+export interface RevenueBreakdownResponse {
+  period: RevenuePeriod;
+  total: number;
+  unit: "Cr";
+  cards: RevenueBreakdownCard[];
+  slices: DonutSlice[];
+}
+
+export interface RevenuePortRow {
+  port: string;
+  companyCode: string;
+  accountNumber: string;
+  profitCentre: string;
+  accumulatedBalance: number;
+}
+
+export interface RevenuePortResponse {
+  items: RevenuePortRow[];
+}
+
+export interface RevenueSegmentRow {
+  segment: string;
+  companyCode: string;
+  accountNumber: string;
+  profitCentre: string;
+  accumulatedBalance: number;
+}
+
+export interface RevenueSegmentResponse {
+  items: RevenueSegmentRow[];
+}
+
 // --- Profitability (Net Margin) -----------------------------------------
 // Cards on /finance/overview/profitability:
 //   - Port Wise horizontal bar chart (currency-switchable INR/USD)
