@@ -1,6 +1,5 @@
-import { useMemo, useState } from "react";
-import { Card, Col, Input, Row, Table } from "antd";
-import { SearchOutlined } from "@ant-design/icons";
+import { useMemo } from "react";
+import { Card, Table } from "antd";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { ErrorRetry } from "../../components/ErrorRetry";
 import { PageHeader } from "../../components/PageHeader";
@@ -16,29 +15,23 @@ import type {
   VesselSalesRow,
 } from "../../types/finance";
 
-const matches = (row: object, q: string) => {
-  if (!q) return true;
-  const needle = q.toLowerCase();
-  return Object.values(row).some((v) =>
-    String(v ?? "").toLowerCase().includes(needle),
-  );
-};
-
 export const VesselProfitability = () => {
   const [tab] = useVesselTab();
-  const [search, setSearch] = useState("");
 
   const salesQ = useApi(["finance", "vessel-sales"], () => financeApi.vesselSales());
   const handlingQ = useApi(["finance", "vessel-handling"], () =>
     financeApi.vesselHandling(),
   );
 
-  const salesColumns = useMemo(() => buildVesselSalesColumns(), []);
-  const handlingColumns = useMemo(() => buildVesselHandlingColumns(), []);
+  const salesRows = salesQ.data?.items ?? [];
+  const handlingRows = handlingQ.data?.items ?? [];
 
-  const salesRows = (salesQ.data?.items ?? []).filter((r) => matches(r, search));
-  const handlingRows = (handlingQ.data?.items ?? []).filter((r) =>
-    matches(r, search),
+  // Column factories take the row set so the tree filters can offer the
+  // unique values actually present in this dataset.
+  const salesColumns = useMemo(() => buildVesselSalesColumns(salesRows), [salesRows]);
+  const handlingColumns = useMemo(
+    () => buildVesselHandlingColumns(handlingRows),
+    [handlingRows],
   );
 
   const isError = tab === "sales" ? salesQ.isError : handlingQ.isError;
@@ -50,22 +43,7 @@ export const VesselProfitability = () => {
     <>
       <PageHeader title="Vessel Profitability" />
 
-      <Row justify="space-between" align="middle" gutter={[16, 16]}>
-        <Col>
-          <VesselTabsNav />
-        </Col>
-        <Col xs={24} md={10} lg={8}>
-          <Input
-            allowClear
-            size="middle"
-            placeholder="Search"
-            prefix={<SearchOutlined />}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ marginBottom: 16 }}
-          />
-        </Col>
-      </Row>
+      <VesselTabsNav />
 
       {isError ? (
         <ErrorRetry title="Could not load vessels" error={error} onRetry={refetch} />

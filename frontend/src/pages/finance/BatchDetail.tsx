@@ -34,7 +34,8 @@ const SalesView = ({ batchId }: { batchId: string }) => {
     ["finance", "sales-batch-detail", batchId],
     () => financeApi.salesBatchDetail(batchId),
   );
-  const cols = useMemo(() => buildSalesBatchDetailColumns(), []);
+  const rows = q.data?.items ?? [];
+  const cols = useMemo(() => buildSalesBatchDetailColumns(rows), [rows]);
   return (
     <>
       <PageHeader title={`Batch ID - ${batchId}`} />
@@ -47,7 +48,7 @@ const SalesView = ({ batchId }: { batchId: string }) => {
               rowKey={(r, i) => `${r.batchId}-${i}`}
               size="middle"
               columns={cols}
-              dataSource={q.data?.items ?? []}
+              dataSource={rows}
               loading={q.isLoading}
               pagination={{ pageSize: 10, showSizeChanger: false }}
               scroll={{ x: "max-content" }}
@@ -64,7 +65,8 @@ const HandlingView = ({ batchId }: { batchId: string }) => {
     ["finance", "handling-batch-detail", batchId],
     () => financeApi.handlingBatchDetail(batchId),
   );
-  const cols = useMemo(() => buildHandlingBatchDetailColumns(), []);
+  const rows = q.data?.items ?? [];
+  const cols = useMemo(() => buildHandlingBatchDetailColumns(rows), [rows]);
   return (
     <>
       <PageHeader title={`Batch ID - ${batchId}`} />
@@ -77,7 +79,7 @@ const HandlingView = ({ batchId }: { batchId: string }) => {
               rowKey={(r, i) => `${r.batchId}-${i}`}
               size="middle"
               columns={cols}
-              dataSource={q.data?.items ?? []}
+              dataSource={rows}
               loading={q.isLoading}
               pagination={{ pageSize: 10, showSizeChanger: false }}
               scroll={{ x: "max-content" }}

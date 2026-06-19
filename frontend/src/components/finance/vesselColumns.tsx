@@ -1,5 +1,6 @@
 import type { ColumnsType } from "antd/es/table";
 import { BatchIdLink } from "./BatchIdLink";
+import { textSearchFilter, treeFilter, uniqueValues } from "./columnFilters";
 import { brand } from "../../theme/tokens";
 import type { VesselHandlingRow, VesselSalesRow } from "../../types/finance";
 
@@ -17,6 +18,7 @@ const NumberCell = ({ value }: { value: number }) =>
 
 // Sales tab columns -----------------------------------------------------
 export const buildVesselSalesColumns = (
+  rows: readonly VesselSalesRow[] = [],
   basePath = SALES_BASE,
 ): ColumnsType<VesselSalesRow> => [
   {
@@ -27,6 +29,7 @@ export const buildVesselSalesColumns = (
     fixed: "left",
     sorter: (a, b) => a.batchId.localeCompare(b.batchId),
     render: (v: string) => <BatchIdLink batchId={v} basePath={basePath} />,
+    ...textSearchFilter<VesselSalesRow>((r) => r.batchId, "Search Batch ID"),
   },
   {
     title: "Vessel",
@@ -36,6 +39,7 @@ export const buildVesselSalesColumns = (
     fixed: "left",
     sorter: (a, b) => a.vessel.localeCompare(b.vessel),
     render: (v: string) => <VesselCell value={v} />,
+    ...textSearchFilter<VesselSalesRow>((r) => r.vessel, "Search Vessel"),
   },
   {
     title: "Segment",
@@ -43,6 +47,7 @@ export const buildVesselSalesColumns = (
     key: "segment",
     width: 140,
     sorter: (a, b) => a.segment.localeCompare(b.segment),
+    ...treeFilter<VesselSalesRow>(uniqueValues(rows, (r) => r.segment), (r) => r.segment),
   },
   {
     title: "Volume",
@@ -75,6 +80,7 @@ export const buildVesselSalesColumns = (
 
 // Handling tab columns --------------------------------------------------
 export const buildVesselHandlingColumns = (
+  rows: readonly VesselHandlingRow[] = [],
   basePath = HANDLING_BASE,
 ): ColumnsType<VesselHandlingRow> => [
   {
@@ -85,6 +91,7 @@ export const buildVesselHandlingColumns = (
     fixed: "left",
     sorter: (a, b) => a.batchId.localeCompare(b.batchId),
     render: (v: string) => <BatchIdLink batchId={v} basePath={basePath} />,
+    ...textSearchFilter<VesselHandlingRow>((r) => r.batchId, "Search Batch ID"),
   },
   {
     title: "Vessel",
@@ -94,6 +101,7 @@ export const buildVesselHandlingColumns = (
     fixed: "left",
     sorter: (a, b) => a.vessel.localeCompare(b.vessel),
     render: (v: string) => <VesselCell value={v} />,
+    ...textSearchFilter<VesselHandlingRow>((r) => r.vessel, "Search Vessel"),
   },
   {
     title: "Grade",
@@ -101,6 +109,7 @@ export const buildVesselHandlingColumns = (
     key: "grade",
     width: 150,
     sorter: (a, b) => a.grade.localeCompare(b.grade),
+    ...treeFilter<VesselHandlingRow>(uniqueValues(rows, (r) => r.grade), (r) => r.grade),
   },
   {
     title: "Origin",
@@ -108,6 +117,7 @@ export const buildVesselHandlingColumns = (
     key: "origin",
     width: 100,
     sorter: (a, b) => a.origin.localeCompare(b.origin),
+    ...treeFilter<VesselHandlingRow>(uniqueValues(rows, (r) => r.origin), (r) => r.origin),
   },
   {
     title: "Port",
@@ -115,6 +125,7 @@ export const buildVesselHandlingColumns = (
     key: "port",
     width: 130,
     sorter: (a, b) => a.port.localeCompare(b.port),
+    ...treeFilter<VesselHandlingRow>(uniqueValues(rows, (r) => r.port), (r) => r.port),
   },
   {
     title: "Segment",
@@ -122,6 +133,7 @@ export const buildVesselHandlingColumns = (
     key: "segment",
     width: 140,
     sorter: (a, b) => a.segment.localeCompare(b.segment),
+    ...treeFilter<VesselHandlingRow>(uniqueValues(rows, (r) => r.segment), (r) => r.segment),
   },
   {
     title: "Volume",

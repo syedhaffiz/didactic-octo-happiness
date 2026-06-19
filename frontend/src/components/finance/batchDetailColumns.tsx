@@ -1,5 +1,6 @@
 import type { ColumnsType } from "antd/es/table";
 import { BatchIdLink } from "./BatchIdLink";
+import { textSearchFilter, treeFilter, uniqueValues } from "./columnFilters";
 import type {
   HandlingBatchDetailRow,
   SalesBatchDetailRow,
@@ -13,6 +14,7 @@ const Number0 = ({ value }: { value: number }) =>
 
 // Sales batch detail columns -------------------------------------------
 export const buildSalesBatchDetailColumns = (
+  rows: readonly SalesBatchDetailRow[] = [],
   basePath = SALES_BASE,
 ): ColumnsType<SalesBatchDetailRow> => [
   {
@@ -23,6 +25,7 @@ export const buildSalesBatchDetailColumns = (
     fixed: "left",
     sorter: (a, b) => a.batchId.localeCompare(b.batchId),
     render: (v: string) => <BatchIdLink batchId={v} basePath={basePath} />,
+    ...textSearchFilter<SalesBatchDetailRow>((r) => r.batchId, "Search Batch No"),
   },
   {
     title: "Customer Name",
@@ -31,12 +34,17 @@ export const buildSalesBatchDetailColumns = (
     width: 200,
     fixed: "left",
     sorter: (a, b) => a.customerName.localeCompare(b.customerName),
+    ...textSearchFilter<SalesBatchDetailRow>((r) => r.customerName, "Search Customer"),
   },
   {
     title: "Plant Name",
     dataIndex: "plantName",
     key: "plantName",
     sorter: (a, b) => a.plantName.localeCompare(b.plantName),
+    ...treeFilter<SalesBatchDetailRow>(
+      uniqueValues(rows, (r) => r.plantName),
+      (r) => r.plantName,
+    ),
   },
   {
     title: "Trade Contract No",
@@ -44,6 +52,10 @@ export const buildSalesBatchDetailColumns = (
     key: "tradeContractNo",
     width: 170,
     sorter: (a, b) => a.tradeContractNo.localeCompare(b.tradeContractNo),
+    ...treeFilter<SalesBatchDetailRow>(
+      uniqueValues(rows, (r) => r.tradeContractNo),
+      (r) => r.tradeContractNo,
+    ),
   },
   {
     title: "Bill Amount",
@@ -76,6 +88,7 @@ export const buildSalesBatchDetailColumns = (
 
 // Handling batch detail columns ----------------------------------------
 export const buildHandlingBatchDetailColumns = (
+  rows: readonly HandlingBatchDetailRow[] = [],
   basePath = HANDLING_BASE,
 ): ColumnsType<HandlingBatchDetailRow> => [
   {
@@ -86,6 +99,7 @@ export const buildHandlingBatchDetailColumns = (
     fixed: "left",
     sorter: (a, b) => a.batchId.localeCompare(b.batchId),
     render: (v: string) => <BatchIdLink batchId={v} basePath={basePath} />,
+    ...textSearchFilter<HandlingBatchDetailRow>((r) => r.batchId, "Search Batch No"),
   },
   {
     title: "Customer Name",
@@ -94,12 +108,17 @@ export const buildHandlingBatchDetailColumns = (
     width: 200,
     fixed: "left",
     sorter: (a, b) => a.customerName.localeCompare(b.customerName),
+    ...textSearchFilter<HandlingBatchDetailRow>((r) => r.customerName, "Search Customer"),
   },
   {
     title: "Plant Name",
     dataIndex: "plantName",
     key: "plantName",
     sorter: (a, b) => a.plantName.localeCompare(b.plantName),
+    ...treeFilter<HandlingBatchDetailRow>(
+      uniqueValues(rows, (r) => r.plantName),
+      (r) => r.plantName,
+    ),
   },
   {
     title: "Trade Contract No",
@@ -107,6 +126,10 @@ export const buildHandlingBatchDetailColumns = (
     key: "tradeContractNo",
     width: 170,
     sorter: (a, b) => a.tradeContractNo.localeCompare(b.tradeContractNo),
+    ...treeFilter<HandlingBatchDetailRow>(
+      uniqueValues(rows, (r) => r.tradeContractNo),
+      (r) => r.tradeContractNo,
+    ),
   },
   {
     title: "TPH + CIF Coal Handling Qty",
