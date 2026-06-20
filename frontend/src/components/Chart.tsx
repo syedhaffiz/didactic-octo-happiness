@@ -5,6 +5,7 @@ import "highcharts/highcharts-more";
 import "highcharts/modules/solid-gauge";
 import { useEffect, useMemo, useRef } from "react";
 import { brand, chartPalette, fontFamily } from "../theme/tokens";
+import { LoadingOverlay } from "./LoadingIndicator";
 
 // NOTE: we drive Highcharts imperatively rather than via highcharts-react-official.
 // That package ships as UMD/CJS, so Vite force-pre-bundles it with its own React
@@ -73,15 +74,13 @@ export const Chart = ({
   options,
   height,
   loading = false,
-  loadingText = "Loading…",
   containerProps,
 }: {
   options: Options;
   height?: number | string;
-  /** Show the Highcharts loading overlay (no skeleton swap, no layout shift). */
+  /** Drape an antd Spin (custom LoadingOutlined indicator) over the chart
+   *  without swapping it for a skeleton — no layout shift. */
   loading?: boolean;
-  /** Override the overlay label (defaults to "Loading…"). */
-  loadingText?: string;
   containerProps?: React.HTMLAttributes<HTMLDivElement>;
 }) => {
   const merged = useMemo<Options>(() => {
@@ -106,15 +105,13 @@ export const Chart = ({
     };
   }, [merged]);
 
-  // Drive Highcharts' built-in loading overlay from the `loading` prop. The
-  // chart's frame and axes stay put — only the overlay fades in/out — which
-  // means data swaps don't trigger a layout shift.
-  useEffect(() => {
-    const chart = chartRef.current;
-    if (!chart) return;
-    if (loading) chart.showLoading(loadingText);
-    else chart.hideLoading();
-  }, [loading, loadingText]);
-
-  return <div ref={hostRef} {...containerProps} />;
+  // Wrap the chart host so the overlay can sit absolutely-positioned over the
+  // same footprint without changing the chart's layout.
+  const { style: containerStyle, ...rest } = containerProps ?? {};
+  return (
+    <div style={{ position: "relative", ...containerStyle }} {...rest}>
+      <div ref={hostRef} />
+      <LoadingOverlay show={loading} />
+    </div>
+  );
 };

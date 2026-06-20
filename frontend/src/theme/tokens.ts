@@ -57,6 +57,10 @@ export const brand = {
   // purple seen in the screenshot.
   gradient: "linear-gradient(90deg, #0D73B3 0%, #AE3C6D 100%)",
   gradientDark: "linear-gradient(90deg, #0A557F 0%, #7C2D4F 100%)",
+
+  // Loading overlay backdrop — semi-transparent over a card surface so the
+  // spinner reads clearly without fully hiding the underlying content.
+  loadingOverlay: "rgba(255, 255, 255, 0.55)",
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -78,6 +82,7 @@ export const brandDark = {
   headline: "rgba(255, 255, 255, 0.92)",
   panelBg: "rgba(255, 255, 255, 0.03)",
   forexTileBg: "rgba(126, 179, 255, 0.14)",
+  loadingOverlay: "rgba(15, 15, 15, 0.45)",
 } as const;
 
 // ---------------------------------------------------------------------------

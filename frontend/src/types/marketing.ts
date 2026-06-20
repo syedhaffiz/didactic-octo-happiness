@@ -1,6 +1,7 @@
 // Mirror of backend/src/types/marketing.ts. Kept manually in sync.
 
-export type MarketRange = "1W" | "1M" | "3M" | "1Y";
+export type IndexRange = "1" | "2";
+export type IndexCadence = "daily" | "weekly";
 
 // --- Index Movement --------------------------------------------------------
 
@@ -10,8 +11,10 @@ export interface IndexSeries {
 }
 
 export interface IndexChart {
-  code: string; // "ICI Index" | "API Index"
-  range: MarketRange;
+  code: string;        // URL slug: "ici" | "api-daily" | "api-weekly"
+  title: string;       // display title: "ICI Index" | "API Index"
+  cadence: IndexCadence;
+  range: IndexRange;
   categories: string[];
   series: IndexSeries[];
 }

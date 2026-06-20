@@ -44,6 +44,9 @@ export const useBrandTokens = () => {
     deltaUp: isDark ? brandDark.deltaUp : brand.green,
     deltaDown: isDark ? brandDark.deltaDown : brand.danger,
 
+    // Backdrop behind the chart-loading Spin overlay.
+    loadingOverlay: isDark ? brandDark.loadingOverlay : brand.loadingOverlay,
+
     isDark,
   };
 };

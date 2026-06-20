@@ -2,7 +2,7 @@ import { apiClient, unwrap } from "./client";
 import { USE_MOCK_DATA, mockDelay } from "./dataSource";
 import type { ApiEnvelope } from "../types/api";
 import type {
-  MarketRange,
+  IndexRange,
   IndexChart,
   IndexMovementResponse,
   MarketShareResponse,
@@ -38,9 +38,9 @@ const get = async <T>(
 };
 
 const httpMarketingApi = {
-  indices: (range: MarketRange = "1M") =>
+  indices: (range: IndexRange = "1") =>
     get<IndexMovementResponse>("/marketing/indices", { range }),
-  indexOne: (code: string, range: MarketRange = "1M") =>
+  indexOne: (code: string, range: IndexRange = "1") =>
     get<IndexChart>(`/marketing/indices/${encodeURIComponent(code)}`, { range }),
   marketShare: (p: MarketShareParams = {}) =>
     get<MarketShareResponse>("/marketing/market-share", p),
@@ -50,8 +50,8 @@ const httpMarketingApi = {
 };
 
 const mockMarketingApi = {
-  indices: (range: MarketRange = "1M") => mockDelay(buildIndexMovement(range)),
-  indexOne: (code: string, range: MarketRange = "1M") => {
+  indices: (range: IndexRange = "1") => mockDelay(buildIndexMovement(range)),
+  indexOne: (code: string, range: IndexRange = "1") => {
     const result = buildOneIndexChart(code, range);
     if (!result) {
       return Promise.reject(new Error(`not_found: Unknown index code: ${code}`));
