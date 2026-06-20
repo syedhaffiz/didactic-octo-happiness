@@ -9,9 +9,11 @@ import type {
   IndexRange,
   IndexSeries,
   MarketShareResponse,
-  ShareRow,
-  ShareSlice,
-  ZoneShareRow,
+  MarketShareDimension,
+  MarketShareRootPie,
+  MarketShareDrilldownSeries,
+  MarketSharePiePoint,
+  ShipperReceiverRow,
   OceanFreightResponse,
   FreightChart,
   FreightSeries,
@@ -146,42 +148,156 @@ export const buildIndexMovement = (r: IndexRange): IndexMovementResponse => ({
 
 // --- Market Share ----------------------------------------------------------
 
-export const buildMarketShare = (f: MarketShareFilters = {}): MarketShareResponse => {
-  const total = 155.63;
-  const ownPct = 29.7;
-  const nonPct = 70.3;
-  const ownMmt = round(total * (ownPct / 100), 2);
-  const nonMmt = round(total * (nonPct / 100), 2);
+// Base geographic dataset: Zone -> Port with the Own / Non-Own volume split (MT).
+// Drives both the geographic pie and the business-type pie.
+interface PortDatum {
+  port: string;
+  own: number;
+  nonOwn: number;
+}
+const ZONE_PORTS: { zone: string; ports: PortDatum[] }[] = [
+  { zone: "Zone-1", ports: [
+    { port: "MUNDRA", own: 679970, nonOwn: 325005 },
+    { port: "TUNA", own: 203238, nonOwn: 479834 },
+  ] },
+  { zone: "Zone-2", ports: [
+    { port: "NAVLAKHI", own: 135803, nonOwn: 439935 },
+  ] },
+  { zone: "Zone-3", ports: [
+    { port: "HAZIRA", own: 300000, nonOwn: 464700 },
+    { port: "DAHEJ", own: 368271, nonOwn: 296349 },
+  ] },
+  { zone: "Zone-4", ports: [
+    { port: "DHARAMTAR", own: 60500, nonOwn: 405911 },
+  ] },
+  { zone: "Zone-5", ports: [
+    { port: "KRISHNAPATNAM", own: 172411, nonOwn: 673416 },
+    { port: "NEW MANGALORE", own: 76471, nonOwn: 174295 },
+  ] },
+  { zone: "Zone-6", ports: [
+    { port: "TUTICORIN", own: 80000, nonOwn: 470384 },
+  ] },
+  { zone: "Zone-7", ports: [
+    { port: "GANGAVARAM", own: 197000, nonOwn: 240500 },
+  ] },
+  { zone: "Zone-8", ports: [
+    { port: "DHAMRA", own: 192040, nonOwn: 839219 },
+    { port: "HALDIA", own: 86094, nonOwn: 120003 },
+  ] },
+];
 
-  const overall = {
-    total,
-    rows: [
-      { category: "Own", mmt: ownMmt, totalMmt: total, pct: ownPct },
-      { category: "Non-Own", mmt: nonMmt, totalMmt: total, pct: nonPct },
-    ] as ShareRow[],
-    slices: [
-      { label: "Own", value: ownMmt, pct: ownPct },
-      { label: "Non-Own", value: nonMmt, pct: nonPct },
-    ] as ShareSlice[],
-  };
-
-  const rng = seeded(seedFromString(`mkt-share-zone-${f.fromDate ?? ""}-${f.toDate ?? ""}`));
-  const raw = Array.from({ length: 8 }, () => range(rng, 5, 20));
-  const sum = raw.reduce((a, b) => a + b, 0);
-  const zonePcts = raw.map((v) => round((v / sum) * 100, 1));
-
-  const byZone = {
-    total,
-    rows: zonePcts.map((pct, i) => ({ zone: i + 1, pct })) as ZoneShareRow[],
-    slices: zonePcts.map((pct, i) => ({
-      label: `Zone ${i + 1}`,
-      value: round(total * (pct / 100), 2),
-      pct,
-    })) as ShareSlice[],
-  };
-
-  return { unit: "MMT", overall, byZone };
+// Per-port End-User share of the Own volume (rest is Trader). Stable per port.
+const ENDUSER_RATIO: Record<string, number> = {
+  MUNDRA: 0.894, TUNA: 1.0, NAVLAKHI: 1.0, HAZIRA: 0.63, DAHEJ: 0.795,
+  DHARAMTAR: 1.0, KRISHNAPATNAM: 1.0, "NEW MANGALORE": 1.0, TUTICORIN: 1.0,
+  GANGAVARAM: 0.62, DHAMRA: 1.0, HALDIA: 0.65,
 };
+
+const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+const totalsOf = (ports: PortDatum[]) =>
+  ports.reduce(
+    (acc, p) => ({ own: acc.own + p.own, nonOwn: acc.nonOwn + p.nonOwn }),
+    { own: 0, nonOwn: 0 },
+  );
+
+// Builds the root Own / Non-Own slices shared by both pies. The "Own" slice
+// drills into `ownDrilldownId`; "Non-Own" is a leaf.
+const rootSlices = (
+  ownDrilldownId: string,
+  totalOwn: number,
+  totalNonOwn: number,
+): MarketSharePiePoint[] => [
+  { name: "Own", y: totalOwn, drilldown: ownDrilldownId, own: totalOwn, nonOwn: totalNonOwn },
+  { name: "Non-Own", y: totalNonOwn, drilldown: null, own: totalOwn, nonOwn: totalNonOwn },
+];
+
+const grandTotals = () => totalsOf(ZONE_PORTS.flatMap((z) => z.ports));
+
+// Root pies (the only data shipped with the page). Deeper levels are produced
+// by the level builders below and served lazily through the drill endpoint.
+const geographicRoot = (): MarketShareRootPie => {
+  const g = grandTotals();
+  return { rootName: "Market Share", root: rootSlices("geo-own", g.own, g.nonOwn) };
+};
+const businessTypeRoot = (): MarketShareRootPie => {
+  const g = grandTotals();
+  return { rootName: "Market Share", root: rootSlices("business-own", g.own, g.nonOwn) };
+};
+
+// Geographic: Market -> Zone -> Port. All levels keyed by id:
+//   geo-own            -> the 8 zones
+//   geo-<zone-slug>    -> that zone's ports (leaf)
+const geographicLevels = (): MarketShareDrilldownSeries[] => {
+  const zoneLevel: MarketSharePiePoint[] = ZONE_PORTS.map((z) => {
+    const t = totalsOf(z.ports);
+    return { name: z.zone, y: t.own, drilldown: `geo-${slug(z.zone)}`, own: t.own, nonOwn: t.nonOwn };
+  });
+  const portSeries: MarketShareDrilldownSeries[] = ZONE_PORTS.map((z) => ({
+    id: `geo-${slug(z.zone)}`,
+    tier: "Port",
+    data: z.ports.map((p) => ({ name: p.port, y: p.own, drilldown: null, own: p.own, nonOwn: p.nonOwn })),
+  }));
+  return [{ id: "geo-own", tier: "Zone", data: zoneLevel }, ...portSeries];
+};
+
+// Business Type: Market -> Port -> Business Type. Levels keyed by id:
+//   business-own         -> every port
+//   business-<port-slug> -> that port's Trader / End-User split (leaf)
+const businessTypeLevels = (): MarketShareDrilldownSeries[] => {
+  const allPorts = ZONE_PORTS.flatMap((z) => z.ports);
+  const portLevel: MarketSharePiePoint[] = allPorts.map((p) => ({
+    name: p.port,
+    y: p.own,
+    drilldown: `business-${slug(p.port)}`,
+    own: p.own,
+    nonOwn: p.nonOwn,
+  }));
+  const businessSeries: MarketShareDrilldownSeries[] = allPorts.map((p) => {
+    const endUser = Math.round(p.own * (ENDUSER_RATIO[p.port] ?? 0.8));
+    const trader = p.own - endUser;
+    return {
+      id: `business-${slug(p.port)}`,
+      tier: "Business Type",
+      data: [
+        { name: "End-User", y: endUser, drilldown: null, own: endUser, nonOwn: 0 },
+        { name: "Trader", y: trader, drilldown: null, own: trader, nonOwn: 0 },
+      ],
+    };
+  });
+  return [{ id: "business-own", tier: "Port", data: portLevel }, ...businessSeries];
+};
+
+// Resolves a single drilldown level for the given dimension + node id. Returns
+// null for an unknown id so the controller can answer 404.
+export const buildMarketShareDrill = (
+  dim: MarketShareDimension,
+  path: string,
+): MarketShareDrilldownSeries | null => {
+  const levels = dim === "geographic" ? geographicLevels() : businessTypeLevels();
+  return levels.find((s) => s.id === path) ?? null;
+};
+
+// Shipper vs Receiver volume per port, each split Own / Non-Own (MT).
+const SHIPPER_RECEIVER: ShipperReceiverRow[] = [
+  { port: "MUNDRA", shipperOwn: 679970, shipperNonOwn: 325004, receiverOwn: 1403215, receiverNonOwn: 325004 },
+  { port: "KANDLA", shipperOwn: 0, shipperNonOwn: 709668, receiverOwn: 0, receiverNonOwn: 709668 },
+  { port: "KRISHNAPATNAM", shipperOwn: 172411, shipperNonOwn: 673415, receiverOwn: 172411, receiverNonOwn: 673415 },
+  { port: "DHAMRA", shipperOwn: 192040, shipperNonOwn: 839219, receiverOwn: 192040, receiverNonOwn: 839219 },
+  { port: "VIZAG", shipperOwn: 0, shipperNonOwn: 818241, receiverOwn: 0, receiverNonOwn: 818241 },
+  { port: "DAHEJ", shipperOwn: 368271, shipperNonOwn: 296349, receiverOwn: 405509, receiverNonOwn: 296349 },
+  { port: "HAZIRA", shipperOwn: 300000, shipperNonOwn: 464700, receiverOwn: 395615, receiverNonOwn: 464700 },
+  { port: "TUNA", shipperOwn: 203238, shipperNonOwn: 479834, receiverOwn: 203238, receiverNonOwn: 479834 },
+  { port: "NAVLAKHI", shipperOwn: 135803, shipperNonOwn: 439935, receiverOwn: 135803, receiverNonOwn: 439935 },
+  { port: "TUTICORIN", shipperOwn: 80000, shipperNonOwn: 470384, receiverOwn: 80000, receiverNonOwn: 470384 },
+];
+
+export const buildMarketShare = (_f: MarketShareFilters = {}): MarketShareResponse => ({
+  unit: "MT",
+  geographic: geographicRoot(),
+  businessType: businessTypeRoot(),
+  shipperReceiver: SHIPPER_RECEIVER.map((r) => ({ ...r })),
+});
 
 // --- Ocean Freight ---------------------------------------------------------
 

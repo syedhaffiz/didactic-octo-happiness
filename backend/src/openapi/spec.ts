@@ -421,9 +421,41 @@ export const openApiSpec = {
     "/marketing/market-share": {
       get: {
         tags: ["Marketing"],
-        summary: "Market share (Own vs Non-Own) and Own market share by zone",
+        summary: "Market share — root pies (Own/Non-Own) + shipper/receiver bars",
+        description: "Returns only the root level of each pie. Deeper levels are fetched on demand via `/marketing/market-share/drill`.",
         parameters: [{ $ref: "#/components/parameters/FromDate" }, { $ref: "#/components/parameters/ToDate" }],
         responses: { "200": envelopeResponse("MarketShareResponse") },
+      },
+    },
+    "/marketing/market-share/drill": {
+      get: {
+        tags: ["Marketing"],
+        summary: "One lazily-loaded Market Share drilldown level",
+        parameters: [
+          {
+            name: "dim",
+            in: "query",
+            required: true,
+            schema: { type: "string", enum: ["geographic", "businessType"] },
+            description: "Which pie to drill: geographic (Zone→Port) or businessType (Port→Business Type).",
+          },
+          {
+            name: "path",
+            in: "query",
+            required: true,
+            schema: { type: "string" },
+            description: "Drilldown node id from the clicked point (e.g. `geo-own`, `geo-zone-1`, `business-mundra`).",
+          },
+        ],
+        responses: {
+          "200": envelopeResponse("MarketShareDrilldownSeries"),
+          "404": {
+            description: "Unknown path",
+            content: {
+              "application/json": { schema: envelope({ $ref: "#/components/schemas/ApiError" }) },
+            },
+          },
+        },
       },
     },
     "/marketing/ocean-freight": {
@@ -1047,52 +1079,55 @@ export const openApiSpec = {
           items: { type: "array", items: { $ref: "#/components/schemas/IndexChart" } },
         },
       },
-      ShareRow: {
+      MarketSharePiePoint: {
         type: "object",
-        required: ["category", "mmt", "totalMmt", "pct"],
+        required: ["name", "y", "drilldown", "own", "nonOwn"],
         properties: {
-          category: { type: "string", example: "Own" },
-          mmt: { type: "number" },
-          totalMmt: { type: "number" },
-          pct: { type: "number" },
+          name: { type: "string" },
+          y: { type: "number" },
+          drilldown: { type: "string", nullable: true },
+          own: { type: "number" },
+          nonOwn: { type: "number" },
         },
       },
-      ShareSlice: {
+      MarketShareDrilldownSeries: {
         type: "object",
-        required: ["label", "value", "pct"],
+        required: ["id", "tier", "data"],
         properties: {
-          label: { type: "string" },
-          value: { type: "number" },
-          pct: { type: "number" },
+          id: { type: "string" },
+          tier: { type: "string", example: "Zone" },
+          data: { type: "array", items: { $ref: "#/components/schemas/MarketSharePiePoint" } },
         },
       },
-      ZoneShareRow: {
+      MarketShareRootPie: {
         type: "object",
-        required: ["zone", "pct"],
-        properties: { zone: { type: "integer" }, pct: { type: "number" } },
+        required: ["rootName", "root"],
+        properties: {
+          rootName: { type: "string", example: "Market Share" },
+          root: { type: "array", items: { $ref: "#/components/schemas/MarketSharePiePoint" } },
+        },
+      },
+      ShipperReceiverRow: {
+        type: "object",
+        required: ["port", "shipperOwn", "shipperNonOwn", "receiverOwn", "receiverNonOwn"],
+        properties: {
+          port: { type: "string" },
+          shipperOwn: { type: "number" },
+          shipperNonOwn: { type: "number" },
+          receiverOwn: { type: "number" },
+          receiverNonOwn: { type: "number" },
+        },
       },
       MarketShareResponse: {
         type: "object",
-        required: ["unit", "overall", "byZone"],
+        required: ["unit", "geographic", "businessType", "shipperReceiver"],
         properties: {
-          unit: { type: "string", example: "MMT" },
-          overall: {
-            type: "object",
-            required: ["total", "rows", "slices"],
-            properties: {
-              total: { type: "number" },
-              rows: { type: "array", items: { $ref: "#/components/schemas/ShareRow" } },
-              slices: { type: "array", items: { $ref: "#/components/schemas/ShareSlice" } },
-            },
-          },
-          byZone: {
-            type: "object",
-            required: ["total", "rows", "slices"],
-            properties: {
-              total: { type: "number" },
-              rows: { type: "array", items: { $ref: "#/components/schemas/ZoneShareRow" } },
-              slices: { type: "array", items: { $ref: "#/components/schemas/ShareSlice" } },
-            },
+          unit: { type: "string", example: "MT" },
+          geographic: { $ref: "#/components/schemas/MarketShareDrilldownPie" },
+          businessType: { $ref: "#/components/schemas/MarketShareDrilldownPie" },
+          shipperReceiver: {
+            type: "array",
+            items: { $ref: "#/components/schemas/ShipperReceiverRow" },
           },
         },
       },

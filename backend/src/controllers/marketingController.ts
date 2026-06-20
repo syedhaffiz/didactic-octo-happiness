@@ -58,6 +58,26 @@ export const getMarketShare: RequestHandler = async (req, res, next) => {
   }
 };
 
+const marketShareDrillSchema = z.object({
+  dim: z.enum(["geographic", "businessType"]),
+  path: z.string().min(1),
+});
+
+// Lazy drilldown: one level of a Market Share pie, fetched on slice click.
+export const getMarketShareDrill: RequestHandler = async (req, res, next) => {
+  try {
+    const q = parse(marketShareDrillSchema, req.query);
+    const level = await marketingService.marketShareDrill(q.dim, q.path);
+    if (!level) {
+      res.status(404).json(fail("not_found", `Unknown drilldown path: ${q.path}`));
+      return;
+    }
+    res.json(ok(level));
+  } catch (e) {
+    next(e);
+  }
+};
+
 export const getOceanFreight: RequestHandler = async (req, res, next) => {
   try {
     const q = parse(oceanFreightSchema, req.query);

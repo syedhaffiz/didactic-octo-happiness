@@ -28,37 +28,55 @@ export interface IndexMovementResponse {
 }
 
 // --- Market Share ----------------------------------------------------------
+// Two drilldown pies + one stacked/grouped column chart.
+//   geographic   : Market (Own/Non-Own) -> Zone -> Port
+//   businessType : Market (Own/Non-Own) -> Port -> Business Type (Trader/End-User)
+//   shipperReceiver : per-port Shipper vs Receiver volume, each split Own/Non-Own
 
-export interface ShareRow {
-  category: string; // "Own" | "Non-Own"
-  mmt: number;
-  totalMmt: number;
-  pct: number;
+// A single pie slice. `own`/`nonOwn` carry the absolute split for this entity
+// so the tooltip can show the Own-vs-Others share at every level. `drilldown`
+// is the id of the child series, or null for a leaf slice.
+export interface MarketSharePiePoint {
+  name: string;
+  y: number;
+  drilldown: string | null;
+  own: number;
+  nonOwn: number;
 }
 
-export interface ShareSlice {
-  label: string;
-  value: number; // MMT
-  pct: number;
+// One drilldown level, fetched lazily on slice click. `tier` is the label for
+// what the child slices represent (e.g. "Zone", "Port", "Business Type") —
+// used as the series name. A point whose `drilldown` is a non-null id is itself
+// drillable (its children are fetched on click).
+export interface MarketShareDrilldownSeries {
+  id: string;
+  tier: string;
+  data: MarketSharePiePoint[];
 }
 
-export interface ZoneShareRow {
-  zone: number; // 1..8
-  pct: number;
+// Only the root level (Own / Non-Own) ships with the page. Deeper levels are
+// fetched on demand via the drill endpoint.
+export interface MarketShareRootPie {
+  rootName: string; // e.g. "Market Share"
+  root: MarketSharePiePoint[];
+}
+
+// Which pie a drill request targets.
+export type MarketShareDimension = "geographic" | "businessType";
+
+export interface ShipperReceiverRow {
+  port: string;
+  shipperOwn: number;
+  shipperNonOwn: number;
+  receiverOwn: number;
+  receiverNonOwn: number;
 }
 
 export interface MarketShareResponse {
-  unit: "MMT";
-  overall: {
-    total: number;
-    rows: ShareRow[]; // Own, Non-Own
-    slices: ShareSlice[]; // Own, Non-Own
-  };
-  byZone: {
-    total: number;
-    rows: ZoneShareRow[]; // zones 1..8
-    slices: ShareSlice[]; // zones 1..8
-  };
+  unit: "MT";
+  geographic: MarketShareRootPie;
+  businessType: MarketShareRootPie;
+  shipperReceiver: ShipperReceiverRow[];
 }
 
 // --- Ocean Freight ---------------------------------------------------------
