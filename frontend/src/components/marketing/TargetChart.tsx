@@ -1,8 +1,7 @@
 import { ColumnChart } from "../ColumnChart";
-import { BudgetActualColumnChart } from "../BudgetActualColumnChart";
 import type { TargetMode } from "./TargetModeSegmented";
 import { marketingColors } from "../../theme/tokens";
-import type { TargetResponse } from "../../types/marketing";
+import type { BudgetActualRow, TargetResponse } from "../../types/marketing";
 
 const Y_TITLE = "1000 metric tons (MT)";
 
@@ -12,28 +11,35 @@ export const targetCardTitle: Record<TargetMode, string> = {
   segmentwise: "Segmentwise",
 };
 
-// Picks the right column chart for the active Target tab. Each child guards its
-// own rows, so a missing array degrades to an empty state.
+const toBudgetRows = (rows: BudgetActualRow[] | undefined) =>
+  (rows ?? []).map((r) => ({ category: r.category, value: r.budget }));
+
+// Picks the right column chart for the active Target tab. Origin Wise and
+// Segment Wise show Budget only (no Actual) per the latest figma.
 export const TargetChart = ({ mode, data }: { mode: TargetMode; data?: TargetResponse }) => {
   if (mode === "originwise") {
     return (
-      <BudgetActualColumnChart
-        rows={data?.originwise}
-        budgetColor={marketingColors.originBudget}
-        actualColor={marketingColors.originActual}
+      <ColumnChart
+        rows={toBudgetRows(data?.originwise)}
+        color={marketingColors.originBudget}
         yTitle={Y_TITLE}
         decimals={0}
+        legendName="Budget"
+        labelRotation={0}
+        labelItalic={false}
       />
     );
   }
   if (mode === "segmentwise") {
     return (
-      <BudgetActualColumnChart
-        rows={data?.segmentwise}
-        budgetColor={marketingColors.segmentBudget}
-        actualColor={marketingColors.segmentActual}
+      <ColumnChart
+        rows={toBudgetRows(data?.segmentwise)}
+        color={marketingColors.segmentBudget}
         yTitle={Y_TITLE}
         decimals={1}
+        legendName="Budget"
+        labelRotation={0}
+        labelItalic={false}
       />
     );
   }
