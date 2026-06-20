@@ -1,20 +1,26 @@
 // Marketing module types. Mirrored in frontend/src/types/marketing.ts —
 // kept manually in sync (a shared workspace is overkill at this scope).
 
-export type MarketRange = "1W" | "1M" | "3M" | "1Y";
+// Index Movement window — 1 Month or 2 Months. Stored as the digit so the
+// URL param reads "1" / "2".
+export type IndexRange = "1" | "2";
+
+export type IndexCadence = "daily" | "weekly";
 
 // --- Index Movement --------------------------------------------------------
 
 export interface IndexSeries {
-  name: string; // e.g. "ICI 1"
+  name: string; // e.g. "ICI 1", "API 2"
   data: number[];
 }
 
 export interface IndexChart {
-  code: string; // "ICI Index" | "API Index"
-  range: MarketRange;
-  categories: string[]; // x-axis labels (e.g. "Day 1")
-  series: IndexSeries[]; // ICI 1..5
+  code: string;        // URL slug, e.g. "ici", "api-daily", "api-weekly"
+  title: string;       // display title, e.g. "ICI Index", "API Index"
+  cadence: IndexCadence;
+  range: IndexRange;
+  categories: string[]; // x-axis labels — DD/MM/YY for daily, "DD/MM/YY - DD/MM/YY" for weekly
+  series: IndexSeries[];
 }
 
 export interface IndexMovementResponse {

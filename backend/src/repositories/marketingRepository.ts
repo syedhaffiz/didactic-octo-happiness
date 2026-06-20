@@ -1,5 +1,5 @@
 import type {
-  MarketRange,
+  IndexRange,
   IndexChart,
   IndexMovementResponse,
   MarketShareResponse,
@@ -18,18 +18,18 @@ import {
 } from "../mocks/marketing.js";
 
 export interface MarketingRepository {
-  getIndices(range: MarketRange): Promise<IndexMovementResponse>;
-  getIndex(code: string, range: MarketRange): Promise<IndexChart | null>;
+  getIndices(range: IndexRange): Promise<IndexMovementResponse>;
+  getIndex(code: string, range: IndexRange): Promise<IndexChart | null>;
   getMarketShare(filters: MarketShareFilters): Promise<MarketShareResponse>;
   getOceanFreight(filters: OceanFreightFilters): Promise<OceanFreightResponse>;
   getTarget(filters: TargetFilters): Promise<TargetResponse>;
 }
 
 class MockMarketingRepository implements MarketingRepository {
-  async getIndices(range: MarketRange) {
+  async getIndices(range: IndexRange) {
     return buildIndexMovement(range);
   }
-  async getIndex(code: string, range: MarketRange) {
+  async getIndex(code: string, range: IndexRange) {
     return buildOneIndexChart(code, range);
   }
   async getMarketShare(filters: MarketShareFilters) {

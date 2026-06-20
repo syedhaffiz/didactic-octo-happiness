@@ -375,14 +375,14 @@ export const openApiSpec = {
     "/marketing/indices": {
       get: {
         tags: ["Marketing"],
-        summary: "Index Movement — ICI Index & API Index (multi-series)",
+        summary: "Index Movement — ICI + API (daily & weekly) multi-series charts",
         description: "Bulk endpoint. For per-card range filters use `GET /marketing/indices/{code}`.",
         parameters: [
           {
             name: "range",
             in: "query",
-            schema: { type: "string", enum: ["1W", "1M", "3M", "1Y"] },
-            description: "Defaults to `1M`",
+            schema: { type: "string", enum: ["1", "2"] },
+            description: "Months to plot. Defaults to `1`.",
           },
         ],
         responses: { "200": envelopeResponse("IndexMovementResponse") },
@@ -398,13 +398,13 @@ export const openApiSpec = {
             in: "path",
             required: true,
             schema: { type: "string" },
-            description: "URL-encoded code, e.g. `ICI%20Index`, `API%20Index`",
+            description: "Card slug: `ici`, `api-daily`, or `api-weekly`.",
           },
           {
             name: "range",
             in: "query",
-            schema: { type: "string", enum: ["1W", "1M", "3M", "1Y"] },
-            description: "Defaults to `1M`",
+            schema: { type: "string", enum: ["1", "2"] },
+            description: "Months to plot. Defaults to `1`.",
           },
         ],
         responses: {
@@ -1030,10 +1030,12 @@ export const openApiSpec = {
       },
       IndexChart: {
         type: "object",
-        required: ["code", "range", "categories", "series"],
+        required: ["code", "title", "cadence", "range", "categories", "series"],
         properties: {
-          code: { type: "string", example: "ICI Index" },
-          range: { type: "string", enum: ["1W", "1M", "3M", "1Y"] },
+          code: { type: "string", example: "ici" },
+          title: { type: "string", example: "ICI Index" },
+          cadence: { type: "string", enum: ["daily", "weekly"] },
+          range: { type: "string", enum: ["1", "2"] },
           categories: { type: "array", items: { type: "string" } },
           series: { type: "array", items: { $ref: "#/components/schemas/IndexSeries" } },
         },

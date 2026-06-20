@@ -3,9 +3,10 @@
 
 import { seeded, seedFromString, range, round } from "./rand.js";
 import type {
-  MarketRange,
+  IndexCadence,
   IndexChart,
   IndexMovementResponse,
+  IndexRange,
   IndexSeries,
   MarketShareResponse,
   ShareRow,
@@ -24,12 +25,37 @@ import type {
 
 // --- shared helpers --------------------------------------------------------
 
-const rangeCategories = (r: MarketRange): string[] => {
-  if (r === "1Y")
-    return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  if (r === "3M") return Array.from({ length: 12 }, (_, i) => `Week ${i + 1}`);
-  if (r === "1W") return Array.from({ length: 7 }, (_, i) => `Day ${i + 1}`);
-  return Array.from({ length: 30 }, (_, i) => `Day ${i + 1}`); // 1M
+// Anchor date — the figma exports show dates in May 2026, so we pin "today"
+// at end-May 2026 to keep the mocks reading the same as the design.
+const ANCHOR = new Date(Date.UTC(2026, 4, 31));
+
+const pad = (n: number) => String(n).padStart(2, "0");
+const ddmmyy = (d: Date) =>
+  `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${String(d.getUTCFullYear()).slice(-2)}`;
+
+const addDays = (d: Date, days: number) => {
+  const out = new Date(d);
+  out.setUTCDate(out.getUTCDate() + days);
+  return out;
+};
+
+// Categories for the new Index Movement screen. Daily produces 30/60 single
+// DD/MM/YY labels; weekly produces 4/8 "DD/MM/YY - DD/MM/YY" intervals.
+const indexCategories = (cadence: IndexCadence, r: IndexRange): string[] => {
+  const months = r === "2" ? 2 : 1;
+  if (cadence === "daily") {
+    const total = months * 30;
+    return Array.from({ length: total }, (_, i) =>
+      ddmmyy(addDays(ANCHOR, -(total - 1 - i))),
+    );
+  }
+  // Weekly — anchor weeks end on the anchor date.
+  const weeks = months * 4;
+  return Array.from({ length: weeks }, (_, i) => {
+    const end = addDays(ANCHOR, -7 * (weeks - 1 - i));
+    const start = addDays(end, -6);
+    return `${ddmmyy(start)} - ${ddmmyy(end)}`;
+  });
 };
 
 // Bell-shaped series: low at the ends, peak in the middle (matches the Figma
@@ -50,28 +76,73 @@ const bell = (
 
 // --- Index Movement --------------------------------------------------------
 
-const INDEX_SPECS: Record<string, { prefix: string; bases: number[]; amps: number[] }> = {
-  "ICI Index": { prefix: "ICI", bases: [59, 50, 45, 38, 33], amps: [21, 18, 17, 17, 18] },
-  "API Index": { prefix: "API", bases: [58, 49, 46, 37, 32], amps: [22, 19, 16, 18, 19] },
+// Per-chart spec: which display title, which cadence, and which numbered
+// lines to draw (e.g. ICI 1..5, API 2 + API 4, API 3 + API 5).
+interface IndexSpec {
+  title: string;
+  cadence: IndexCadence;
+  prefix: "ICI" | "API";
+  // Numbers (e.g. [1,2,3,4,5] for ICI, [2,4] for API Daily, [3,5] for API Weekly)
+  numbers: number[];
+  // Per-number base + amplitude, indexed by (number - 1). Keeps each named
+  // line at a believable, distinct level across renders.
+  bases: number[];
+  amps: number[];
+}
+
+const INDEX_SPECS: Record<string, IndexSpec> = {
+  ici: {
+    title: "ICI Index",
+    cadence: "weekly",
+    prefix: "ICI",
+    numbers: [1, 2, 3, 4, 5],
+    bases: [59, 50, 45, 38, 33],
+    amps: [21, 18, 17, 17, 18],
+  },
+  "api-daily": {
+    title: "API Index",
+    cadence: "daily",
+    prefix: "API",
+    numbers: [2, 4],
+    // Element [n-1] used per line — indices 1 and 3 are the live ones here.
+    bases: [0, 60, 0, 50, 0],
+    amps:  [0, 22, 0, 18, 0],
+  },
+  "api-weekly": {
+    title: "API Index",
+    cadence: "weekly",
+    prefix: "API",
+    numbers: [3, 5],
+    bases: [0, 0, 72, 0, 60],
+    amps:  [0, 0, 14, 0, 16],
+  },
 };
 
-export const INDEX_CODES = ["ICI Index", "API Index"];
+export const INDEX_CODES = Object.keys(INDEX_SPECS);
 
-export const buildOneIndexChart = (code: string, r: MarketRange): IndexChart | null => {
+export const buildOneIndexChart = (code: string, r: IndexRange): IndexChart | null => {
   const spec = INDEX_SPECS[code];
   if (!spec) return null;
   const rng = seeded(seedFromString(`mkt-idx-${code}-${r}`));
-  const cats = rangeCategories(r);
-  const series: IndexSeries[] = spec.bases.map((base, idx) => ({
-    name: `${spec.prefix} ${idx + 1}`,
-    data: bell(rng, cats.length, base, spec.amps[idx] ?? 18, 2.5),
+  const cats = indexCategories(spec.cadence, r);
+  const series: IndexSeries[] = spec.numbers.map((n) => ({
+    name: `${spec.prefix} ${n}`,
+    data: bell(rng, cats.length, spec.bases[n - 1] ?? 50, spec.amps[n - 1] ?? 18, 2.5),
   }));
-  return { code, range: r, categories: cats, series };
+  return {
+    code,
+    title: spec.title,
+    cadence: spec.cadence,
+    range: r,
+    categories: cats,
+    series,
+  };
 };
 
-export const buildIndexMovement = (r: MarketRange): IndexMovementResponse => ({
+export const buildIndexMovement = (r: IndexRange): IndexMovementResponse => ({
   items: INDEX_CODES.map((c) => buildOneIndexChart(c, r)).filter((c): c is IndexChart => c !== null),
 });
+
 
 // --- Market Share ----------------------------------------------------------
 

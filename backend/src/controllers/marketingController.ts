@@ -4,7 +4,7 @@ import { marketingService } from "../services/marketingService.js";
 import { fail, ok } from "../types/api.js";
 
 const rangeSchema = z.object({
-  range: z.enum(["1W", "1M", "3M", "1Y"]).optional(),
+  range: z.enum(["1", "2"]).optional(),
 });
 
 const dateRangeSchema = z.object({
@@ -27,7 +27,7 @@ const parse = <T>(schema: z.ZodSchema<T>, query: unknown): T => {
 export const getIndices: RequestHandler = async (req, res, next) => {
   try {
     const q = parse(rangeSchema, req.query);
-    res.json(ok(await marketingService.indices(q.range ?? "1M")));
+    res.json(ok(await marketingService.indices(q.range ?? "1")));
   } catch (e) {
     next(e);
   }
@@ -38,7 +38,7 @@ export const getIndex: RequestHandler = async (req, res, next) => {
   try {
     const q = parse(rangeSchema, req.query);
     const code = decodeURIComponent(req.params.code ?? "");
-    const result = await marketingService.index(code, q.range ?? "1M");
+    const result = await marketingService.index(code, q.range ?? "1");
     if (!result) {
       res.status(404).json(fail("not_found", `Unknown index code: ${code}`));
       return;
