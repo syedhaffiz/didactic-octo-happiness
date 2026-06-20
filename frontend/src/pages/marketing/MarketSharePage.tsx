@@ -1,9 +1,9 @@
-import { Space } from "antd";
+import { Col, Row } from "antd";
 import { PageHeader } from "../../components/PageHeader";
 import { DateRangeFilter } from "../../components/DateRangeFilter";
 import { ErrorRetry } from "../../components/ErrorRetry";
-import { OverallShareCard } from "../../components/marketing/OverallShareCard";
-import { ZoneShareCard } from "../../components/marketing/ZoneShareCard";
+import { DrilldownPieCard } from "../../components/marketing/DrilldownPieCard";
+import { ShipperReceiverCard } from "../../components/marketing/ShipperReceiverCard";
 import { marketingApi } from "../../api/marketing";
 import { useApi } from "../../api/useApi";
 import {
@@ -19,8 +19,6 @@ export const MarketSharePage = () => {
     () => marketingApi.marketShare({ fromDate, toDate }),
   );
 
-  const unit = data?.unit ?? "MMT";
-
   return (
     <>
       <PageHeader
@@ -32,10 +30,36 @@ export const MarketSharePage = () => {
       {isError ? (
         <ErrorRetry title="Could not load market share" error={error} onRetry={refetch} />
       ) : (
-        <Space direction="vertical" size={16} style={{ width: "100%" }}>
-          <OverallShareCard overall={data?.overall} unit={unit} loading={isLoading} />
-          <ZoneShareCard byZone={data?.byZone} unit={unit} loading={isLoading} />
-        </Space>
+        <Row gutter={[16, 16]}>
+          <Col xs={24} lg={12}>
+            {/* Chart 1 — Geographic dominance: Market -> Zone -> Port */}
+            <DrilldownPieCard
+              title="Market Share"
+              subtitle="Click a slice to drill down: Market → Zone → Port"
+              dim="geographic"
+              root={data?.geographic}
+              loading={isLoading}
+            />
+          </Col>
+          <Col xs={24} lg={12}>
+            {/* Chart 2 — Commercial model: Market -> Port -> Business Type */}
+            <DrilldownPieCard
+              title="Market Share by Business Type"
+              subtitle="Click a slice to drill down: Market → Port → Business Type"
+              dim="businessType"
+              root={data?.businessType}
+              loading={isLoading}
+            />
+          </Col>
+          <Col xs={24}>
+            {/* Chart 3 — Operational balance: Shipper vs Receiver per port */}
+            <ShipperReceiverCard
+              title="Market Share by Receiver vs Shipper"
+              rows={data?.shipperReceiver}
+              loading={isLoading}
+            />
+          </Col>
+        </Row>
       )}
     </>
   );

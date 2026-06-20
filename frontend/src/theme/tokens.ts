@@ -157,6 +157,28 @@ export const marketingColors = {
     "#3E81F4",
     "#F69C50",
   ],
+  // Market Share revamp — drilldown pies + shipper/receiver bars.
+  marketShare: {
+    own: "#1B365D", // dark navy — Own root slice / shipper-own bar
+    nonOwn: "#A5C8ED", // light blue — Non-Own root slice / shipper-non-own bar
+    receiverOwn: "#2E5B88", // medium blue — Own receiver bar
+    receiverNonOwn: "#D0D0D0", // grey — Non-Own receiver bar
+    // Categorical palette for drilled levels (zones / ports / business type).
+    drill: [
+      "#3E81F4",
+      "#7E57D8",
+      "#1BA05A",
+      "#F36C2A",
+      "#0BA0C1",
+      "#F7836E",
+      "#9B5BD0",
+      "#37A089",
+      "#F69C50",
+      "#5FA0E6",
+      "#C2477E",
+      "#2A7A68",
+    ],
+  },
   // Target above 2% — Port Wise bars (navy).
   portBar: "#264165",
   // Target above 2% — Origin Wise (purple Budget/Actual = purpleDeep / actualAlt).

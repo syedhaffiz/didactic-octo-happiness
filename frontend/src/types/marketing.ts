@@ -24,29 +24,44 @@ export interface IndexMovementResponse {
 }
 
 // --- Market Share ----------------------------------------------------------
+// Mirror of backend/src/types/marketing.ts.
 
-export interface ShareRow {
-  category: string;
-  mmt: number;
-  totalMmt: number;
-  pct: number;
+export interface MarketSharePiePoint {
+  name: string;
+  y: number;
+  drilldown: string | null;
+  own: number;
+  nonOwn: number;
 }
 
-export interface ShareSlice {
-  label: string;
-  value: number; // MMT
-  pct: number;
+// One drilldown level, fetched lazily on slice click.
+export interface MarketShareDrilldownSeries {
+  id: string;
+  tier: string;
+  data: MarketSharePiePoint[];
 }
 
-export interface ZoneShareRow {
-  zone: number;
-  pct: number;
+// Only the root level ships with the page; deeper levels are fetched on demand.
+export interface MarketShareRootPie {
+  rootName: string;
+  root: MarketSharePiePoint[];
+}
+
+export type MarketShareDimension = "geographic" | "businessType";
+
+export interface ShipperReceiverRow {
+  port: string;
+  shipperOwn: number;
+  shipperNonOwn: number;
+  receiverOwn: number;
+  receiverNonOwn: number;
 }
 
 export interface MarketShareResponse {
-  unit: "MMT";
-  overall: { total: number; rows: ShareRow[]; slices: ShareSlice[] };
-  byZone: { total: number; rows: ZoneShareRow[]; slices: ShareSlice[] };
+  unit: "MT";
+  geographic: MarketShareRootPie;
+  businessType: MarketShareRootPie;
+  shipperReceiver: ShipperReceiverRow[];
 }
 
 // --- Ocean Freight ---------------------------------------------------------

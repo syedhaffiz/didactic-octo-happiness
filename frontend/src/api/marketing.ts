@@ -7,6 +7,8 @@ import type {
   IndexMovementResponse,
   MarketShareResponse,
   MarketShareParams,
+  MarketShareDimension,
+  MarketShareDrilldownSeries,
   OceanFreightResponse,
   OceanFreightParams,
   TargetResponse,
@@ -16,6 +18,7 @@ import {
   buildIndexMovement,
   buildOneIndexChart,
   buildMarketShare,
+  buildMarketShareDrill,
   buildOceanFreight,
   buildTarget,
 } from "../mocks/marketing";
@@ -44,6 +47,8 @@ const httpMarketingApi = {
     get<IndexChart>(`/marketing/indices/${encodeURIComponent(code)}`, { range }),
   marketShare: (p: MarketShareParams = {}) =>
     get<MarketShareResponse>("/marketing/market-share", p),
+  marketShareDrill: (dim: MarketShareDimension, path: string) =>
+    get<MarketShareDrilldownSeries>("/marketing/market-share/drill", { dim, path }),
   oceanFreight: (p: OceanFreightParams = {}) =>
     get<OceanFreightResponse>("/marketing/ocean-freight", p),
   target: (p: TargetParams = {}) => get<TargetResponse>("/marketing/target", p),
@@ -59,6 +64,11 @@ const mockMarketingApi = {
     return mockDelay(result);
   },
   marketShare: (p: MarketShareParams = {}) => mockDelay(buildMarketShare(p)),
+  marketShareDrill: (dim: MarketShareDimension, path: string) => {
+    const level = buildMarketShareDrill(dim, path);
+    if (!level) return Promise.reject(new Error(`not_found: Unknown drilldown path: ${path}`));
+    return mockDelay(level);
+  },
   oceanFreight: (p: OceanFreightParams = {}) => mockDelay(buildOceanFreight(p)),
   target: (p: TargetParams = {}) => mockDelay(buildTarget(p)),
 };

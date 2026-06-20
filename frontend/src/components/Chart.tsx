@@ -1,8 +1,11 @@
 import Highcharts from "highcharts";
-// Side-effect imports register the solidgauge series type used by the
-// Inventory Days panel on the Approved Budget page.
+// Side-effect imports register extra series/features. Core must be imported
+// first (above) or the modules throw "Cannot read … 'Templating'".
+//   - highcharts-more / solid-gauge: Inventory Days gauge (Approved Budget)
+//   - drilldown: Market Share pie drilldown
 import "highcharts/highcharts-more";
 import "highcharts/modules/solid-gauge";
+import "highcharts/modules/drilldown";
 import { useEffect, useMemo, useRef } from "react";
 import { brand, chartPalette, fontFamily } from "../theme/tokens";
 import { LoadingOverlay } from "./LoadingIndicator";
