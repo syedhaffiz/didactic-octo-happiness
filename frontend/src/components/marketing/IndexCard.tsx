@@ -10,40 +10,28 @@ import {
   IndexRangeSelect,
   isIndexRange,
 } from "./IndexRangeSelect";
-import type { IndexChart, IndexRange } from "../../types/marketing";
+import type { IndexRange } from "../../types/marketing";
 
-// URL-safe slug so each card owns its own range param (e.g. "ici" →
-// "range_ici") and the dropdowns never collide.
 const paramKey = (code: string) =>
   `range_${code.toLowerCase().replace(/[^a-z0-9]/g, "")}`;
 
 const cadenceLabel = (cadence: "daily" | "weekly") =>
   cadence === "daily" ? "Updates Daily" : "Updates Weekly";
 
-// One independent Index Movement card. Renders its title + cadence subtitle in
-// the card header, an independent 1/2 Month dropdown on the right, and a
-// multi-series line chart in the body. The page passes the per-chart color
-// palette so the lines match the figma legend exactly.
 export const IndexCard = ({
   code,
-  initial,
   colors,
 }: {
   code: string;
-  initial: IndexChart;
   colors: readonly string[];
 }) => {
   const [rawRange, setRawRange] = useUrlParam(paramKey(code));
   const range: IndexRange = isIndexRange(rawRange) ? rawRange : DEFAULT_INDEX_RANGE;
 
-  // Only refetch when the user picks a non-default range — the bulk call
-  // already seeded this card's default-range data.
-  const needsRefetch = isIndexRange(rawRange) && rawRange !== DEFAULT_INDEX_RANGE;
-  const { data: fetched, isLoading } = useApi(
-    ["marketing", "index", code, range, needsRefetch],
-    () => (needsRefetch ? marketingApi.indexOne(code, range) : Promise.resolve(initial)),
+  const { data: idx, isLoading } = useApi(
+    ["marketing", "index", code, range],
+    () => marketingApi.indexOne(code, range),
   );
-  const idx = fetched ?? initial;
   const series = idx?.series ?? [];
 
   const onChange = (next: IndexRange) =>
@@ -62,7 +50,7 @@ export const IndexCard = ({
       extra={<IndexRangeSelect value={range} onChange={onChange} />}
       styles={{ header: { borderBottom: "none" }, body: { paddingTop: 4 } }}
     >
-      {series.length === 0 ? (
+      {!isLoading && series.length === 0 ? (
         <Empty description="No series data" style={{ padding: 32 }} />
       ) : (
         <ErrorBoundary level="section" label={idx?.code ?? code}>
@@ -73,7 +61,7 @@ export const IndexCard = ({
             height={340}
             yMin={0}
             valueDecimals={1}
-            loading={isLoading && needsRefetch}
+            loading={isLoading}
           />
         </ErrorBoundary>
       )}
