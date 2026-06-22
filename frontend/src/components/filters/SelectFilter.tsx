@@ -31,6 +31,9 @@ interface SelectFilterProps {
   value: string | undefined;
   onChange: (v: string | undefined) => void;
   width?: number;
+  // When false, the "All" option is omitted and the select always holds a
+  // concrete value (the caller supplies a default). Defaults to true.
+  allowAll?: boolean;
 }
 
 export const SelectFilter = ({
@@ -39,6 +42,7 @@ export const SelectFilter = ({
   value,
   onChange,
   width = 160,
+  allowAll = true,
 }: SelectFilterProps) => {
   const { data } = useApi(["filters"], filtersApi.all, { cache: true });
 
@@ -51,19 +55,19 @@ export const SelectFilter = ({
     label: string;
   };
 
-  const options = [
-    { value: ALL, label: "All" },
-    ...items.map((item) => extract(item)),
-  ];
+  const baseOptions = items.map((item) => extract(item));
+  const options = allowAll
+    ? [{ value: ALL, label: "All" }, ...baseOptions]
+    : baseOptions;
 
   return (
     <FilterField label={label} width={width}>
       <Select
-        value={value ?? ALL}
+        value={allowAll ? value ?? ALL : value}
         onChange={(v) => onChange(v === ALL ? undefined : v)}
         options={options}
         style={{ width: "100%" }}
-        placeholder="All"
+        placeholder={allowAll ? "All" : undefined}
       />
     </FilterField>
   );

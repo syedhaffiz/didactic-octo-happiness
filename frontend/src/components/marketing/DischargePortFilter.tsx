@@ -1,18 +1,21 @@
-import { Select } from "antd";
-import { FilterField } from "../filters/FilterField";
-import { DISCHARGE_PORT_LIST } from "../../mocks/marketing";
+import { SelectFilter } from "../filters/SelectFilter";
 
-const options = DISCHARGE_PORT_LIST.map((p) => ({ value: p, label: p }));
-
-// Discharge Port dropdown for the Ocean Freight page.
+// Discharge Port dropdown for the Ocean Freight page. A port select sourced
+// from /filters (same as the Finance PortFilter), but with no "All" option —
+// a concrete port is always selected.
 export const DischargePortFilter = ({
   value,
   onChange,
 }: {
-  value: string;
-  onChange: (value: string) => void;
+  value: string | undefined;
+  onChange: (v: string | undefined) => void;
 }) => (
-  <FilterField label="Discharge Port" width={180}>
-    <Select value={value} onChange={onChange} options={options} style={{ width: "100%" }} />
-  </FilterField>
+  <SelectFilter
+    label="Discharge Port"
+    kind="ports"
+    value={value}
+    onChange={onChange}
+    allowAll={false}
+    width={180}
+  />
 );
