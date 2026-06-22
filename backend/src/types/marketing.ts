@@ -70,6 +70,10 @@ export interface ShipperReceiverRow {
   shipperNonOwn: number;
   receiverOwn: number;
   receiverNonOwn: number;
+  shipperOwnEntities?: string[];
+  shipperNonOwnEntities?: string[];
+  receiverOwnEntities?: string[];
+  receiverNonOwnEntities?: string[];
 }
 
 export interface MarketShareResponse {

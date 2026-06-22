@@ -45,14 +45,23 @@ export const ShipperReceiverCard = ({ title, rows, loading, height = 420 }: Prop
       tooltip: {
         shared: false,
         useHTML: true,
-        headerFormat: "",
-        pointFormatter(this: Highcharts.Point): string {
-          const s = this.series;
-          const stack = (s.options as { stack?: string }).stack ?? "";
-          return (
-            `<span style="font-size:13px;font-weight:700;color:${brand.headline}">${this.category} <span style="font-size:11px;color:#888">(${stack})</span></span><br/>` +
-            `<span style="color:${this.color}">■</span> ${s.name}: <b>${Highcharts.numberFormat(this.y ?? 0, 0)} MT</b>`
-          );
+        formatter(this: Highcharts.TooltipFormatterContextObject): string {
+          const stack = (this.series.options as { stack?: string }).stack ?? "";
+          const entities: string[] = (this.point.options as { custom?: { entities?: string[] } }).custom?.entities ?? [];
+          let html = `<div style="font-family:Arial,sans-serif;font-size:12px;min-width:180px;">`;
+          html += `<div style="font-size:14px;font-weight:700;color:${brand.headline};border-bottom:1px solid #ccc;padding-bottom:5px;margin-bottom:5px;">`;
+          html += `${this.key} <span style="font-size:11px;color:#666;">(${stack} Stack)</span></div>`;
+          html += `<b>Segment:</b> <span style="color:${String(this.color)}">■</span> ${this.series.name}<br/>`;
+          html += `<b>Total Volume:</b> ${Highcharts.numberFormat(this.y ?? 0, 0)} MT<br/>`;
+          if (entities.length > 0) {
+            html += `<div style="margin-top:8px;background:#f4f6f9;padding:6px;border-radius:4px;border:1px solid #eee;">`;
+            html += `<b style="color:#333;">Key Entities Included:</b><br/>`;
+            html += `<ul style="margin:4px 0 0 0;padding-left:15px;color:#444;">`;
+            entities.forEach((e) => { html += `<li>${e}</li>`; });
+            html += `</ul></div>`;
+          }
+          html += `</div>`;
+          return html;
         },
       },
       plotOptions: {
@@ -60,13 +69,13 @@ export const ShipperReceiverCard = ({ title, rows, loading, height = 420 }: Prop
       },
       series: [
         { type: "column", name: "Shipper Own", stack: "Shipper", color: own,
-          data: safe.map((r) => r.shipperOwn) },
+          data: safe.map((r) => ({ y: r.shipperOwn, custom: { entities: r.shipperOwnEntities ?? [] } })) },
         { type: "column", name: "Shipper Non-Own", stack: "Shipper", color: nonOwn,
-          data: safe.map((r) => r.shipperNonOwn) },
+          data: safe.map((r) => ({ y: r.shipperNonOwn, custom: { entities: r.shipperNonOwnEntities ?? [] } })) },
         { type: "column", name: "Own Receiver", stack: "Receiver", color: receiverOwn,
-          data: safe.map((r) => r.receiverOwn) },
+          data: safe.map((r) => ({ y: r.receiverOwn, custom: { entities: r.receiverOwnEntities ?? [] } })) },
         { type: "column", name: "Non-Own Receiver", stack: "Receiver", color: receiverNonOwn,
-          data: safe.map((r) => r.receiverNonOwn) },
+          data: safe.map((r) => ({ y: r.receiverNonOwn, custom: { entities: r.receiverNonOwnEntities ?? [] } })) },
       ],
     };
   }, [rows, height]);
