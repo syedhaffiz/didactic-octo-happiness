@@ -16,6 +16,7 @@ export interface IndexNameRef {
 
 export interface FiltersResponse {
   ports: FilterRef[];
+  dischargePorts: FilterRef[];
   segments: FilterRef[];
   zones: FilterRef[];
   origins: FilterRef[];

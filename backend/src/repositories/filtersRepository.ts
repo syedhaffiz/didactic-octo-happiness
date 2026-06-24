@@ -1,4 +1,5 @@
 import {
+  DISCHARGE_PORT_LIST,
   GRADE_LIST,
   INDEX_NAME_LIST,
   ORIGIN_LIST,
@@ -16,6 +17,7 @@ class MockFiltersRepository implements FiltersRepository {
   async getAll(): Promise<FiltersResponse> {
     return {
       ports: [...PORT_LIST],
+      dischargePorts: [...DISCHARGE_PORT_LIST],
       segments: [...SEGMENT_LIST],
       zones: [...ZONE_LIST],
       origins: [...ORIGIN_LIST],

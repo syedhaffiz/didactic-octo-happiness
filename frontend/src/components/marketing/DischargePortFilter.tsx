@@ -1,8 +1,8 @@
 import { SelectFilter } from "../filters/SelectFilter";
 
-// Discharge Port dropdown for the Ocean Freight page. A port select sourced
-// from /filters (same as the Finance PortFilter), but with no "All" option —
-// a concrete port is always selected.
+// Discharge Port dropdown for the Ocean Freight page. Sourced from the
+// dedicated `dischargePorts` slice of /filters (distinct from the Finance
+// `ports` list), with no "All" option — a concrete port is always selected.
 export const DischargePortFilter = ({
   value,
   onChange,
@@ -12,7 +12,7 @@ export const DischargePortFilter = ({
 }) => (
   <SelectFilter
     label="Discharge Port"
-    kind="ports"
+    kind="dischargePorts"
     value={value}
     onChange={onChange}
     allowAll={false}

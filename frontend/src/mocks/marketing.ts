@@ -296,33 +296,43 @@ export const buildMarketShare = (_f: MarketShareParams = {}): MarketShareRespons
 
 // --- Ocean Freight ---------------------------------------------------------
 
-export const DISCHARGE_PORT_LIST = ["Hazira", "Mundra", "Krishnapatnam", "Dahej", "Gangavaram"];
-const CAPES_SERIES = ["Samarinda", "Abbotpoint", "RBCT", "US Balti CNX"];
-const PANAMAX_SERIES = ["Samarinda", "Abbotpoint", "RBCT"];
+// The full catalogue of vessel-type charts. How many a given port returns is
+// derived per port below — the page renders whatever count comes back rather
+// than assuming a fixed Capes/Panamax pair.
+interface VesselSpec {
+  vesselType: string;
+  series: string[];
+  baseTop: number;
+}
+const VESSEL_SPECS: VesselSpec[] = [
+  { vesselType: "Capes", series: ["Samarinda", "Abbotpoint", "RBCT", "US Balti CNX"], baseTop: 8.6 },
+  { vesselType: "Panamax", series: ["Samarinda", "Abbotpoint", "RBCT"], baseTop: 8.0 },
+  { vesselType: "Supramax", series: ["Samarinda", "Abbotpoint"], baseTop: 7.4 },
+  { vesselType: "Handymax", series: ["Samarinda", "RBCT"], baseTop: 7.0 },
+];
 
-const freightChart = (
-  vesselType: string,
-  names: string[],
-  port: string,
-  baseTop: number,
-): FreightChart => {
-  const rng = seeded(seedFromString(`mkt-freight-${vesselType}-${port}`));
+// Deterministic per-port chart count (2..VESSEL_SPECS.length) so a given
+// discharge port always returns the same set across reloads.
+const portVesselCount = (port: string): number => {
+  const rng = seeded(seedFromString(`mkt-freight-count-${port}`));
+  return 2 + Math.floor(rng() * (VESSEL_SPECS.length - 1));
+};
+
+const freightChart = (spec: VesselSpec, port: string): FreightChart => {
+  const rng = seeded(seedFromString(`mkt-freight-${spec.vesselType}-${port}`));
   const cats = Array.from({ length: 30 }, (_, i) => `Day ${i + 1}`);
-  const series: FreightSeries[] = names.map((name, idx) => ({
+  const series: FreightSeries[] = spec.series.map((name, idx) => ({
     name,
-    data: bell(rng, cats.length, baseTop - idx * 0.18, 0.4, 0.06, 2),
+    data: bell(rng, cats.length, spec.baseTop - idx * 0.18, 0.4, 0.06, 2),
   }));
-  return { vesselType, unit: "$/MT", categories: cats, series };
+  return { vesselType: spec.vesselType, unit: "$/MT", categories: cats, series };
 };
 
 export const buildOceanFreight = (f: OceanFreightParams = {}): OceanFreightResponse => {
-  const port = f.dischargePort ?? "Hazira";
+  const port = f.dischargePort ?? "hazira";
   return {
     dischargePort: port,
-    items: [
-      freightChart("Capes", CAPES_SERIES, port, 8.6),
-      freightChart("Panamax", PANAMAX_SERIES, port, 8.0),
-    ],
+    items: VESSEL_SPECS.slice(0, portVesselCount(port)).map((spec) => freightChart(spec, port)),
   };
 };
 

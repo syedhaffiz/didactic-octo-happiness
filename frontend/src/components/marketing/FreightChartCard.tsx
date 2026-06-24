@@ -4,17 +4,19 @@ import { MultiSeriesLineChart } from "../MultiSeriesLineChart";
 import { marketingColors } from "../../theme/tokens";
 import type { FreightChart } from "../../types/marketing";
 
-// A single vessel-type card (Capes / Panamax) wrapping the line chart.
+// A single vessel-type card wrapping the line chart. `title` is optional so
+// the card can stand in as a loading placeholder before the vessel type is
+// known — in that case the header shows a skeleton instead of text.
 export const FreightChartCard = ({
   title,
   chart,
   loading,
 }: {
-  title: string;
+  title?: string;
   chart?: FreightChart;
   loading: boolean;
 }) => (
-  <Card title={title}>
+  <Card title={title ?? <Skeleton.Input active size="small" style={{ width: 90 }} />}>
     {loading || !chart ? (
       <Skeleton active paragraph={{ rows: 6 }} />
     ) : (chart.series ?? []).length === 0 ? (

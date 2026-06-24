@@ -14,6 +14,7 @@ const optionExtractors: {
   ) => { value: string; label: string };
 } = {
   ports: (p) => ({ value: p.id, label: p.name }),
+  dischargePorts: (p) => ({ value: p.id, label: p.name }),
   segments: (s) => ({ value: s.id, label: s.name }),
   zones: (z) => ({ value: z.id, label: z.name }),
   origins: (o) => ({ value: o.id, label: o.name }),

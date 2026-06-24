@@ -36,6 +36,17 @@ export const PORT_LIST: IdName[] = [
   { id: "gopalpur", name: "Gopalpur" },
 ];
 
+// Discharge ports for the Marketing → Ocean Freight page. A distinct catalogue
+// from PORT_LIST (load/finance ports) — exposed under `dischargePorts` in the
+// /filters response.
+export const DISCHARGE_PORT_LIST: IdName[] = [
+  { id: "hazira", name: "Hazira" },
+  { id: "mundra", name: "Mundra" },
+  { id: "krishnapatnam", name: "Krishnapatnam" },
+  { id: "dahej", name: "Dahej" },
+  { id: "gangavaram", name: "Gangavaram" },
+];
+
 export const SEGMENT_LIST: IdName[] = [
   { id: "sns", name: "SNS" },
   { id: "seb", name: "SEB" },
