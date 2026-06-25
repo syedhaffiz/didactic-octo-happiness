@@ -59,6 +59,9 @@ const MarketingTarget = lazy(() =>
 const LegalPage = lazy(() =>
   import("./pages/legal/LegalPage").then((m) => ({ default: m.LegalPage })),
 );
+const LogisticsPage = lazy(() =>
+  import("./pages/logistics/LogisticsPage").then((m) => ({ default: m.LogisticsPage })),
+);
 const Placeholder = lazy(() =>
   import("./pages/Placeholder").then((m) => ({ default: m.Placeholder })),
 );
@@ -94,7 +97,7 @@ export const createAppRouter = (basename: string = "/") =>
               { path: "inventory", element: <InventoryOverviewPage /> },
             ],
           },
-          { path: "logistics", element: <Placeholder title="Logistics" /> },
+          { path: "logistics", element: <LogisticsPage /> },
           { path: "marketing", element: <Navigate to="/marketing/index-movement" replace /> },
           { path: "marketing/index-movement", element: <MarketingIndexMovement /> },
           { path: "marketing/market-share", element: <MarketingMarketShare /> },
