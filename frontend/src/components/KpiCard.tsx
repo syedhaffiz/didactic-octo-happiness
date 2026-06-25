@@ -25,6 +25,14 @@ const iconMap: Record<IconKey, ReactElement> = {
   inventoryDays: <ClockCircleOutlined />,
 };
 
+// Destination routes live in the UI, not the API. Only these three KPIs have a
+// detail page to open; the rest (Sales, Inventory Days) render no export link.
+const hrefMap: Partial<Record<IconKey, string>> = {
+  revenue: "/finance/overview/revenue",
+  profitability: "/finance/overview/profitability",
+  workingCapital: "/finance/working-capital",
+};
+
 interface Props {
   /** KPI data; undefined while loading or when the API hasn't delivered yet. */
   kpi?: KPI;
@@ -39,6 +47,7 @@ interface Props {
 export const KpiCard = ({ kpi, loading = false }: Props) => {
   const t = useBrandTokens();
   const icon = kpi ? iconMap[kpi.id] : null;
+  const href = kpi ? hrefMap[kpi.id] : undefined;
   const sparkColor = kpi ? kpiSparkColors[kpi.id] ?? brand.purple : brand.accent;
   const isUp = kpi?.trend === "up";
   const deltaColor = isUp ? t.deltaUp : t.deltaDown;
@@ -79,10 +88,10 @@ export const KpiCard = ({ kpi, loading = false }: Props) => {
         >
           {icon}
         </div>
-        {kpi ? (
+        {href ? (
           <Link
-            to={kpi.href}
-            aria-label={`Open ${kpi.label}`}
+            to={href}
+            aria-label={`Open ${kpi?.label ?? ""}`}
             style={{
               width: 26,
               height: 26,
@@ -97,7 +106,9 @@ export const KpiCard = ({ kpi, loading = false }: Props) => {
           >
             <ExportOutlined />
           </Link>
-        ) : (
+        ) : !kpi ? (
+          // Loading: reserve the slot so the header doesn't shift when data
+          // lands. Once loaded, KPIs without an href render no link at all.
           <div
             style={{
               width: 26,
@@ -106,7 +117,7 @@ export const KpiCard = ({ kpi, loading = false }: Props) => {
               background: brand.accentSoft,
             }}
           />
-        )}
+        ) : null}
       </div>
 
       <div style={{ marginTop: 14, color: t.textSecondary, fontSize: 13, minHeight: 18 }}>

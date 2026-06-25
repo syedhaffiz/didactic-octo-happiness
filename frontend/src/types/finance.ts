@@ -19,7 +19,6 @@ export interface KPI {
   deltaPct: number;
   trend: Trend;
   spark: number[];
-  href: string;
 }
 
 export type ForexRange = "all" | "week" | "month";

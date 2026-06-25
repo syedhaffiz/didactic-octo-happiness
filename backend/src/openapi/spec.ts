@@ -589,7 +589,7 @@ export const openApiSpec = {
       // --- Finance: KPIs + Forex --------------------------------------
       KPI: {
         type: "object",
-        required: ["id", "label", "value", "unit", "deltaPct", "trend", "spark", "href"],
+        required: ["id", "label", "value", "unit", "deltaPct", "trend", "spark"],
         properties: {
           id: {
             type: "string",
@@ -601,7 +601,6 @@ export const openApiSpec = {
           deltaPct: { type: "number" },
           trend: { type: "string", enum: ["up", "down"] },
           spark: { type: "array", items: { type: "number" } },
-          href: { type: "string" },
         },
       },
       ForexPoint: {

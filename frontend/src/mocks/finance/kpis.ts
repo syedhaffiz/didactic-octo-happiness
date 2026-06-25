@@ -11,15 +11,14 @@ interface Definition {
   unit: KPI["unit"];
   value: number;
   deltaPct: number;
-  href: string;
 }
 
 const DEFINITIONS: readonly Definition[] = [
-  { id: "revenue",        label: "Revenue",         unit: "Cr",   value: 970, deltaPct: 12, href: "/finance/overview/revenue" },
-  { id: "sales",          label: "Sales",           unit: "MMT",  value: 5.1, deltaPct: -7, href: "/finance/sales" },
-  { id: "profitability",  label: "Profitability",   unit: "Cr",   value: 114, deltaPct: 8,  href: "/finance/overview/profitability" },
-  { id: "workingCapital", label: "Working Capital", unit: "Cr",   value: 970, deltaPct: 12, href: "/finance/working-capital" },
-  { id: "inventoryDays",  label: "Inventory Days",  unit: "Days", value: 24,  deltaPct: 12, href: "/finance/inventory-days" },
+  { id: "revenue",        label: "Revenue",         unit: "Cr",   value: 970, deltaPct: 12 },
+  { id: "sales",          label: "Sales",           unit: "MMT",  value: 5.1, deltaPct: -7 },
+  { id: "profitability",  label: "Profitability",   unit: "Cr",   value: 114, deltaPct: 8  },
+  { id: "workingCapital", label: "Working Capital", unit: "Cr",   value: 970, deltaPct: 12 },
+  { id: "inventoryDays",  label: "Inventory Days",  unit: "Days", value: 24,  deltaPct: 12 },
 ];
 
 const buildSpark = (def: Definition, months: MonthKey[]): number[] => {
@@ -45,6 +44,5 @@ export const buildKpis = (fromDate?: string, toDate?: string): KPI[] => {
     spark: buildSpark(def, months),
     deltaPct: def.deltaPct,
     trend: def.deltaPct >= 0 ? "up" : "down",
-    href: def.href,
   } satisfies KPI));
 };
