@@ -5,7 +5,8 @@ export const financeService = {
   overview: (from: Date, to: Date) => financeRepository.getOverview(from, to),
   kpis: (from: Date, to: Date) => financeRepository.getKpis(from, to),
   forex: (range: ForexRange, anchor: Date) => financeRepository.getForex(range, anchor),
-  revenueBreakdown: (period: RevenuePeriod) => financeRepository.getRevenueBreakdown(period),
+  revenueBreakdown: (period: RevenuePeriod, from: Date, to: Date) =>
+    financeRepository.getRevenueBreakdown(period, from, to),
   revenuePort: (port: string | undefined) => financeRepository.getRevenuePort(port),
   revenueSegment: (segment: string | undefined) => financeRepository.getRevenueSegment(segment),
   workingCapital: (port: string | undefined, from: Date, to: Date) =>

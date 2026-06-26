@@ -70,7 +70,7 @@ export interface NetMarginParams extends PortRangeParams {
   currency?: Currency;
 }
 
-export interface RevenuePeriodParams {
+export interface RevenuePeriodParams extends RangeParams {
   period?: RevenuePeriod;
 }
 
@@ -118,7 +118,7 @@ const mockFinanceApi = {
   kpis: (p: RangeParams = {}) => mockDelay(buildKpis(p.fromDate, p.toDate)),
   forex: (range: ForexRange = "week") => mockDelay(buildForex(range, new Date())),
   revenueBreakdown: (p: RevenuePeriodParams = {}) =>
-    mockDelay(buildRevenueBreakdown(p.period ?? "YTD")),
+    mockDelay(buildRevenueBreakdown(p.period ?? "YTD", p.fromDate, p.toDate)),
   revenuePort: (p: PortOnlyParams = {}) => mockDelay(buildRevenuePort(p.port)),
   revenueSegment: (p: SegmentOnlyParams = {}) => mockDelay(buildRevenueSegment(p.segment)),
   workingCapital: (p: PortRangeParams = {}) =>

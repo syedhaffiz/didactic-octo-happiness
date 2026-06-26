@@ -20,11 +20,11 @@ import {
 export const Revenue = () => {
   const t = useBrandTokens();
   const [period] = useRevenuePeriod();
-  const { start, end, value, setRange } = useDateRangeWithDefault(1);
+  const { start, end, value, fromDate, toDate, setRange } = useDateRangeWithDefault(1);
 
   const { data, isLoading, isError, error, refetch } = useApi(
-    ["revenue-breakdown", period],
-    () => financeApi.revenueBreakdown({ period }),
+    ["revenue-breakdown", period, fromDate, toDate],
+    () => financeApi.revenueBreakdown({ period, fromDate, toDate }),
   );
 
   // Slice/card colors are owned by the UI, not the API: assign from the shared
@@ -32,8 +32,8 @@ export const Revenue = () => {
   // the pool size) so cards and donut slices stay in lockstep.
   const colorBySegment = useMemo(() => {
     const out: Record<string, string> = {};
-    (data?.cards ?? []).forEach((c, i) => {
-      out[c.segment] = donutColors[i % donutColors.length];
+    (data?.items ?? []).forEach((it, i) => {
+      out[it.segment] = donutColors[i % donutColors.length];
     });
     return out;
   }, [data]);
@@ -63,12 +63,12 @@ export const Revenue = () => {
                 <Row gutter={[20, 20]} align="middle">
                   <Col xs={24} md={14}>
                     <Row gutter={[16, 16]}>
-                      {data.cards.map((c) => (
-                        <Col xs={12} sm={12} md={12} lg={6} key={c.segment}>
+                      {data.items.map((it) => (
+                        <Col xs={12} sm={12} md={12} lg={6} key={it.segment}>
                           <RevenueKpiCard
-                            segment={c.segment}
-                            value={c.value}
-                            hoverColor={colorBySegment[c.segment]}
+                            segment={it.segment}
+                            value={it.value}
+                            hoverColor={colorBySegment[it.segment]}
                           />
                         </Col>
                       ))}
@@ -76,7 +76,7 @@ export const Revenue = () => {
                   </Col>
                   <Col xs={24} md={10}>
                     <RevenueDonut
-                      slices={data.slices}
+                      items={data.items}
                       colorBySegment={colorBySegment}
                       total={data.total}
                     />

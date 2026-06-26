@@ -682,24 +682,22 @@ export const openApiSpec = {
       },
 
       // --- Finance: Revenue suite --------------------------------------
-      RevenueBreakdownCard: {
+      RevenueBreakdownItem: {
         type: "object",
-        required: ["segment", "value", "unit"],
+        required: ["segment", "value", "pct"],
         properties: {
           segment: { type: "string" },
-          value: { type: "number" },
-          unit: { type: "string", enum: ["Cr"] },
+          value: { type: "number", description: "Whole-number amount in rupees; the UI formats as Cr/L." },
+          pct: { type: "number", description: "Share of the total, percent." },
         },
       },
       RevenueBreakdownResponse: {
         type: "object",
-        required: ["period", "total", "unit", "cards", "slices"],
+        required: ["period", "total", "items"],
         properties: {
           period: { type: "string", enum: ["YTD", "MTD"] },
           total: { type: "number" },
-          unit: { type: "string", enum: ["Cr"] },
-          cards: { type: "array", items: { $ref: "#/components/schemas/RevenueBreakdownCard" } },
-          slices: { type: "array", items: { $ref: "#/components/schemas/DonutSlice" } },
+          items: { type: "array", items: { $ref: "#/components/schemas/RevenueBreakdownItem" } },
         },
       },
       RevenuePortRow: {

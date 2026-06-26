@@ -1,11 +1,12 @@
 import { Card, Tooltip } from "antd";
 import { useState } from "react";
 import { useBrandTokens } from "../../theme/useBrandTokens";
-import { formatRawWithCommas } from "../../utils/format";
+import { formatInr, toCrLakh } from "../../utils/format";
 import { brand } from "../../theme/tokens";
 
 interface Props {
   segment: string;
+  /** Whole-number rupee amount; formatted here as Cr or L. */
   value: number;
   /** Hex color of the matching donut slice — used as the hover background. */
   hoverColor: string;
@@ -20,6 +21,7 @@ export const RevenueKpiCard = ({ segment, value, hoverColor }: Props) => {
 
   const valueColor = hover ? brand.white : t.breakdownValue;
   const labelColor = hover ? brand.white : t.textSecondary;
+  const { num, unit } = toCrLakh(value);
 
   return (
     <Card
@@ -35,10 +37,10 @@ export const RevenueKpiCard = ({ segment, value, hoverColor }: Props) => {
       styles={{ body: { padding: "20px 22px" } }}
       data-segment={segment}
     >
-      <Tooltip title={formatRawWithCommas(value, "Cr")}>
+      <Tooltip title={formatInr(value)}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-          <span style={{ fontSize: 28, fontWeight: 700, color: valueColor }}>{value}</span>
-          <span style={{ fontSize: 15, fontWeight: 600, color: valueColor }}>Cr</span>
+          <span style={{ fontSize: 28, fontWeight: 700, color: valueColor }}>{num}</span>
+          <span style={{ fontSize: 15, fontWeight: 600, color: valueColor }}>{unit}</span>
         </div>
       </Tooltip>
       <div style={{ marginTop: 6, color: labelColor, fontSize: 14 }}>{segment}</div>

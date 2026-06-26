@@ -50,6 +50,37 @@ export const formatSigned = (n: number): string => (n >= 0 ? `+${n}%` : `${n}%`)
 export const formatInr = (value: number): string =>
   numberFormat({ style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(value);
 
+// Indian compact formatter — uses the en-IN locale's native lakh/crore
+// abbreviations (… K / L / Cr) rather than dividing by hand. Pinned to en-IN
+// (not the browser locale) so the scale is always lakh/crore. `maximumFraction-
+// Digits` is required: the default compact rounding drops the decimals the
+// design shows (866000000 → "87Cr" instead of "86.6Cr").
+const crLakhFormat = new Intl.NumberFormat("en-IN", {
+  notation: "compact",
+  compactDisplay: "short",
+  maximumFractionDigits: 2,
+});
+
+// Splits the compact output into number + unit via formatToParts so the UI can
+// style them separately. `unit` is the scale suffix ("L", "Cr", …) — empty for
+// values too small to abbreviate.
+export const toCrLakh = (value: number): { num: string; unit: string } => {
+  const parts = crLakhFormat.formatToParts(value);
+  const unit = parts.find((p) => p.type === "compact")?.value ?? "";
+  const num = parts
+    .filter((p) => p.type !== "compact")
+    .map((p) => p.value)
+    .join("")
+    .trim();
+  return { num, unit };
+};
+
+// Single-string form, e.g. 866_000_000 -> "86.6 Cr", 4_140_000 -> "41.4 L".
+export const formatCrLakh = (value: number): string => {
+  const { num, unit } = toCrLakh(value);
+  return unit ? `${num} ${unit}` : num;
+};
+
 // Compact thousands formatter for chart axes/labels (e.g. 350000 → "350K").
 // Tolerates non-numeric / non-finite input (returns ""). Grouping is disabled on
 // the abbreviated value so the axis reads "1000K" rather than "1,000K".
