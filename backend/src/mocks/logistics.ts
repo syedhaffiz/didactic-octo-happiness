@@ -4,6 +4,7 @@
 import { seeded, seedFromString, range, intRange, pick } from "./rand.js";
 import { VESSELS } from "./catalog.js";
 import type {
+  DpHandlingOutstanding,
   HandlingRateRow,
   LogisticsFilters,
   LogisticsResponse,
@@ -147,6 +148,20 @@ export const buildPdaDrill = (path: string): PdaDrilldownSeries | null => {
   return { id: path, tier: "Operations", data };
 };
 
+// --- DP Handling Agents — Outstanding Payments -----------------------------
+// Outstanding amount owed to each handling agent, grouped by category. Values
+// pinned to the design exports (in the port's local currency).
+const OUTSTANDING_CATEGORIES = ["Operations", "Pradip"];
+
+const buildOutstanding = (): DpHandlingOutstanding => ({
+  unit: "Local Currency",
+  categories: [...OUTSTANDING_CATEGORIES],
+  series: [
+    { agent: PDA_AGENTS[0]!, data: [98_440_000, 138_260_000] },
+    { agent: PDA_AGENTS[1]!, data: [146_240_000, 1_230_000] },
+  ],
+});
+
 // --- Aggregate -------------------------------------------------------------
 
 export const buildLogistics = (filters: LogisticsFilters = {}): LogisticsResponse => {
@@ -156,5 +171,6 @@ export const buildLogistics = (filters: LogisticsFilters = {}): LogisticsRespons
     vesselsSailed: buildVesselsSailed(from, to),
     handlingRates: HANDLING_RATES.map((r) => ({ ...r })),
     pda: buildPdaRoot(),
+    outstanding: buildOutstanding(),
   };
 };

@@ -37,11 +37,24 @@ export interface PdaRootPie {
   root: PdaPiePoint[];
 }
 
+// --- DP Handling Agents — Outstanding Payments (grouped column) ------------
+export interface OutstandingSeries {
+  agent: string; // shipping agent — series name
+  data: number[]; // outstanding amount per category
+}
+
+export interface DpHandlingOutstanding {
+  unit: string; // y-axis unit label, e.g. "Local Currency"
+  categories: string[]; // x-axis groups, e.g. "Operations", "Pradip"
+  series: OutstandingSeries[];
+}
+
 // --- Response + filters ----------------------------------------------------
 export interface LogisticsResponse {
   vesselsSailed: VesselSailedRow[];
   handlingRates: HandlingRateRow[];
   pda: PdaRootPie;
+  outstanding: DpHandlingOutstanding;
 }
 
 export interface LogisticsFilters {

@@ -5,6 +5,7 @@ import { ErrorRetry } from "../../components/ErrorRetry";
 import { VesselSailedCard } from "../../components/logistics/VesselSailedCard";
 import { HandlingRatesCard } from "../../components/logistics/HandlingRatesCard";
 import { PortwisePdaCard } from "../../components/logistics/PortwisePdaCard";
+import { DpHandlingOutstandingCard } from "../../components/logistics/DpHandlingOutstandingCard";
 import { logisticsApi } from "../../api/logistics";
 import { useApi } from "../../api/useApi";
 import {
@@ -40,6 +41,9 @@ export const LogisticsPage = () => {
           </Col>
           <Col xs={24} lg={12}>
             <PortwisePdaCard title="Portwise PDA" root={data?.pda} loading={isLoading} />
+          </Col>
+          <Col xs={24}>
+            <DpHandlingOutstandingCard data={data?.outstanding} loading={isLoading} />
           </Col>
         </Row>
       )}
