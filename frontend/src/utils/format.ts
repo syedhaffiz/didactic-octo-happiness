@@ -44,6 +44,12 @@ export const formatRawWithCommas = (value: number, unit: Unit): string => {
 
 export const formatSigned = (n: number): string => (n >= 0 ? `+${n}%` : `${n}%`);
 
+// Rupee currency formatter for ledger amounts (already raw INR). Uses the INR
+// currency style so the ₹ symbol and grouping come from Intl; whole rupees
+// only — these balances are large enough that paise add noise.
+export const formatInr = (value: number): string =>
+  numberFormat({ style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(value);
+
 // Compact thousands formatter for chart axes/labels (e.g. 350000 → "350K").
 // Tolerates non-numeric / non-finite input (returns ""). Grouping is disabled on
 // the abbreviated value so the axis reads "1000K" rather than "1,000K".

@@ -11,21 +11,30 @@ import { RevenueKpiCard } from "../../components/finance/RevenueKpiCard";
 import { financeApi } from "../../api/finance";
 import { useApi } from "../../api/useApi";
 import { useBrandTokens } from "../../theme/useBrandTokens";
-import { useUrlDateRange } from "../../utils/useUrlParam";
+import { donutColors } from "../../theme/tokens";
+import {
+  formatDateRangePill,
+  useDateRangeWithDefault,
+} from "../../utils/useDateRangeWithDefault";
 
 export const Revenue = () => {
   const t = useBrandTokens();
   const [period] = useRevenuePeriod();
-  const [range, setRange] = useUrlDateRange();
+  const { start, end, value, setRange } = useDateRangeWithDefault(1);
 
   const { data, isLoading, isError, error, refetch } = useApi(
     ["revenue-breakdown", period],
     () => financeApi.revenueBreakdown({ period }),
   );
 
+  // Slice/card colors are owned by the UI, not the API: assign from the shared
+  // pool by the segment's position in the response (cycling if it ever exceeds
+  // the pool size) so cards and donut slices stay in lockstep.
   const colorBySegment = useMemo(() => {
     const out: Record<string, string> = {};
-    for (const c of data?.cards ?? []) out[c.segment] = c.color;
+    (data?.cards ?? []).forEach((c, i) => {
+      out[c.segment] = donutColors[i % donutColors.length];
+    });
     return out;
   }, [data]);
 
@@ -33,8 +42,8 @@ export const Revenue = () => {
     <>
       <PageHeader
         title="Revenue"
-        datePill="Apr 25 : Feb 26"
-        filters={<DateRangeFilter value={range} onChange={setRange} />}
+        datePill={formatDateRangePill(start, end)}
+        filters={<DateRangeFilter value={value} onChange={setRange} />}
       />
 
       {isError ? (
@@ -59,7 +68,7 @@ export const Revenue = () => {
                           <RevenueKpiCard
                             segment={c.segment}
                             value={c.value}
-                            hoverColor={c.color}
+                            hoverColor={colorBySegment[c.segment]}
                           />
                         </Col>
                       ))}

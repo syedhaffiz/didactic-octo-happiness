@@ -8,12 +8,16 @@ import { PortFilter } from "../../components/filters/PortFilter";
 import { buildRevenuePortColumns } from "../../components/finance/revenueLedgerColumns";
 import { financeApi } from "../../api/finance";
 import { useApi } from "../../api/useApi";
-import { useUrlDateRange, useUrlParam } from "../../utils/useUrlParam";
+import { useUrlParam } from "../../utils/useUrlParam";
+import {
+  formatDateRangePill,
+  useDateRangeWithDefault,
+} from "../../utils/useDateRangeWithDefault";
 import type { RevenuePortRow } from "../../types/finance";
 
 export const RevenuePort = () => {
   const [port, setPort] = useUrlParam("port");
-  const [range, setRange] = useUrlDateRange();
+  const { start, end, value, setRange } = useDateRangeWithDefault(1);
 
   const { data, isLoading, isError, error, refetch } = useApi(
     ["revenue-port", port],
@@ -26,11 +30,11 @@ export const RevenuePort = () => {
     <>
       <PageHeader
         title="Revenue"
-        datePill="Apr 25 : Feb 26"
+        datePill={formatDateRangePill(start, end)}
         filters={
           <>
             <PortFilter value={port} onChange={setPort} />
-            <DateRangeFilter value={range} onChange={setRange} />
+            <DateRangeFilter value={value} onChange={setRange} />
           </>
         }
       />

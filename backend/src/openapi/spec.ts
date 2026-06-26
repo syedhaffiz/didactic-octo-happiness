@@ -684,12 +684,11 @@ export const openApiSpec = {
       // --- Finance: Revenue suite --------------------------------------
       RevenueBreakdownCard: {
         type: "object",
-        required: ["segment", "value", "unit", "color"],
+        required: ["segment", "value", "unit"],
         properties: {
           segment: { type: "string" },
           value: { type: "number" },
           unit: { type: "string", enum: ["Cr"] },
-          color: { type: "string", description: "Hex color matching the donut slice." },
         },
       },
       RevenueBreakdownResponse: {

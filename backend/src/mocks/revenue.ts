@@ -11,14 +11,9 @@ import type {
 import { PORTS, PROFIT_CENTRES, SEGMENTS } from "./catalog.js";
 import { pick, range, round, seedFromString, seeded } from "./rand.js";
 
-// Segments + slice colors, kept in lockstep with the Figma legend order
-// (SNS / SEB / Sagarmala / TPH).
-const SEGMENT_PALETTE = [
-  { segment: "SNS",       color: "#4A6CD4" },
-  { segment: "SEB",       color: "#36B45C" },
-  { segment: "Sagarmala", color: "#F2992E" },
-  { segment: "TPH",       color: "#07DBFB" },
-] as const;
+// Segment order, kept in lockstep with the Figma legend order
+// (SNS / SEB / Sagarmala / TPH). Slice/card colors are owned by the UI.
+const SEGMENTS_ORDER = ["SNS", "SEB", "Sagarmala", "TPH"] as const;
 
 // Headline numbers anchored to the Figma so the screen reads the same as the
 // design out of the box. YTD vs MTD scales the values; the mix stays the same.
@@ -34,11 +29,10 @@ export const buildRevenueBreakdown = (
 ): RevenueBreakdownResponse => {
   const factor = period === "MTD" ? 0.09 : 1;
 
-  const cards: RevenueBreakdownCard[] = SEGMENT_PALETTE.map(({ segment, color }) => ({
+  const cards: RevenueBreakdownCard[] = SEGMENTS_ORDER.map((segment) => ({
     segment,
     value: round((YTD_VALUES[segment] ?? 0) * factor, 1),
     unit: "Cr" as const,
-    color,
   }));
 
   const total = round(cards.reduce((s, c) => s + c.value, 0), 1);

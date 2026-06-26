@@ -8,12 +8,16 @@ import { SegmentFilter } from "../../components/filters/SegmentFilter";
 import { buildRevenueSegmentColumns } from "../../components/finance/revenueLedgerColumns";
 import { financeApi } from "../../api/finance";
 import { useApi } from "../../api/useApi";
-import { useUrlDateRange, useUrlParam } from "../../utils/useUrlParam";
+import { useUrlParam } from "../../utils/useUrlParam";
+import {
+  formatDateRangePill,
+  useDateRangeWithDefault,
+} from "../../utils/useDateRangeWithDefault";
 import type { RevenueSegmentRow } from "../../types/finance";
 
 export const RevenueSegment = () => {
   const [segment, setSegment] = useUrlParam("segment");
-  const [range, setRange] = useUrlDateRange();
+  const { start, end, value, setRange } = useDateRangeWithDefault(1);
 
   const { data, isLoading, isError, error, refetch } = useApi(
     ["revenue-segment", segment],
@@ -26,11 +30,11 @@ export const RevenueSegment = () => {
     <>
       <PageHeader
         title="Revenue"
-        datePill="Apr 25 : Feb 26"
+        datePill={formatDateRangePill(start, end)}
         filters={
           <>
             <SegmentFilter value={segment} onChange={setSegment} />
-            <DateRangeFilter value={range} onChange={setRange} />
+            <DateRangeFilter value={value} onChange={setRange} />
           </>
         }
       />

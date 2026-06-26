@@ -1,5 +1,6 @@
 import type { ColumnsType } from "antd/es/table";
 import { brand } from "../../theme/tokens";
+import { formatInr } from "../../utils/format";
 import type { RevenuePortRow, RevenueSegmentRow } from "../../types/finance";
 
 const LinkText = ({ value }: { value: string }) => (
@@ -7,7 +8,7 @@ const LinkText = ({ value }: { value: string }) => (
 );
 
 const Amount = ({ value }: { value: number }) =>
-  Number.isFinite(value) ? <>{value.toLocaleString()}</> : <>—</>;
+  Number.isFinite(value) ? <>{formatInr(value)}</> : <>—</>;
 
 const SHARED_TAIL: ColumnsType<RevenuePortRow & RevenueSegmentRow> = [
   {

@@ -77,7 +77,6 @@ export interface RevenueBreakdownCard {
   segment: string;
   value: number;
   unit: "Cr";
-  color: string;
 }
 
 export interface RevenueBreakdownResponse {
