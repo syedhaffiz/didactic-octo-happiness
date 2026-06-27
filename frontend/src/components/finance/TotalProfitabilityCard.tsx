@@ -2,7 +2,7 @@ import { Card, Skeleton } from "antd";
 import { AimOutlined, ArrowDownOutlined, ArrowUpOutlined } from "@ant-design/icons";
 import { useBrandTokens } from "../../theme/useBrandTokens";
 import { brand } from "../../theme/tokens";
-import { formatSigned } from "../../utils/format";
+import { formatSigned, splitCrValue } from "../../utils/format";
 import type { NetMarginProfitabilityResponse } from "../../types/finance";
 
 interface Props {
@@ -17,6 +17,7 @@ export const TotalProfitabilityCard = ({ total, loading }: Props) => {
   const t = useBrandTokens();
   const isUp = total?.trend === "up";
   const deltaColor = isUp ? t.deltaUp : t.deltaDown;
+  const valueParts = total ? splitCrValue(total.value) : null;
   return (
     <Card
       title={
@@ -33,10 +34,10 @@ export const TotalProfitabilityCard = ({ total, loading }: Props) => {
           ) : (
             <div style={{ display: "flex", alignItems: "baseline", gap: 6, justifyContent: "center" }}>
               <span style={{ fontSize: 44, fontWeight: 800, color: t.headline, lineHeight: 1 }}>
-                {total.value}
+                {valueParts?.num}
               </span>
               <span style={{ fontSize: 18, fontWeight: 600, color: t.textSecondary }}>
-                {total.unit}
+                {valueParts?.unit}
               </span>
             </div>
           )}

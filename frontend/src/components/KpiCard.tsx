@@ -14,7 +14,7 @@ import { Link } from "react-router-dom";
 import { Chart } from "./Chart";
 import { useBrandTokens } from "../theme/useBrandTokens";
 import { brand, kpiSparkColors } from "../theme/tokens";
-import { formatRawWithCommas, formatSigned } from "../utils/format";
+import { formatRawWithCommas, formatSigned, splitCrValue } from "../utils/format";
 import type { IconKey, KPI } from "../types/finance";
 
 const iconMap: Record<IconKey, ReactElement> = {
@@ -48,6 +48,13 @@ export const KpiCard = ({ kpi, loading = false }: Props) => {
   const t = useBrandTokens();
   const icon = kpi ? iconMap[kpi.id] : null;
   const href = kpi ? hrefMap[kpi.id] : undefined;
+  // Crore figures get the compact Cr/L formatter; non-monetary units (MMT, Days)
+  // render their stored value + unit as-is.
+  const valueParts = kpi
+    ? kpi.unit === "Cr"
+      ? splitCrValue(kpi.value)
+      : { num: String(kpi.value), unit: kpi.unit }
+    : null;
   const sparkColor = kpi ? kpiSparkColors[kpi.id] ?? brand.purple : brand.accent;
   const isUp = kpi?.trend === "up";
   const deltaColor = isUp ? t.deltaUp : t.deltaDown;
@@ -140,10 +147,10 @@ export const KpiCard = ({ kpi, loading = false }: Props) => {
           <Tooltip title={formatRawWithCommas(kpi.value, kpi.unit)}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
               <span style={{ fontSize: 30, fontWeight: 700, color: t.headline, lineHeight: 1.1 }}>
-                {kpi.value}
+                {valueParts?.num}
               </span>
               <span style={{ fontSize: 12, fontWeight: 600, color: t.textSecondary }}>
-                {kpi.unit}
+                {valueParts?.unit}
               </span>
             </div>
           </Tooltip>

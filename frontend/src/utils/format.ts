@@ -81,6 +81,15 @@ export const formatCrLakh = (value: number): string => {
   return unit ? `${num} ${unit}` : num;
 };
 
+// Convenience for values already expressed in crores — the app's stored unit
+// for most monetary figures (a KPI value of 86.6 means 86.6 Cr). Expands to
+// rupees, then applies the compact Cr/L formatter so a sub-crore figure renders
+// in lakhs. `splitCrValue` returns the parts for two-tone (number + unit) UI.
+export const splitCrValue = (valueInCr: number): { num: string; unit: string } =>
+  toCrLakh(expandRaw(valueInCr, "Cr"));
+
+export const formatCrValue = (valueInCr: number): string => formatCrLakh(expandRaw(valueInCr, "Cr"));
+
 // Compact thousands formatter for chart axes/labels (e.g. 350000 → "350K").
 // Tolerates non-numeric / non-finite input (returns ""). Grouping is disabled on
 // the abbreviated value so the axis reads "1000K" rather than "1,000K".

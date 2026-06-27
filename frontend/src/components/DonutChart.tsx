@@ -2,12 +2,13 @@ import { Chart } from "./Chart";
 import type { DonutResponse } from "../types/finance";
 import { donutColors } from "../theme/tokens";
 import { useBrandTokens } from "../theme/useBrandTokens";
-import { formatRawWithCommas } from "../utils/format";
+import { formatCrValue, formatRawWithCommas, splitCrValue } from "../utils/format";
 
 const palette = donutColors;
 
 export const DonutChart = ({ donut, height = 260 }: { donut: DonutResponse; height?: number }) => {
   const t = useBrandTokens();
+  const totalParts = splitCrValue(donut.total);
   return (
     <div style={{ position: "relative" }}>
       <Chart
@@ -19,7 +20,7 @@ export const DonutChart = ({ donut, height = 260 }: { donut: DonutResponse; heig
               const key = String(this.key ?? "");
               const slice = donut.slices.find((s) => s.segment === key);
               const raw = slice ? formatRawWithCommas(slice.value, "Cr") : "";
-              return `<b>${key}</b><br/>${slice?.pct ?? 0}% (${this.y} Cr)<br/><span style="color:${t.textSecondary}">${raw}</span>`;
+              return `<b>${key}</b><br/>${slice?.pct ?? 0}% (${formatCrValue(Number(this.y))})<br/><span style="color:${t.textSecondary}">${raw}</span>`;
             },
           },
           plotOptions: {
@@ -65,7 +66,8 @@ export const DonutChart = ({ donut, height = 260 }: { donut: DonutResponse; heig
       >
         <span style={{ fontSize: 11, color: t.textSecondary }}>Total</span>
         <span style={{ fontSize: 22, fontWeight: 600, color: t.text }}>
-          {donut.total} <span style={{ fontSize: 12, color: t.textSecondary }}>Cr</span>
+          {totalParts.num}{" "}
+          <span style={{ fontSize: 12, color: t.textSecondary }}>{totalParts.unit}</span>
         </span>
       </div>
     </div>

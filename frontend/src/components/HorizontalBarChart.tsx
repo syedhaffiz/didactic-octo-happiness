@@ -1,5 +1,7 @@
 import { Empty } from "antd";
+import type Highcharts from "highcharts";
 import { Chart } from "./Chart";
+import { formatCrValue } from "../utils/format";
 
 interface Row {
   category: string;
@@ -35,6 +37,9 @@ export const HorizontalBarChart = ({
 
   const chartHeight = height ?? Math.max(360, safeRows.length * 28);
   const suffix = unit ? unit : "";
+  // Crore values get the compact Cr/L formatter (so sub-crore bars read in
+  // lakhs); other units keep the plain "{value} {unit}" label.
+  const isCr = unit === "Cr";
 
   return (
     <Chart
@@ -48,7 +53,13 @@ export const HorizontalBarChart = ({
         },
         yAxis: { visible: false, min: 0, title: { text: undefined } },
         legend: { enabled: false },
-        tooltip: { pointFormat: `<b>{point.y:.1f} ${suffix}</b>` },
+        tooltip: isCr
+          ? {
+              pointFormatter(this: Highcharts.Point) {
+                return `<b>${formatCrValue(Number(this.y))}</b>`;
+              },
+            }
+          : { pointFormat: `<b>{point.y:.1f} ${suffix}</b>` },
         plotOptions: {
           bar: {
             color,
@@ -56,7 +67,13 @@ export const HorizontalBarChart = ({
             pointWidth: 10,
             dataLabels: {
               enabled: true,
-              format: `{y:.1f}${suffix ? ` ${suffix}` : ""}`,
+              ...(isCr
+                ? {
+                    formatter(this: Highcharts.PointLabelObject) {
+                      return formatCrValue(Number(this.y));
+                    },
+                  }
+                : { format: `{y:.1f}${suffix ? ` ${suffix}` : ""}` }),
               style: { fontSize: "11px", fontWeight: "500", textOutline: "none" },
             },
           },
