@@ -6,16 +6,15 @@ import Highcharts from "highcharts";
 import { Chart } from "../Chart";
 import { ErrorBoundary } from "../ErrorBoundary";
 import { logisticsApi } from "../../api/logistics";
-import { brand, fontFamily } from "../../theme/tokens";
+import { brand, fontFamily, logisticsColors } from "../../theme/tokens";
 import type { PdaDrilldownSeries, PdaPiePoint, PdaRootPie } from "../../types/logistics";
 
 // Root slices read as a navy ramp (matching the design); drilled "Operations"
 // levels use a distinct categorical palette so the change in tier is obvious.
-const ROOT_COLORS = ["#1B365D", "#21487A", "#2E5B88", "#3E81F4", "#5FA0E6", "#A5C8ED"];
-const DRILL_COLORS = ["#10B5E8", "#7E57D8", "#1BA05A", "#F36C2A", "#0BA0C1", "#F7836E"];
+const { pdaRoot, pdaDrill } = logisticsColors;
 
-const rootColorFor = (i: number) => ROOT_COLORS[i % ROOT_COLORS.length];
-const drillColorFor = (i: number) => DRILL_COLORS[i % DRILL_COLORS.length];
+const rootColorFor = (i: number) => pdaRoot[i % pdaRoot.length];
+const drillColorFor = (i: number) => pdaDrill[i % pdaDrill.length];
 
 // Tooltip: entity name, its PDA volume and the share of the level it sits in.
 const tooltipFormatter = function (this: Highcharts.Point): string {
@@ -102,8 +101,20 @@ export const PortwisePdaCard = ({ title, root, loading, height = 360 }: Props) =
       plotOptions: {
         pie: {
           borderRadius: 4,
+          // Pin the diameter so the pie keeps a constant size across levels —
+          // otherwise the longer drilled labels (agent names) reserve more room
+          // and shrink it on drill. `crop:false` / `overflow:"allow"` let those
+          // long labels extend past the plot instead of squeezing the pie.
+          size: "72%",
+          center: ["50%", "50%"],
           dataLabels: [
-            { enabled: true, distance: 14, format: "<b>{point.name}</b>" },
+            {
+              enabled: true,
+              distance: 14,
+              format: "<b>{point.name}</b>",
+              crop: false,
+              overflow: "allow",
+            },
             {
               enabled: true,
               distance: "-30%",
@@ -137,7 +148,19 @@ export const PortwisePdaCard = ({ title, root, loading, height = 360 }: Props) =
   return (
     <Card
       title={<span style={{ fontWeight: 700, fontSize: 15 }}>{title}</span>}
-      styles={{ header: { borderBottom: "none" }, body: { paddingTop: 0 } }}
+      // Flex column so the body fills the (stretched) card height and the chart
+      // sits centered — no dead space when this card is shorter than its row peer.
+      style={{ height: "100%", display: "flex", flexDirection: "column" }}
+      styles={{
+        header: { borderBottom: "none" },
+        body: {
+          paddingTop: 0,
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+        },
+      }}
     >
       {!hasData && !loading ? (
         <Empty description="No PDA data" style={{ padding: 32 }} />

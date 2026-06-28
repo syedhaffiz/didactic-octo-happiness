@@ -32,7 +32,7 @@ export const LogisticsPage = () => {
       {isError ? (
         <ErrorRetry title="Could not load logistics" error={error} onRetry={refetch} />
       ) : (
-        <Row gutter={[16, 16]}>
+        <Row gutter={[16, 16]} align="stretch">
           <Col xs={24}>
             <VesselSailedCard rows={data?.vesselsSailed} loading={isLoading} />
           </Col>

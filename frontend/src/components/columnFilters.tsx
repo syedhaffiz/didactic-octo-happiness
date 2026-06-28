@@ -1,9 +1,9 @@
 import { Button, Flex, Input } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import type { ColumnType } from "antd/es/table/interface";
-import { brand } from "../../theme/tokens";
+import { brand } from "../theme/tokens";
 
-// Two reusable column-filter shapes for the Profitability tables:
+// Reusable column-filter shapes for antd Tables (shared across modules):
 //   - textSearchFilter — input-driven substring match (Figma "Customized
 //     filter panel" pattern: Search / Reset / Filter / close).
 //   - treeFilter — antd's filterMode: "tree" with searchable checkboxes,

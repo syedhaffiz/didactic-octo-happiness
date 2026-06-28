@@ -2,10 +2,11 @@ import { Card, Empty, Skeleton } from "antd";
 import type Highcharts from "highcharts";
 import { Chart } from "../Chart";
 import { ErrorBoundary } from "../ErrorBoundary";
+import { logisticsColors } from "../../theme/tokens";
 import type { DpHandlingOutstanding } from "../../types/logistics";
 
 // Series colors — purple (first agent) / blue (second), matching the design.
-const SERIES_COLORS = ["#7A2BBE", "#3E64D6"];
+const SERIES_COLORS = logisticsColors.outstandingSeries;
 
 // Compact "millions" label for the columns, e.g. 98_440_000 -> "98.44M".
 const fmtMillions = (v: number | null | undefined): string =>

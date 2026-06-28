@@ -189,4 +189,17 @@ export const marketingColors = {
   segmentActual: "#083A91",
 } as const;
 
+// ---------------------------------------------------------------------------
+// Logistics module — Portwise PDA drilldown pie + DP Handling Agents columns.
+// Reuse existing brand tokens where they match the sampled design colors.
+// ---------------------------------------------------------------------------
+export const logisticsColors = {
+  // Portwise PDA root pie — navy ramp matching the design's monochrome ports.
+  pdaRoot: ["#1B365D", "#21487A", "#2E5B88", "#3E81F4", "#5FA0E6", "#A5C8ED"],
+  // Drilled "Operations" level — distinct categorical palette.
+  pdaDrill: ["#10B5E8", "#7E57D8", brand.green, brand.orange, "#0BA0C1", "#F7836E"],
+  // DP Handling Agents — Outstanding Payments columns (purple / blue per agent).
+  outstandingSeries: ["#7A2BBE", "#3E64D6"],
+} as const;
+
 export const fontFamily = '"Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';

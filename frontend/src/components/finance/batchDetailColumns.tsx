@@ -1,6 +1,6 @@
 import type { ColumnsType } from "antd/es/table";
 import { BatchIdLink } from "./BatchIdLink";
-import { textSearchFilter, treeFilter, uniqueValues } from "./columnFilters";
+import { textSearchFilter, treeFilter, uniqueValues } from "../columnFilters";
 import type {
   HandlingBatchDetailRow,
   SalesBatchDetailRow,

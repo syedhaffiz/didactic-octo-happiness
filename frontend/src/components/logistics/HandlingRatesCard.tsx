@@ -1,10 +1,11 @@
 import { Card, Empty, Skeleton, Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
+import { brand } from "../../theme/tokens";
 import type { HandlingRateRow } from "../../types/logistics";
 
 const rateHeader = (label: string) => (
   <span>
-    {label} <span style={{ fontWeight: 400, color: "#8c8c8c" }}>(INR/MT)</span>
+    {label} <span style={{ fontWeight: 400, color: brand.textMuted }}>(INR/MT)</span>
   </span>
 );
 
@@ -16,6 +17,7 @@ const columns: ColumnsType<HandlingRateRow> = [
     key: "road",
     align: "right",
     width: 140,
+    sorter: (a, b) => a.road - b.road,
     render: (v: number) => v.toLocaleString("en-IN"),
   },
   {
@@ -24,6 +26,7 @@ const columns: ColumnsType<HandlingRateRow> = [
     key: "rake",
     align: "right",
     width: 140,
+    sorter: (a, b) => a.rake - b.rake,
     render: (v: number) => v.toLocaleString("en-IN"),
   },
 ];
