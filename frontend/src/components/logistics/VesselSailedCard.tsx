@@ -3,7 +3,10 @@ import { Card, Empty, Skeleton, Space, Table, Typography } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
 import { useBrandTokens } from "../../theme/useBrandTokens";
+import { ErrorRetry } from "../ErrorRetry";
 import { treeFilter, uniqueValues } from "../columnFilters";
+import { logisticsApi } from "../../api/logistics";
+import { useApi } from "../../api/useApi";
 import type { VesselSailedRow } from "../../types/logistics";
 
 const { Text } = Typography;
@@ -14,14 +17,18 @@ const fmtDate = (iso: string) => {
 };
 
 export const VesselSailedCard = ({
-  rows,
-  loading,
+  fromDate,
+  toDate,
 }: {
-  rows?: VesselSailedRow[];
-  loading: boolean;
+  fromDate?: string;
+  toDate?: string;
 }) => {
   const t = useBrandTokens();
-  const safeRows = rows ?? [];
+  const { data, isLoading, isError, error, refetch } = useApi(
+    ["logistics", "vessels-sailed", fromDate, toDate],
+    () => logisticsApi.vesselsSailed({ fromDate, toDate }),
+  );
+  const safeRows = data?.items ?? [];
 
   // Every column is sortable; Vessel / Coal Grade / Origin carry a searchable
   // tree filter whose options come from the values present in the dataset.
@@ -91,7 +98,9 @@ export const VesselSailedCard = ({
 
   return (
     <Card title="Vessel Sailed Out">
-      {loading || !rows ? (
+      {isError ? (
+        <ErrorRetry title="Could not load vessels sailed out" error={error} onRetry={refetch} />
+      ) : isLoading || !data ? (
         <Skeleton active paragraph={{ rows: 8 }} />
       ) : safeRows.length === 0 ? (
         <Empty description="No vessels sailed out" />

@@ -6,8 +6,6 @@ import { VESSELS } from "./catalog";
 import type {
   DpHandlingOutstanding,
   HandlingRateRow,
-  LogisticsFilters,
-  LogisticsResponse,
   PdaDrilldownSeries,
   PdaPiePoint,
   PdaRootPie,
@@ -55,7 +53,12 @@ const VESSEL_ORIGINS = ["INDO", "AUS", "RSA", "USA"];
 
 const VESSEL_COUNT = 25;
 
-const buildVesselsSailed = (from: Date, to: Date): VesselSailedRow[] => {
+export const buildVesselsSailed = (
+  fromDate?: string,
+  toDate?: string,
+): VesselSailedRow[] => {
+  const from = parseDate(fromDate, DEFAULT_FROM);
+  const to = parseDate(toDate, DEFAULT_TO);
   const rng = seeded(seedFromString(`log-vessels-${isoDate(from)}-${isoDate(to)}`));
   const spanDays = Math.max(1, Math.round((to.getTime() - from.getTime()) / 86_400_000));
 
@@ -88,6 +91,9 @@ const HANDLING_RATES: HandlingRateRow[] = [
   { port: "Krishnapatnam (Geared)", road: 353, rake: 389 },
 ];
 
+export const buildHandlingRates = (): HandlingRateRow[] =>
+  HANDLING_RATES.map((r) => ({ ...r }));
+
 // --- Portwise PDA ----------------------------------------------------------
 interface PdaPort {
   id: string;
@@ -111,7 +117,7 @@ const PDA_AGENTS = [
 
 const pdaDrillId = (portId: string) => `pda-${portId}`;
 
-const buildPdaRoot = (): PdaRootPie => ({
+export const buildPdaRoot = (): PdaRootPie => ({
   rootName: "Ports",
   root: [
     ...PDA_PORTS.map(
@@ -145,7 +151,7 @@ export const buildPdaDrill = (path: string): PdaDrilldownSeries | null => {
 // pinned to the design exports (in the port's local currency).
 const OUTSTANDING_CATEGORIES = ["Operations", "Pradip"];
 
-const buildOutstanding = (): DpHandlingOutstanding => ({
+export const buildOutstanding = (): DpHandlingOutstanding => ({
   unit: "Local Currency",
   categories: [...OUTSTANDING_CATEGORIES],
   series: [
@@ -153,16 +159,3 @@ const buildOutstanding = (): DpHandlingOutstanding => ({
     { agent: PDA_AGENTS[1]!, data: [146_240_000, 1_230_000] },
   ],
 });
-
-// --- Aggregate -------------------------------------------------------------
-
-export const buildLogistics = (filters: LogisticsFilters = {}): LogisticsResponse => {
-  const from = parseDate(filters.fromDate, DEFAULT_FROM);
-  const to = parseDate(filters.toDate, DEFAULT_TO);
-  return {
-    vesselsSailed: buildVesselsSailed(from, to),
-    handlingRates: HANDLING_RATES.map((r) => ({ ...r })),
-    pda: buildPdaRoot(),
-    outstanding: buildOutstanding(),
-  };
-};

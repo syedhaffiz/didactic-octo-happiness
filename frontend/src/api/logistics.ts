@@ -2,11 +2,20 @@ import { apiClient, unwrap } from "./client";
 import { USE_MOCK_DATA, mockDelay } from "./dataSource";
 import type { ApiEnvelope } from "../types/api";
 import type {
+  DpHandlingOutstanding,
+  HandlingRatesResponse,
   LogisticsFilters,
-  LogisticsResponse,
   PdaDrilldownSeries,
+  PdaRootPie,
+  VesselsSailedResponse,
 } from "../types/logistics";
-import { buildLogistics, buildPdaDrill } from "../mocks/logistics";
+import {
+  buildHandlingRates,
+  buildOutstanding,
+  buildPdaDrill,
+  buildPdaRoot,
+  buildVesselsSailed,
+} from "../mocks/logistics";
 
 // HTTP path identical to the backend so flipping `USE_MOCK_DATA` is the only
 // change required to switch over to the real API.
@@ -25,14 +34,23 @@ const get = async <T>(
   return unwrap(res);
 };
 
+// One endpoint per card — there is no aggregate overview.
 const httpLogisticsApi = {
-  overview: (p: LogisticsFilters = {}) => get<LogisticsResponse>("/logistics", p),
+  vesselsSailed: (p: LogisticsFilters = {}) =>
+    get<VesselsSailedResponse>("/logistics/vessels-sailed", p),
+  handlingRates: () => get<HandlingRatesResponse>("/logistics/handling-rates"),
+  pda: () => get<PdaRootPie>("/logistics/pda"),
+  outstanding: () => get<DpHandlingOutstanding>("/logistics/outstanding"),
   pdaDrill: (path: string) =>
     get<PdaDrilldownSeries>("/logistics/pda/drill", { path }),
 };
 
 const mockLogisticsApi = {
-  overview: (p: LogisticsFilters = {}) => mockDelay(buildLogistics(p)),
+  vesselsSailed: (p: LogisticsFilters = {}) =>
+    mockDelay<VesselsSailedResponse>({ items: buildVesselsSailed(p.fromDate, p.toDate) }),
+  handlingRates: () => mockDelay<HandlingRatesResponse>({ items: buildHandlingRates() }),
+  pda: () => mockDelay(buildPdaRoot()),
+  outstanding: () => mockDelay(buildOutstanding()),
   pdaDrill: (path: string) => {
     const level = buildPdaDrill(path);
     if (!level) return Promise.reject(new Error(`not_found: Unknown drilldown path: ${path}`));

@@ -5,9 +5,11 @@ import Highcharts from "highcharts";
 // so importing Chart here guarantees drilldown is available.
 import { Chart } from "../Chart";
 import { ErrorBoundary } from "../ErrorBoundary";
+import { ErrorRetry } from "../ErrorRetry";
 import { logisticsApi } from "../../api/logistics";
+import { useApi } from "../../api/useApi";
 import { brand, fontFamily, logisticsColors } from "../../theme/tokens";
-import type { PdaDrilldownSeries, PdaPiePoint, PdaRootPie } from "../../types/logistics";
+import type { PdaDrilldownSeries, PdaPiePoint } from "../../types/logistics";
 
 // Root slices read as a navy ramp (matching the design); drilled "Operations"
 // levels use a distinct categorical palette so the change in tier is obvious.
@@ -44,17 +46,18 @@ const toDrilldownSeries = (lvl: PdaDrilldownSeries): Highcharts.SeriesOptionsTyp
 
 interface Props {
   title: string;
-  /** Root level only; deeper levels are fetched on slice click. */
-  root?: PdaRootPie;
-  loading?: boolean;
   height?: number;
 }
 
-// Portwise PDA pie. Ships only the root (per-port PDA); each port slice click
-// fetches that port's operations split from the drill endpoint and adds it via
-// addSeriesAsDrilldown. Fetched levels are cached per id so drill-up/re-drill
+// Portwise PDA pie. Fetches its own root (per-port PDA); each port slice click
+// then fetches that port's operations split from the drill endpoint and adds it
+// via addSeriesAsDrilldown. Fetched levels are cached per id so drill-up/re-drill
 // is instant. The Spin overlay shows while a level is in flight.
-export const PortwisePdaCard = ({ title, root, loading, height = 360 }: Props) => {
+export const PortwisePdaCard = ({ title, height = 360 }: Props) => {
+  const { data: root, isLoading, isError, error, refetch } = useApi(
+    ["logistics", "pda"],
+    () => logisticsApi.pda(),
+  );
   const [drilling, setDrilling] = useState(false);
   // id -> already-fetched level. Reset whenever the root payload changes.
   const cacheRef = useRef<Map<string, PdaDrilldownSeries>>(new Map());
@@ -162,11 +165,13 @@ export const PortwisePdaCard = ({ title, root, loading, height = 360 }: Props) =
         },
       }}
     >
-      {!hasData && !loading ? (
+      {isError ? (
+        <ErrorRetry title="Could not load Portwise PDA" error={error} onRetry={refetch} />
+      ) : !hasData && !isLoading ? (
         <Empty description="No PDA data" style={{ padding: 32 }} />
       ) : (
         <ErrorBoundary level="section" label={title}>
-          <Chart loading={loading || drilling} options={options} />
+          <Chart loading={isLoading || drilling} options={options} />
         </ErrorBoundary>
       )}
     </Card>

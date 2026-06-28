@@ -1,18 +1,39 @@
 import type {
+  DpHandlingOutstanding,
+  HandlingRatesResponse,
   LogisticsFilters,
-  LogisticsResponse,
   PdaDrilldownSeries,
+  PdaRootPie,
+  VesselsSailedResponse,
 } from "../types/logistics.js";
-import { buildLogistics, buildPdaDrill } from "../mocks/logistics.js";
+import {
+  buildHandlingRates,
+  buildOutstanding,
+  buildPdaDrill,
+  buildPdaRoot,
+  buildVesselsSailed,
+} from "../mocks/logistics.js";
 
 export interface LogisticsRepository {
-  getOverview(filters: LogisticsFilters): Promise<LogisticsResponse>;
+  getVesselsSailed(filters: LogisticsFilters): Promise<VesselsSailedResponse>;
+  getHandlingRates(): Promise<HandlingRatesResponse>;
+  getPda(): Promise<PdaRootPie>;
+  getOutstanding(): Promise<DpHandlingOutstanding>;
   getPdaDrill(path: string): Promise<PdaDrilldownSeries | null>;
 }
 
 class MockLogisticsRepository implements LogisticsRepository {
-  async getOverview(filters: LogisticsFilters) {
-    return buildLogistics(filters);
+  async getVesselsSailed(filters: LogisticsFilters) {
+    return { items: buildVesselsSailed(filters.fromDate, filters.toDate) };
+  }
+  async getHandlingRates() {
+    return { items: buildHandlingRates() };
+  }
+  async getPda() {
+    return buildPdaRoot();
+  }
+  async getOutstanding() {
+    return buildOutstanding();
   }
   async getPdaDrill(path: string) {
     return buildPdaDrill(path);

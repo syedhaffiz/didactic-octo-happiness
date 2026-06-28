@@ -1,6 +1,9 @@
 import { Card, Empty, Skeleton, Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { brand } from "../../theme/tokens";
+import { ErrorRetry } from "../ErrorRetry";
+import { logisticsApi } from "../../api/logistics";
+import { useApi } from "../../api/useApi";
 import type { HandlingRateRow } from "../../types/logistics";
 
 const rateHeader = (label: string) => (
@@ -31,26 +34,30 @@ const columns: ColumnsType<HandlingRateRow> = [
   },
 ];
 
-export const HandlingRatesCard = ({
-  rows,
-  loading,
-}: {
-  rows?: HandlingRateRow[];
-  loading: boolean;
-}) => (
-  <Card title="Handling Rates" style={{ height: "100%" }}>
-    {loading || !rows ? (
-      <Skeleton active paragraph={{ rows: 8 }} />
-    ) : rows.length === 0 ? (
-      <Empty description="No handling rates" />
-    ) : (
-      <Table
-        rowKey="port"
-        columns={columns}
-        dataSource={rows}
-        pagination={false}
-        size="middle"
-      />
-    )}
-  </Card>
-);
+export const HandlingRatesCard = () => {
+  const { data, isLoading, isError, error, refetch } = useApi(
+    ["logistics", "handling-rates"],
+    () => logisticsApi.handlingRates(),
+  );
+  const rows = data?.items;
+
+  return (
+    <Card title="Handling Rates" style={{ height: "100%" }}>
+      {isError ? (
+        <ErrorRetry title="Could not load handling rates" error={error} onRetry={refetch} />
+      ) : isLoading || !rows ? (
+        <Skeleton active paragraph={{ rows: 8 }} />
+      ) : rows.length === 0 ? (
+        <Empty description="No handling rates" />
+      ) : (
+        <Table
+          rowKey="port"
+          columns={columns}
+          dataSource={rows}
+          pagination={false}
+          size="middle"
+        />
+      )}
+    </Card>
+  );
+};

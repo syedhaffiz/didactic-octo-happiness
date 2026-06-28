@@ -49,13 +49,18 @@ export interface DpHandlingOutstanding {
   series: OutstandingSeries[];
 }
 
-// --- Response + filters ----------------------------------------------------
-export interface LogisticsResponse {
-  vesselsSailed: VesselSailedRow[];
-  handlingRates: HandlingRateRow[];
-  pda: PdaRootPie;
-  outstanding: DpHandlingOutstanding;
+// --- Per-card responses + filters ------------------------------------------
+// Each Logistics card has its own endpoint; there is no aggregate overview.
+export interface VesselsSailedResponse {
+  items: VesselSailedRow[];
 }
+
+export interface HandlingRatesResponse {
+  items: HandlingRateRow[];
+}
+
+// Portwise PDA returns PdaRootPie, and DP Handling Agents returns
+// DpHandlingOutstanding, directly.
 
 export interface LogisticsFilters {
   fromDate?: string;

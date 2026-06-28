@@ -2,6 +2,9 @@ import { Card, Empty, Skeleton } from "antd";
 import type Highcharts from "highcharts";
 import { Chart } from "../Chart";
 import { ErrorBoundary } from "../ErrorBoundary";
+import { ErrorRetry } from "../ErrorRetry";
+import { logisticsApi } from "../../api/logistics";
+import { useApi } from "../../api/useApi";
 import { logisticsColors } from "../../theme/tokens";
 import type { DpHandlingOutstanding } from "../../types/logistics";
 
@@ -50,22 +53,29 @@ const buildOptions = (data: DpHandlingOutstanding): Highcharts.Options => ({
   })),
 });
 
-export const DpHandlingOutstandingCard = ({
-  data,
-  loading,
-}: {
-  data?: DpHandlingOutstanding;
-  loading: boolean;
-}) => (
-  <Card title="DP Handling Agents - Outstanding Payments">
-    {loading || !data ? (
-      <Skeleton active paragraph={{ rows: 8 }} />
-    ) : (data.series ?? []).length === 0 ? (
-      <Empty description="No outstanding payments" />
-    ) : (
-      <ErrorBoundary level="section" label="DP Handling Agents outstanding payments">
-        <Chart options={buildOptions(data)} />
-      </ErrorBoundary>
-    )}
-  </Card>
-);
+export const DpHandlingOutstandingCard = () => {
+  const { data, isLoading, isError, error, refetch } = useApi(
+    ["logistics", "outstanding"],
+    () => logisticsApi.outstanding(),
+  );
+
+  return (
+    <Card title="DP Handling Agents - Outstanding Payments">
+      {isError ? (
+        <ErrorRetry
+          title="Could not load outstanding payments"
+          error={error}
+          onRetry={refetch}
+        />
+      ) : isLoading || !data ? (
+        <Skeleton active paragraph={{ rows: 8 }} />
+      ) : (data.series ?? []).length === 0 ? (
+        <Empty description="No outstanding payments" />
+      ) : (
+        <ErrorBoundary level="section" label="DP Handling Agents outstanding payments">
+          <Chart options={buildOptions(data)} />
+        </ErrorBoundary>
+      )}
+    </Card>
+  );
+};

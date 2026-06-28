@@ -18,10 +18,34 @@ const parse = <T>(schema: z.ZodSchema<T>, query: unknown): T => {
   return result.data;
 };
 
-export const getOverview: RequestHandler = async (req, res, next) => {
+export const getVesselsSailed: RequestHandler = async (req, res, next) => {
   try {
     const q = parse(dateRangeSchema, req.query);
-    res.json(ok(await logisticsService.overview(q)));
+    res.json(ok(await logisticsService.vesselsSailed(q)));
+  } catch (e) {
+    next(e);
+  }
+};
+
+export const getHandlingRates: RequestHandler = async (_req, res, next) => {
+  try {
+    res.json(ok(await logisticsService.handlingRates()));
+  } catch (e) {
+    next(e);
+  }
+};
+
+export const getPda: RequestHandler = async (_req, res, next) => {
+  try {
+    res.json(ok(await logisticsService.pda()));
+  } catch (e) {
+    next(e);
+  }
+};
+
+export const getOutstanding: RequestHandler = async (_req, res, next) => {
+  try {
+    res.json(ok(await logisticsService.outstanding()));
   } catch (e) {
     next(e);
   }
