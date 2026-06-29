@@ -3,6 +3,7 @@ import { Card, Table } from "antd";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { ErrorRetry } from "../../components/ErrorRetry";
 import { PageHeader } from "../../components/PageHeader";
+import { MonthRangeFilter } from "../../components/MonthRangeFilter";
 import { VesselTabsNav, useVesselTab } from "../../components/finance/VesselTabsNav";
 import {
   buildVesselHandlingColumns,
@@ -10,6 +11,7 @@ import {
 } from "../../components/finance/vesselColumns";
 import { financeApi } from "../../api/finance";
 import { useApi } from "../../api/useApi";
+import { useMonthRangeWithDefault } from "../../utils/useDateRangeWithDefault";
 import type {
   VesselHandlingRow,
   VesselSalesRow,
@@ -17,10 +19,13 @@ import type {
 
 export const VesselProfitability = () => {
   const [tab] = useVesselTab();
+  const { value, fromDate, toDate, setRange } = useMonthRangeWithDefault(6);
 
-  const salesQ = useApi(["finance", "vessel-sales"], () => financeApi.vesselSales());
-  const handlingQ = useApi(["finance", "vessel-handling"], () =>
-    financeApi.vesselHandling(),
+  const salesQ = useApi(["finance", "vessel-sales", fromDate, toDate], () =>
+    financeApi.vesselSales({ fromDate, toDate }),
+  );
+  const handlingQ = useApi(["finance", "vessel-handling", fromDate, toDate], () =>
+    financeApi.vesselHandling({ fromDate, toDate }),
   );
 
   const salesRows = salesQ.data?.items ?? [];
@@ -41,7 +46,10 @@ export const VesselProfitability = () => {
 
   return (
     <>
-      <PageHeader title="Vessel Profitability" />
+      <PageHeader
+        title="Vessel Profitability"
+        filters={<MonthRangeFilter value={value} onChange={setRange} />}
+      />
 
       <VesselTabsNav />
 

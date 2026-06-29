@@ -76,6 +76,7 @@ export const createAppRouter = (basename: string = "/") =>
         element: <AppShell />,
         children: [
           { index: true, element: <Navigate to="/finance/overview" replace /> },
+          { path: "finance", element: <Navigate to="/finance/overview" replace /> },
           { path: "finance/overview", element: <FinanceOverview /> },
           { path: "finance/overview/profitability", element: <Profitability /> },
           { path: "finance/overview/profitability/vessels", element: <VesselProfitability /> },
