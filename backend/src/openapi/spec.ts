@@ -888,11 +888,10 @@ export const openApiSpec = {
       // --- Finance: Approved Budget -----------------------------------
       BudgetSeries: {
         type: "object",
-        required: ["months", "budget", "actual", "unit"],
+        required: ["months", "budget", "unit"],
         properties: {
           months: { type: "array", items: { type: "string" } },
           budget: { type: "array", items: { type: "number", nullable: true } },
-          actual: { type: "array", items: { type: "number", nullable: true } },
           unit: { type: "string", enum: ["MT", "Cr"] },
         },
       },

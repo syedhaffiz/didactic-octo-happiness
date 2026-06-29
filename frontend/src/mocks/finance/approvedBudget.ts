@@ -11,9 +11,6 @@ import { range, round, seedFromString, seeded } from "../rand";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-// Number of months Actual has data for (year-to-date).
-const ACTUAL_HORIZON = 6;
-
 const filterKey = (f: ApprovedBudgetParams, fy: string) =>
   `${fy}:${f.port ?? "ALL"}:${f.grade ?? "ALL"}:${f.zone ?? "ALL"}:${f.origin ?? "ALL"}`;
 
@@ -34,22 +31,14 @@ const buildSeries = (
     return round(base + jitter, 1);
   });
 
-  // Actual: shorter run, smaller magnitude with occasional dip below zero.
-  const actual = MONTHS.map((_, i) => {
-    if (i >= ACTUAL_HORIZON) return null;
-    const seasonal = (i / 11) * 10;
-    const jitter = (rng() * 2 - 1) * 4;
-    return round(Math.max(-4, seasonal - 2 + jitter), 1);
-  });
-
-  return { months: MONTHS, budget, actual, unit };
+  return { months: MONTHS, budget, unit };
 };
 
 const PBD_PORTS = [
   "DAHEJ",
   "DHAMRA",
-  "DHAMARTAR",
-  "DIGH",
+  "DHARAMTAR",
+  "DIGHI",
   "ENNORE",
   "GANGAVARAM",
   "GOA",

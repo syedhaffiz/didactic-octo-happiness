@@ -221,7 +221,6 @@ export interface OverviewResponse {
 export interface BudgetSeries {
   months: string[];
   budget: (number | null)[];
-  actual: (number | null)[];
   unit: "MT" | "Cr";
 }
 

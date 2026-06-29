@@ -233,7 +233,6 @@ export interface DateRange {
 export interface BudgetSeries {
   months: string[];
   budget: (number | null)[];
-  actual: (number | null)[];
   unit: "MT" | "Cr";
 }
 

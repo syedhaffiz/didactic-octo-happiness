@@ -10,10 +10,6 @@ import { range, round, seedFromString, seeded } from "./rand.js";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-// Number of months Actual has data for. The Figma shows Actual ending around
-// Jun, i.e. year-to-date actuals; later months remain null so the line stops.
-const ACTUAL_HORIZON = 6;
-
 const filterKey = (f: ApprovedBudgetFilters, fy: string) =>
   `${fy}:${f.port ?? "ALL"}:${f.grade ?? "ALL"}:${f.zone ?? "ALL"}:${f.origin ?? "ALL"}`;
 
@@ -34,22 +30,14 @@ const buildSeries = (
     return round(base + jitter, 1);
   });
 
-  // Actual: shorter run, smaller magnitude with the occasional dip below zero.
-  const actual = MONTHS.map((_, i) => {
-    if (i >= ACTUAL_HORIZON) return null;
-    const seasonal = (i / 11) * 10;
-    const jitter = (rng() * 2 - 1) * 4;
-    return round(Math.max(-4, seasonal - 2 + jitter), 1);
-  });
-
-  return { months: MONTHS, budget, actual, unit };
+  return { months: MONTHS, budget, unit };
 };
 
 const PBD_PORTS = [
   "DAHEJ",
   "DHAMRA",
-  "DHAMARTAR",
-  "DIGH",
+  "DHARAMTAR",
+  "DIGHI",
   "ENNORE",
   "GANGAVARAM",
   "GOA",
