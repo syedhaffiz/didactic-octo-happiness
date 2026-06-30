@@ -1,4 +1,5 @@
 import type { ColumnsType } from "antd/es/table";
+import { textSearchFilter } from "../columnFilters";
 import type { CriticalIssue } from "../../types/legal";
 import { brand } from "../../theme/tokens";
 
@@ -11,12 +12,19 @@ const Amount = ({ value }: { value: string }) => (
 );
 
 export const criticalIssuesColumns: ColumnsType<CriticalIssue> = [
-  { title: "Sr No", dataIndex: "srNo", key: "srNo", width: 70 },
+  {
+    title: "Sr No",
+    dataIndex: "srNo",
+    key: "srNo",
+    width: 70,
+    ...textSearchFilter<CriticalIssue>((r) => String(r.srNo), "Search Sr No"),
+  },
   {
     title: "Legal Issue",
     dataIndex: "legalIssue",
     key: "legalIssue",
     render: (v: string) => <MultiLine value={v} />,
+    ...textSearchFilter<CriticalIssue>((r) => r.legalIssue, "Search Legal Issue"),
   },
   {
     title: "Amount Involved",
@@ -25,6 +33,7 @@ export const criticalIssuesColumns: ColumnsType<CriticalIssue> = [
     width: 160,
     align: "center",
     render: (v: string) => <Amount value={v} />,
+    ...textSearchFilter<CriticalIssue>((r) => r.amountInvolved, "Search Amount"),
   },
   {
     title: "Current Status",
@@ -32,5 +41,6 @@ export const criticalIssuesColumns: ColumnsType<CriticalIssue> = [
     key: "currentStatus",
     width: 240,
     render: (v: string) => <MultiLine value={v} />,
+    ...textSearchFilter<CriticalIssue>((r) => r.currentStatus, "Search Status"),
   },
 ];

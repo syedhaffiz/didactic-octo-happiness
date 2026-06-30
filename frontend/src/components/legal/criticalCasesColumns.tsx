@@ -1,6 +1,7 @@
 import type { ColumnsType } from "antd/es/table";
 import { Button } from "antd";
 import { ExportOutlined } from "@ant-design/icons";
+import { textSearchFilter } from "../columnFilters";
 import type { CriticalCase } from "../../types/legal";
 import { brand } from "../../theme/tokens";
 
@@ -36,14 +37,29 @@ export const buildCriticalCasesColumns = ({
   onOpenDetails,
 }: BuildOpts): ColumnsType<CriticalCase> => [
   // Sr No + Case No stay pinned to the left while the rest scrolls.
-  { title: "Sr No", dataIndex: "srNo", key: "srNo", width: 70, fixed: "left" },
-  { title: "Case No", dataIndex: "caseNo", key: "caseNo", width: 140, fixed: "left" },
+  {
+    title: "Sr No",
+    dataIndex: "srNo",
+    key: "srNo",
+    width: 70,
+    fixed: "left",
+    ...textSearchFilter<CriticalCase>((r) => String(r.srNo), "Search Sr No"),
+  },
+  {
+    title: "Case No",
+    dataIndex: "caseNo",
+    key: "caseNo",
+    width: 140,
+    fixed: "left",
+    ...textSearchFilter<CriticalCase>((r) => r.caseNo, "Search Case No"),
+  },
   {
     title: "Category",
     dataIndex: "category",
     key: "category",
     width: 100,
     render: (v: string) => <Category value={v} />,
+    ...textSearchFilter<CriticalCase>((r) => r.category, "Search Category"),
   },
   {
     title: "Claimant/ Petitioner",
@@ -51,6 +67,7 @@ export const buildCriticalCasesColumns = ({
     key: "claimant",
     width: 130,
     render: (v: string) => <MultiLine value={v} />,
+    ...textSearchFilter<CriticalCase>((r) => r.claimant, "Search Claimant"),
   },
   {
     title: "Defendant/ Respondent",
@@ -58,13 +75,50 @@ export const buildCriticalCasesColumns = ({
     key: "defendant",
     width: 130,
     render: (v: string) => <MultiLine value={v} />,
+    ...textSearchFilter<CriticalCase>((r) => r.defendant, "Search Defendant"),
   },
-  { title: "Forum", dataIndex: "forum", key: "forum", width: 220 },
-  { title: "Claim", dataIndex: "claim", key: "claim", width: 130 },
-  { title: "Cost Incurred", dataIndex: "costIncurred", key: "costIncurred", width: 130 },
-  { title: "Lawyer", dataIndex: "lawyer", key: "lawyer", width: 170 },
-  { title: "Last Date", dataIndex: "lastDate", key: "lastDate", width: 100 },
-  { title: "Next Date", dataIndex: "nextDate", key: "nextDate", width: 100 },
+  {
+    title: "Forum",
+    dataIndex: "forum",
+    key: "forum",
+    width: 220,
+    ...textSearchFilter<CriticalCase>((r) => r.forum, "Search Forum"),
+  },
+  {
+    title: "Claim",
+    dataIndex: "claim",
+    key: "claim",
+    width: 130,
+    ...textSearchFilter<CriticalCase>((r) => r.claim, "Search Claim"),
+  },
+  {
+    title: "Cost Incurred",
+    dataIndex: "costIncurred",
+    key: "costIncurred",
+    width: 130,
+    ...textSearchFilter<CriticalCase>((r) => r.costIncurred, "Search Cost Incurred"),
+  },
+  {
+    title: "Lawyer",
+    dataIndex: "lawyer",
+    key: "lawyer",
+    width: 170,
+    ...textSearchFilter<CriticalCase>((r) => r.lawyer, "Search Lawyer"),
+  },
+  {
+    title: "Last Date",
+    dataIndex: "lastDate",
+    key: "lastDate",
+    width: 100,
+    ...textSearchFilter<CriticalCase>((r) => r.lastDate, "Search Last Date"),
+  },
+  {
+    title: "Next Date",
+    dataIndex: "nextDate",
+    key: "nextDate",
+    width: 100,
+    ...textSearchFilter<CriticalCase>((r) => r.nextDate, "Search Next Date"),
+  },
   {
     title: "Details",
     key: "details",
