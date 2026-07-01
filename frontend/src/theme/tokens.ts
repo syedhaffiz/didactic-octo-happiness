@@ -127,10 +127,18 @@ export const approvedBudgetSeries = {
   actual: "#1B2333", // near-black line — matches body ink
 } as const;
 
-export const inventoryColors = {
-  seb: "#A678D6", // lighter purple slice
-  sns: brand.purpleDeep, // deep purple slice
-} as const;
+// Inventory Days gauge — one color per concentric ring, assigned by the slice's
+// position in the API response (cycles if there are more rings than colors).
+// The first two keep the original SEB / SNS purples so the common case is
+// unchanged; the rest extend the palette for additional segments.
+export const inventoryColors = [
+  "#A678D6", // lighter purple
+  brand.purpleDeep, // deep violet
+  "#5FA0E6", // blue
+  "#37A089", // teal
+  "#F69C50", // amber
+  "#C2477E", // magenta
+] as const;
 
 // PBD column chart color (dark navy bars).
 export const pbdColumn = "#1F2A6B";
