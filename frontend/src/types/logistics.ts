@@ -59,6 +59,16 @@ export interface HandlingRatesResponse {
   items: HandlingRateRow[];
 }
 
+// Drives the fiscal-year dropdown in the Handling Rates card header.
+export interface FiscalYear {
+  fiscalYear: string; // "2025-26"
+  fiscalYearDisplay: string; // "FY2025-26"
+}
+
+export interface FiscalYearResponse {
+  fiscalYear: FiscalYear[];
+}
+
 // Portwise PDA returns PdaRootPie, and DP Handling Agents returns
 // DpHandlingOutstanding, directly.
 

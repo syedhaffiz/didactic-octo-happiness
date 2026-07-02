@@ -21,6 +21,18 @@ export interface HandlingRateRow {
   rake: number; // INR/MT
 }
 
+// --- Fiscal Year -----------------------------------------------------------
+// Drives the fiscal-year dropdown in the Handling Rates card header; the chosen
+// `fiscalYear` (e.g. "2025-26") is passed to the handling-rates endpoint.
+export interface FiscalYear {
+  fiscalYear: string; // "2025-26"
+  fiscalYearDisplay: string; // "FY2025-26"
+}
+
+export interface FiscalYearResponse {
+  fiscalYear: FiscalYear[];
+}
+
 // --- Portwise PDA (drilldown pie: Ports -> Operations) ---------------------
 // PDA = Port Disbursement Account. Root pie is by port; drilling a port slice
 // fetches the per-operation (shipping-agent) split for that port.

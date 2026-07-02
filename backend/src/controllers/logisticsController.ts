@@ -8,6 +8,10 @@ const dateRangeSchema = z.object({
   toDate: z.string().optional(),
 });
 
+const handlingRatesSchema = z.object({
+  year: z.string().optional(),
+});
+
 const pdaDrillSchema = z.object({
   path: z.string().min(1),
 });
@@ -27,9 +31,18 @@ export const getVesselsSailed: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const getHandlingRates: RequestHandler = async (_req, res, next) => {
+export const getFiscalYears: RequestHandler = async (_req, res, next) => {
   try {
-    res.json(ok(await logisticsService.handlingRates()));
+    res.json(ok(await logisticsService.fiscalYears()));
+  } catch (e) {
+    next(e);
+  }
+};
+
+export const getHandlingRates: RequestHandler = async (req, res, next) => {
+  try {
+    const q = parse(handlingRatesSchema, req.query);
+    res.json(ok(await logisticsService.handlingRates(q.year)));
   } catch (e) {
     next(e);
   }

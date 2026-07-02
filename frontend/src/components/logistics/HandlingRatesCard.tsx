@@ -1,9 +1,10 @@
-import { Card, Empty, Skeleton, Table } from "antd";
+import { Card, Empty, Select, Skeleton, Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { brand } from "../../theme/tokens";
 import { ErrorRetry } from "../ErrorRetry";
 import { logisticsApi } from "../../api/logistics";
 import { useApi } from "../../api/useApi";
+import { useUrlParam } from "../../utils/useUrlParam";
 import type { HandlingRateRow } from "../../types/logistics";
 
 const rateHeader = (label: string) => (
@@ -35,14 +36,43 @@ const columns: ColumnsType<HandlingRateRow> = [
 ];
 
 export const HandlingRatesCard = () => {
+  // Fiscal-year list drives the header dropdown; the first entry is the default.
+  const fy = useApi(["logistics", "fiscal-year"], () => logisticsApi.fiscalYears());
+  const [year, setYear] = useUrlParam("handlingYear");
+  const defaultYear = fy.data?.fiscalYear[0]?.fiscalYear;
+  const activeYear = year ?? defaultYear;
+
+  // Rates depend on the selected year. Wait for a year to resolve before firing
+  // (unless the fiscal-year list failed, in which case fall back to the API's
+  // own default year so the table still loads).
   const { data, isLoading, isError, error, refetch } = useApi(
-    ["logistics", "handling-rates"],
-    () => logisticsApi.handlingRates(),
+    ["logistics", "handling-rates", activeYear, fy.isError],
+    () =>
+      activeYear
+        ? logisticsApi.handlingRates(activeYear)
+        : fy.isError
+          ? logisticsApi.handlingRates(undefined)
+          : new Promise<never>(() => {}),
   );
   const rows = data?.items;
 
+  const yearSelect = (
+    <Select
+      size="small"
+      value={activeYear}
+      onChange={(v) => setYear(v === defaultYear ? undefined : v)}
+      options={(fy.data?.fiscalYear ?? []).map((f) => ({
+        value: f.fiscalYear,
+        label: f.fiscalYearDisplay,
+      }))}
+      loading={fy.isLoading}
+      placeholder="Fiscal Year"
+      style={{ width: 140 }}
+    />
+  );
+
   return (
-    <Card title="Handling Rates" style={{ height: "100%" }}>
+    <Card title="Handling Rates" extra={yearSelect} style={{ height: "100%" }}>
       {isError ? (
         <ErrorRetry title="Could not load handling rates" error={error} onRetry={refetch} />
       ) : isLoading || !rows ? (

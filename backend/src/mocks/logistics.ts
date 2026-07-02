@@ -5,6 +5,7 @@ import { seeded, seedFromString, range, intRange, pick } from "./rand.js";
 import { VESSELS } from "./catalog.js";
 import type {
   DpHandlingOutstanding,
+  FiscalYear,
   HandlingRateRow,
   PdaDrilldownSeries,
   PdaPiePoint,
@@ -94,8 +95,25 @@ const HANDLING_RATES: HandlingRateRow[] = [
   { port: "Krishnapatnam (Geared)", road: 353, rake: 389 },
 ];
 
-export const buildHandlingRates = (): HandlingRateRow[] =>
-  HANDLING_RATES.map((r) => ({ ...r }));
+// Fiscal years for the dropdown, latest first; the first is the default.
+const FISCAL_YEARS = ["2025-26", "2024-25", "2023-24", "2022-23"];
+const DEFAULT_FISCAL_YEAR = FISCAL_YEARS[0]!;
+
+export const buildFiscalYears = (): FiscalYear[] =>
+  FISCAL_YEARS.map((fy) => ({ fiscalYear: fy, fiscalYearDisplay: `FY${fy}` }));
+
+// Rates depend on the selected fiscal year. The default year returns the pinned
+// design figures; other years apply a deterministic per-year variation so the
+// dropdown visibly changes the table.
+export const buildHandlingRates = (year?: string): HandlingRateRow[] => {
+  const fy = year ?? DEFAULT_FISCAL_YEAR;
+  if (fy === DEFAULT_FISCAL_YEAR) return HANDLING_RATES.map((r) => ({ ...r }));
+  return HANDLING_RATES.map((r) => {
+    const rng = seeded(seedFromString(`log-handling-${r.port}-${fy}`));
+    const factor = 0.85 + rng() * 0.3; // ±15%
+    return { port: r.port, road: Math.round(r.road * factor), rake: Math.round(r.rake * factor) };
+  });
+};
 
 // --- Portwise PDA ----------------------------------------------------------
 // Root pie by port (values tuned to the design's percentages); each port

@@ -3,6 +3,7 @@ import { USE_MOCK_DATA, mockDelay } from "./dataSource";
 import type { ApiEnvelope } from "../types/api";
 import type {
   DpHandlingOutstanding,
+  FiscalYearResponse,
   HandlingRatesResponse,
   LogisticsFilters,
   PdaDrilldownSeries,
@@ -10,6 +11,7 @@ import type {
   VesselsSailedResponse,
 } from "../types/logistics";
 import {
+  buildFiscalYears,
   buildHandlingRates,
   buildOutstanding,
   buildPdaDrill,
@@ -38,7 +40,9 @@ const get = async <T>(
 const httpLogisticsApi = {
   vesselsSailed: (p: LogisticsFilters = {}) =>
     get<VesselsSailedResponse>("/logistics/vessels-sailed", p),
-  handlingRates: () => get<HandlingRatesResponse>("/logistics/handling-rates"),
+  fiscalYears: () => get<FiscalYearResponse>("/logistics/fiscal-year"),
+  handlingRates: (year?: string) =>
+    get<HandlingRatesResponse>("/logistics/handling-rates", { year }),
   pda: () => get<PdaRootPie>("/logistics/pda"),
   outstanding: () => get<DpHandlingOutstanding>("/logistics/outstanding"),
   pdaDrill: (path: string) =>
@@ -48,7 +52,9 @@ const httpLogisticsApi = {
 const mockLogisticsApi = {
   vesselsSailed: (p: LogisticsFilters = {}) =>
     mockDelay<VesselsSailedResponse>({ items: buildVesselsSailed(p.fromDate, p.toDate) }),
-  handlingRates: () => mockDelay<HandlingRatesResponse>({ items: buildHandlingRates() }),
+  fiscalYears: () => mockDelay<FiscalYearResponse>({ fiscalYear: buildFiscalYears() }),
+  handlingRates: (year?: string) =>
+    mockDelay<HandlingRatesResponse>({ items: buildHandlingRates(year) }),
   pda: () => mockDelay(buildPdaRoot()),
   outstanding: () => mockDelay(buildOutstanding()),
   pdaDrill: (path: string) => {
