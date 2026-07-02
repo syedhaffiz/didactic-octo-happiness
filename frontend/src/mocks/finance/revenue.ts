@@ -3,7 +3,6 @@
 import type {
   RevenueBreakdownItem,
   RevenueBreakdownResponse,
-  RevenuePeriod,
   RevenuePortResponse,
   RevenuePortRow,
   RevenueSegmentResponse,
@@ -19,7 +18,7 @@ const SEGMENTS_ORDER = ["SNS", "SEB", "Sagarmala", "TPH"] as const;
 
 // Baseline per-segment revenue for a ~1-month window, as whole-number rupee
 // amounts. Pinned so the default view reads like the Figma (86.6 Cr, …); the
-// UI formats each value as Cr or L. YTD/MTD and the date range scale these.
+// UI formats each value as Cr or L. The date range scales these.
 const MONTHLY_BASELINE: Record<string, number> = {
   SNS: 866_000_000, // 86.6 Cr
   SEB: 245_000_000, // 24.5 Cr
@@ -30,15 +29,14 @@ const MONTHLY_BASELINE: Record<string, number> = {
 const DAY_MS = 86_400_000;
 
 export const buildRevenueBreakdown = (
-  period: RevenuePeriod,
   fromDate?: string,
   toDate?: string,
 ): RevenueBreakdownResponse => {
   const { from, to } = parseRange(fromDate, toDate);
   // Scale the monthly baseline by the selected window (relative to 30 days) so
-  // the breakdown responds to the date-range filter; MTD trims it further.
+  // the breakdown responds to the date-range filter.
   const days = Math.max(1, Math.round((to.getTime() - from.getTime()) / DAY_MS));
-  const factor = (period === "MTD" ? 0.09 : 1) * (days / 30);
+  const factor = days / 30;
 
   const items: RevenueBreakdownItem[] = SEGMENTS_ORDER.map((segment) => ({
     segment,
@@ -51,7 +49,7 @@ export const buildRevenueBreakdown = (
     it.pct = total > 0 ? round((it.value / total) * 100, 1) : 0;
   }
 
-  return { period, total, items };
+  return { total, items };
 };
 
 interface LedgerCore {

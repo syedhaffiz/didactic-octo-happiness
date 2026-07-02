@@ -111,14 +111,10 @@ export const openApiSpec = {
     "/finance/revenue": {
       get: {
         tags: ["Finance"],
-        summary: "Revenue breakdown (cards + donut, YTD/MTD)",
+        summary: "Revenue breakdown (cards + donut)",
         parameters: [
-          {
-            name: "period",
-            in: "query",
-            schema: { type: "string", enum: ["YTD", "MTD"] },
-            description: "Defaults to `YTD`.",
-          },
+          { $ref: "#/components/parameters/FromDate" },
+          { $ref: "#/components/parameters/ToDate" },
         ],
         responses: { "200": envelopeResponse("RevenueBreakdownResponse") },
       },
@@ -693,9 +689,8 @@ export const openApiSpec = {
       },
       RevenueBreakdownResponse: {
         type: "object",
-        required: ["period", "total", "items"],
+        required: ["total", "items"],
         properties: {
-          period: { type: "string", enum: ["YTD", "MTD"] },
           total: { type: "number" },
           items: { type: "array", items: { $ref: "#/components/schemas/RevenueBreakdownItem" } },
         },

@@ -71,8 +71,6 @@ export interface BreakdownResponse {
 
 // --- Revenue suite -------------------------------------------------------
 
-export type RevenuePeriod = "YTD" | "MTD";
-
 // One combined breakdown entry — drives both the KPI cards and the donut
 // slices (they describe the same per-segment figure). `value` is a whole-number
 // amount in rupees; the UI formats it as Cr/L. `pct` is its share of the total.
@@ -83,7 +81,6 @@ export interface RevenueBreakdownItem {
 }
 
 export interface RevenueBreakdownResponse {
-  period: RevenuePeriod;
   total: number;
   items: RevenueBreakdownItem[];
 }

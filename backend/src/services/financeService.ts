@@ -1,12 +1,12 @@
 import { financeRepository } from "../repositories/financeRepository.js";
-import type { ApprovedBudgetFilters, Currency, ForexRange, RevenuePeriod } from "../types/finance.js";
+import type { ApprovedBudgetFilters, Currency, ForexRange } from "../types/finance.js";
 
 export const financeService = {
   overview: (from: Date, to: Date) => financeRepository.getOverview(from, to),
   kpis: (from: Date, to: Date) => financeRepository.getKpis(from, to),
   forex: (range: ForexRange, anchor: Date) => financeRepository.getForex(range, anchor),
-  revenueBreakdown: (period: RevenuePeriod, from: Date, to: Date) =>
-    financeRepository.getRevenueBreakdown(period, from, to),
+  revenueBreakdown: (from: Date, to: Date) =>
+    financeRepository.getRevenueBreakdown(from, to),
   revenuePort: (port: string | undefined) => financeRepository.getRevenuePort(port),
   revenueSegment: (segment: string | undefined) => financeRepository.getRevenueSegment(segment),
   workingCapital: (port: string | undefined, from: Date, to: Date) =>

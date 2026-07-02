@@ -1,10 +1,17 @@
 import { useMemo } from "react";
 import { Card, Col, Row, Skeleton, Space } from "antd";
+import dayjs from "dayjs";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { ErrorRetry } from "../../components/ErrorRetry";
 import { PageHeader } from "../../components/PageHeader";
 import { DateRangeFilter } from "../../components/DateRangeFilter";
-import { PeriodToggle, useRevenuePeriod } from "../../components/finance/PeriodToggle";
+import {
+  PeriodSelect,
+  presetOf,
+  mtdRange,
+  ytdRange,
+  type RevenuePreset,
+} from "../../components/finance/PeriodToggle";
 import { RevenueChildLinks } from "../../components/finance/RevenueChildLinks";
 import { RevenueDonut } from "../../components/finance/RevenueDonut";
 import { RevenueKpiCard } from "../../components/finance/RevenueKpiCard";
@@ -19,14 +26,24 @@ import {
 
 export const Revenue = () => {
   const t = useBrandTokens();
-  const [period] = useRevenuePeriod();
   const { start, end, value, fromDate, toDate, setRange } = useDateRangeWithDefault(1, {
     persist: "inherit",
   });
 
+  // The date range is the single source of truth. YTD/MTD apply a computed
+  // range; the dropdown label is derived from the current range so a manual pick
+  // reads as "None" automatically. "None" clears back to the default/inherited.
+  const today = useMemo(() => dayjs(), []);
+  const preset = presetOf([start, end], today);
+  const applyPreset = (next: RevenuePreset) => {
+    if (next === "ytd") setRange(ytdRange(today));
+    else if (next === "mtd") setRange(mtdRange(today));
+    else setRange(null);
+  };
+
   const { data, isLoading, isError, error, refetch } = useApi(
-    ["revenue-breakdown", period, fromDate, toDate],
-    () => financeApi.revenueBreakdown({ period, fromDate, toDate }),
+    ["revenue-breakdown", fromDate, toDate],
+    () => financeApi.revenueBreakdown({ fromDate, toDate }),
   );
 
   // Slice/card colors are owned by the UI, not the API: assign from the shared
@@ -54,7 +71,7 @@ export const Revenue = () => {
         <>
           <Card
             title="Revenue Breakdown"
-            extra={<PeriodToggle />}
+            extra={<PeriodSelect value={preset} onChange={applyPreset} />}
             style={{ marginBottom: 16, background: t.panelBg }}
             styles={{ header: { borderBottom: "none" }, body: { paddingTop: 4 } }}
           >
