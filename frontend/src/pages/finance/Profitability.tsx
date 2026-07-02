@@ -10,7 +10,8 @@ import { VesselWiseLinkCard } from "../../components/finance/VesselWiseLinkCard"
 import { SegmentWiseTreemapCard } from "../../components/finance/SegmentWiseTreemapCard";
 import { financeApi } from "../../api/finance";
 import { useApi } from "../../api/useApi";
-import { useUrlParam, useUrlDateRange } from "../../utils/useUrlParam";
+import { useUrlParam } from "../../utils/useUrlParam";
+import { useDateRangeWithDefault } from "../../utils/useDateRangeWithDefault";
 import type { Currency } from "../../types/finance";
 
 // Net Margin Profitability page (child of /finance/overview). Layout:
@@ -28,9 +29,10 @@ export const Profitability = () => {
   const currency: Currency = isCurrency(rawCurrency) ? rawCurrency : "INR";
 
   const [port, setPort] = useUrlParam("port");
-  const [range, setRange] = useUrlDateRange();
-  const fromDate = range?.[0]?.format("YYYY-MM-DD");
-  const toDate = range?.[1]?.format("YYYY-MM-DD");
+  // Persisting default so the Finance Overview range carries down here.
+  const { value: range, fromDate, toDate, setRange } = useDateRangeWithDefault(1, {
+    persist: true,
+  });
 
   const { data, isLoading, isError, error, refetch } = useApi(
     ["finance", "net-margin-profitability", port, currency, fromDate, toDate],

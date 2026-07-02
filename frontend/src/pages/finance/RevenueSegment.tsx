@@ -17,7 +17,7 @@ import type { RevenueSegmentRow } from "../../types/finance";
 
 export const RevenueSegment = () => {
   const [segment, setSegment] = useUrlParam("segment");
-  const { start, end, value, setRange } = useDateRangeWithDefault(1);
+  const { start, end, value, setRange } = useDateRangeWithDefault(1, { persist: true });
 
   const { data, isLoading, isError, error, refetch } = useApi(
     ["revenue-segment", segment],

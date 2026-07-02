@@ -18,7 +18,10 @@ import {
 // antd Card.loading + Highcharts.showLoading instead of swapping the layout
 // for a Skeleton.
 export const FinanceOverview = () => {
-  const { start, end, value, fromDate, toDate, setRange } = useDateRangeWithDefault(1);
+  // Persist so the picked range carries down to the Finance child routes.
+  const { start, end, value, fromDate, toDate, setRange } = useDateRangeWithDefault(1, {
+    persist: true,
+  });
 
   const { data, isLoading, isError, error, refetch } = useApi(
     ["finance", "overview", fromDate, toDate],

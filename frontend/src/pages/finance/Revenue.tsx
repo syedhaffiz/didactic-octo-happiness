@@ -20,7 +20,9 @@ import {
 export const Revenue = () => {
   const t = useBrandTokens();
   const [period] = useRevenuePeriod();
-  const { start, end, value, fromDate, toDate, setRange } = useDateRangeWithDefault(1);
+  const { start, end, value, fromDate, toDate, setRange } = useDateRangeWithDefault(1, {
+    persist: true,
+  });
 
   const { data, isLoading, isError, error, refetch } = useApi(
     ["revenue-breakdown", period, fromDate, toDate],
