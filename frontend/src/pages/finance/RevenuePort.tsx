@@ -17,7 +17,7 @@ import type { RevenuePortRow } from "../../types/finance";
 
 export const RevenuePort = () => {
   const [port, setPort] = useUrlParam("port");
-  const { start, end, value, setRange } = useDateRangeWithDefault(1, { persist: true });
+  const { start, end, value, setRange } = useDateRangeWithDefault(1, { persist: "inherit" });
 
   const { data, isLoading, isError, error, refetch } = useApi(
     ["revenue-port", port],

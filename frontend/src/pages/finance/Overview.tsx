@@ -18,9 +18,9 @@ import {
 // antd Card.loading + Highcharts.showLoading instead of swapping the layout
 // for a Skeleton.
 export const FinanceOverview = () => {
-  // Persist so the picked range carries down to the Finance child routes.
+  // Source of the shared Finance range — carries down to the child routes.
   const { start, end, value, fromDate, toDate, setRange } = useDateRangeWithDefault(1, {
-    persist: true,
+    persist: "source",
   });
 
   const { data, isLoading, isError, error, refetch } = useApi(

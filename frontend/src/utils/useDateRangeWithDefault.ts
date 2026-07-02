@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import dayjs, { type Dayjs } from "dayjs";
 import { useUrlDateRange } from "./useUrlParam";
 
@@ -56,48 +56,53 @@ export interface DateRangeWithDefault {
   isCustom: boolean;
 }
 
+// Cross-screen carry-down of the range (Finance Overview → its child routes):
+//   - "source"  publishes its *effective* range — the untouched default OR a
+//               picked one — to a shared store, and never reads that store, so
+//               it stays authoritative (always shows its own default / URL).
+//   - "inherit" reads the store as its default (falling back to today − N when
+//               empty), so it adopts the source's range even when navigation
+//               dropped the URL params. Local changes stay on the URL and never
+//               mutate the shared store, so one child can't hijack another.
+type PersistMode = "source" | "inherit";
+
 interface Options {
-  /** When set, an explicit selection is remembered and reused as the default on
-   *  the next persisting screen that has no range of its own (carry-down). */
-  persist?: boolean;
+  persist?: PersistMode;
 }
 
 // Shared default-date-range hook. Reads/writes the `fromDate` + `toDate` URL
 // params via useUrlDateRange and applies a default of (today − N months →
 // today) when neither is present. Consumers get `fromDate` + `toDate` for the
-// API call and a `[start, end]` tuple for the picker. With `persist`, the
-// default instead falls back to the last range picked on a persisting screen.
+// API call and a `[start, end]` tuple for the picker.
 export const useDateRangeWithDefault = (
   monthsBack = 1,
-  { persist = false }: Options = {},
+  { persist }: Options = {},
 ): DateRangeWithDefault => {
-  const [tuple, setUrlRange] = useUrlDateRange();
+  const [tuple, setRange] = useUrlDateRange();
 
   // Stable "today" so the default range doesn't drift across re-renders.
   const today = useMemo(() => dayjs(), []);
-  // Read fresh each render (not memoised) so clearing the store reverts to the
-  // today-based default rather than a stale value.
-  const stored = persist ? readStoredRange() : null;
+  // Inheriting screens read the shared store fresh each render (not memoised)
+  // so clearing the URL range reverts to the source's range, not a stale value.
+  const stored = persist === "inherit" ? readStoredRange() : null;
 
   const start = tuple?.[0] ?? stored?.[0] ?? today.subtract(monthsBack, "month");
   const end = tuple?.[1] ?? stored?.[1] ?? today;
+  const fromDate = start.format(RANGE_FMT);
+  const toDate = end.format(RANGE_FMT);
 
-  const setRange = useCallback(
-    (next: [Dayjs | null, Dayjs | null] | null) => {
-      setUrlRange(next);
-      if (persist) {
-        writeStoredRange(next && next[0] && next[1] ? [next[0], next[1]] : null);
-      }
-    },
-    [setUrlRange, persist],
-  );
+  // The source publishes its effective range (default included) so child routes
+  // pick it up even when the URL carries no params.
+  useEffect(() => {
+    if (persist === "source") writeStoredRange([dayjs(fromDate), dayjs(toDate)]);
+  }, [persist, fromDate, toDate]);
 
   return {
     start,
     end,
     value: [start, end],
-    fromDate: start.format(RANGE_FMT),
-    toDate: end.format(RANGE_FMT),
+    fromDate,
+    toDate,
     setRange,
     isCustom: tuple !== null,
   };

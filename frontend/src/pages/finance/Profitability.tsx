@@ -29,9 +29,9 @@ export const Profitability = () => {
   const currency: Currency = isCurrency(rawCurrency) ? rawCurrency : "INR";
 
   const [port, setPort] = useUrlParam("port");
-  // Persisting default so the Finance Overview range carries down here.
+  // Inherit the shared Finance range set on the Overview page.
   const { value: range, fromDate, toDate, setRange } = useDateRangeWithDefault(1, {
-    persist: true,
+    persist: "inherit",
   });
 
   const { data, isLoading, isError, error, refetch } = useApi(
