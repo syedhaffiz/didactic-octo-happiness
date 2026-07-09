@@ -42,9 +42,21 @@ export const Revenue = () => {
   // Finance range, per the Revenue spec).
   const { value, fromDate, toDate, start, end, setRange } = useDateRangeWithDefault(12);
 
+  // "All" is sent to the API as the literal "all" (rather than an omitted
+  // param), per the filter contract.
+  const zoneParam = zone ?? "all";
+  const portParam = port ?? "all";
+
   const { data, isLoading, isError, error, refetch } = useApi(
-    ["revenue", fromDate, toDate, zone, port, currency],
-    () => financeApi.revenueBreakdown({ fromDate, toDate, zone, port, currency }),
+    ["revenue", fromDate, toDate, zoneParam, portParam, currency],
+    () =>
+      financeApi.revenueBreakdown({
+        fromDate,
+        toDate,
+        zone: zoneParam,
+        port: portParam,
+        currency,
+      }),
   );
 
   // Slice/card colors are owned by the UI, not the API: assign from the shared
@@ -69,6 +81,21 @@ export const Revenue = () => {
     [data, divisor],
   );
 
+  // Changing the zone resets the dependent port back to "All" in the same URL
+  // update (the port list is zone-specific, so a carried-over port would be
+  // invalid). One functional update so the two keys can't clobber each other.
+  const onZoneChange = (next: string | undefined) =>
+    setSearchParams(
+      (prev) => {
+        const out = new URLSearchParams(prev);
+        if (next) out.set("zone", next);
+        else out.delete("zone");
+        out.delete("port");
+        return out;
+      },
+      { replace: true },
+    );
+
   // Clear every filter param in one update so the page reverts to its defaults
   // (All zone/port, INR, one-year range). A single call keeps the zone/port/
   // currency and date-range params from clobbering each other.
@@ -88,7 +115,7 @@ export const Revenue = () => {
             port={port}
             dateValue={value}
             currency={currency}
-            onZoneChange={(v) => set("zone", v)}
+            onZoneChange={onZoneChange}
             onPortChange={(v) => set("port", v)}
             onDateChange={setRange}
             onCurrencyChange={(v) => set("currency", v === "INR" ? undefined : v)}

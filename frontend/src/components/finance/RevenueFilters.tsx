@@ -2,7 +2,7 @@ import { Button, Segmented, Space, Tooltip } from "antd";
 import { ReloadOutlined, UploadOutlined } from "@ant-design/icons";
 import type { Dayjs } from "dayjs";
 import { ZoneFilter } from "../filters/ZoneFilter";
-import { PortFilter } from "../filters/PortFilter";
+import { RevenuePortFilter } from "../filters/RevenuePortFilter";
 import { DateRangeFilter } from "../DateRangeFilter";
 import type { Currency } from "../../types/finance";
 
@@ -37,7 +37,7 @@ export const RevenueFilters = ({
 }: Props) => (
   <Space size="middle" align="end" wrap>
     <ZoneFilter value={zone} onChange={onZoneChange} />
-    <PortFilter value={port} onChange={onPortChange} />
+    <RevenuePortFilter zone={zone} value={port} onChange={onPortChange} />
     <DateRangeFilter value={dateValue} onChange={onDateChange} />
     <Segmented<Currency>
       value={currency}

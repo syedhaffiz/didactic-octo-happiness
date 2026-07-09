@@ -47,9 +47,14 @@ export const buildRevenueBreakdown = (
   const days = Math.max(1, Math.round((to.getTime() - from.getTime()) / DAY_MS));
   const factor = days / 30;
 
+  // "all" (or missing) means the whole book — normalise it away so it doesn't
+  // act as a concrete zone/port value.
+  const zoneKey = zone && zone !== "all" ? zone : undefined;
+  const portKey = port && port !== "all" ? port : undefined;
+
   // Zone/port nudge the figures so the view visibly responds to those filters
   // (seeded, so a given filter combination is stable across reloads).
-  const rng = seeded(seedFromString(`revenue:${zone ?? "all"}:${port ?? "all"}`));
+  const rng = seeded(seedFromString(`revenue:${zoneKey ?? "all"}:${portKey ?? "all"}`));
   const filterScale = 0.75 + rng() * 0.5; // 0.75 – 1.25
   const rate = currency === "USD" ? USD_PER_INR : 1;
   const toBase = (rupees: number) => Math.round(rupees * rate);
@@ -73,7 +78,7 @@ export const buildRevenueBreakdown = (
     totalDeltaVsBudget: round(5 + rng() * 10, 0),
     totalDeltaVsLastYear: -round(3 + rng() * 8, 0),
     items,
-    portwise: buildRevenuePortwise(port, factor, filterScale, toBase),
+    portwise: buildRevenuePortwise(portKey, factor, filterScale, toBase),
   };
 };
 

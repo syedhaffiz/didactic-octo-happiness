@@ -7,6 +7,7 @@ import {
   INDEX_NAME_LIST,
   ORIGIN_LIST,
   PORT_LIST,
+  portsForZone,
   SEGMENT_LIST,
   ZONE_LIST,
 } from "../mocks/catalog";
@@ -35,13 +36,17 @@ export interface FiltersResponse {
   indexNames: IndexNameRef[];
 }
 
-const get = async <T>(path: string): Promise<T> => {
-  const res = await apiClient.get<ApiEnvelope<T>>(path);
+const get = async <T>(
+  path: string,
+  params?: Record<string, string | undefined>,
+): Promise<T> => {
+  const res = await apiClient.get<ApiEnvelope<T>>(path, { params });
   return unwrap(res);
 };
 
 const httpFiltersApi = {
   all: () => get<FiltersResponse>("/filters"),
+  portsByZone: (zone: string) => get<FilterRef[]>("/filters/ports", { zone }),
 };
 
 const mockFiltersApi = {
@@ -55,6 +60,7 @@ const mockFiltersApi = {
       grades: [...GRADE_LIST],
       indexNames: [...INDEX_NAME_LIST],
     }),
+  portsByZone: (zone: string): Promise<FilterRef[]> => mockDelay(portsForZone(zone)),
 };
 
 export const filtersApi = USE_MOCK_DATA ? mockFiltersApi : httpFiltersApi;

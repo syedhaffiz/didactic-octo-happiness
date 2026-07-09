@@ -59,6 +59,25 @@ export const ZONE_LIST: IdName[] = [
   { id: "zone-6", name: "Zone 6" },
 ];
 
+// Which ports belong to each zone. The real API derives this from the port
+// master; here it's a fixed partition of PORT_LIST so the zone-dependent Port
+// dropdown has something sensible to load.
+export const ZONE_PORT_IDS: Record<string, string[]> = {
+  "zone-1": ["mundra", "navlakhi"],
+  "zone-2": ["hazira", "dahej"],
+  "zone-3": ["dhamra", "paradip"],
+  "zone-4": ["gangavaram", "krishnapatnam"],
+  "zone-5": ["karaikal", "tuna"],
+  "zone-6": ["gopalpur"],
+};
+
+// Ports for a given zone id. An unknown / "all" zone yields an empty list — the
+// UI only queries this once a concrete zone is chosen.
+export const portsForZone = (zone: string | undefined): IdName[] => {
+  const ids = zone ? ZONE_PORT_IDS[zone] ?? [] : [];
+  return PORT_LIST.filter((p) => ids.includes(p.id));
+};
+
 export const ORIGIN_LIST: IdName[] = [
   { id: "indo", name: "INDO" },
   { id: "aus", name: "AUS" },
