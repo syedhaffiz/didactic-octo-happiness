@@ -39,7 +39,13 @@ export interface FinanceRepository {
   getKpis(from: Date, to: Date): Promise<KPI[]>;
   getForex(range: ForexRange, anchor: Date): Promise<ForexResponse>;
   getOverview(from: Date, to: Date): Promise<OverviewResponse>;
-  getRevenueBreakdown(from: Date, to: Date): Promise<RevenueBreakdownResponse>;
+  getRevenueBreakdown(
+    from: Date,
+    to: Date,
+    zone: string | undefined,
+    port: string | undefined,
+    currency: Currency,
+  ): Promise<RevenueBreakdownResponse>;
   getRevenuePort(port: string | undefined): Promise<RevenuePortResponse>;
   getRevenueSegment(segment: string | undefined): Promise<RevenueSegmentResponse>;
   getWorkingCapital(port: string | undefined, from: Date, to: Date): Promise<BreakdownResponse>;
@@ -72,8 +78,14 @@ class MockFinanceRepository implements FinanceRepository {
       forex: buildForex("week", to),
     };
   }
-  async getRevenueBreakdown(from: Date, to: Date) {
-    return buildRevenueBreakdown(from, to);
+  async getRevenueBreakdown(
+    from: Date,
+    to: Date,
+    zone: string | undefined,
+    port: string | undefined,
+    currency: Currency,
+  ) {
+    return buildRevenueBreakdown(from, to, zone, port, currency);
   }
   async getRevenuePort(port: string | undefined) {
     return buildRevenuePort(port);

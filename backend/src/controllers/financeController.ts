@@ -68,6 +68,9 @@ export const getForex: RequestHandler = async (req, res, next) => {
 const revenueBreakdownSchema = z.object({
   fromDate: z.string().optional(),
   toDate: z.string().optional(),
+  zone: z.string().optional(),
+  port: z.string().optional(),
+  currency: z.enum(["INR", "USD"]).optional(),
 });
 
 const portOnlySchema = z.object({ port: z.string().optional() });
@@ -77,7 +80,8 @@ export const getRevenueBreakdown: RequestHandler = async (req, res, next) => {
   try {
     const q = parse(revenueBreakdownSchema, req.query);
     const { from, to } = parseDateRange(q.fromDate, q.toDate);
-    res.json(ok(await financeService.revenueBreakdown(from, to)));
+    const currency: Currency = q.currency ?? "INR";
+    res.json(ok(await financeService.revenueBreakdown(from, to, q.zone, q.port, currency)));
   } catch (e) {
     next(e);
   }

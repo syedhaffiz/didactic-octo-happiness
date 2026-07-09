@@ -71,18 +71,34 @@ export interface BreakdownResponse {
 
 // --- Revenue suite -------------------------------------------------------
 
-// One combined breakdown entry — drives both the KPI cards and the donut
-// slices (they describe the same per-segment figure). `value` is a whole-number
-// amount in rupees; the UI formats it as Cr/L. `pct` is its share of the total.
+// One combined breakdown entry — drives both the Segment Wise KPI cards and the
+// donut slices (they describe the same per-segment figure). `value` is a
+// whole-number amount in the response currency's base unit (rupees for INR,
+// dollars for USD); the UI formats it as Cr/L or $M. `pct` is its share of the
+// total; the two deltas are signed percentages vs budget and vs last year.
 export interface RevenueBreakdownItem {
   segment: string;
   value: number;
   pct: number;
+  deltaVsBudget: number;
+  deltaVsLastYear: number;
+}
+
+// One Port Wise bar pair — budget vs actual for a single port, in the response
+// currency's base unit. The UI scales to Cr (INR) or M (USD) for the chart.
+export interface RevenuePortBudgetActual {
+  port: string;
+  budget: number;
+  actual: number;
 }
 
 export interface RevenueBreakdownResponse {
+  currency: Currency;
   total: number;
+  totalDeltaVsBudget: number;
+  totalDeltaVsLastYear: number;
   items: RevenueBreakdownItem[];
+  portwise: RevenuePortBudgetActual[];
 }
 
 export interface RevenuePortRow {

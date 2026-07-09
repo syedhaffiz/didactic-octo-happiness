@@ -1,4 +1,4 @@
-import type { Unit } from "../types/finance";
+import type { Currency, Unit } from "../types/finance";
 
 // "Cr" represents crore = 10,000,000; "MMT" = million metric tonnes; "Days" is unitless.
 const CR = 10_000_000;
@@ -61,11 +61,25 @@ const crLakhFormat = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 2,
 });
 
-// Splits the compact output into number + unit via formatToParts so the UI can
-// style them separately. `unit` is the scale suffix ("L", "Cr", …) — empty for
-// values too small to abbreviate.
-export const toCrLakh = (value: number): { num: string; unit: string } => {
-  const parts = crLakhFormat.formatToParts(value);
+// USD compact ($1.2M / $860K) for the currency toggle. Uses the currency style
+// so the "$" lands in the number part; the "M"/"K" scale suffix is the unit.
+const usdCompactFormat = new Intl.NumberFormat("en-US", {
+  notation: "compact",
+  compactDisplay: "short",
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 2,
+});
+
+// Splits a compact formatter's output into number + unit via formatToParts so
+// the UI can style them separately. `unit` is the scale suffix ("L", "Cr", "M",
+// …) — empty for values too small to abbreviate; everything else (digits,
+// grouping, currency symbol) folds into `num`.
+const splitCompact = (
+  formatter: Intl.NumberFormat,
+  value: number,
+): { num: string; unit: string } => {
+  const parts = formatter.formatToParts(value);
   const unit = parts.find((p) => p.type === "compact")?.value ?? "";
   const num = parts
     .filter((p) => p.type !== "compact")
@@ -74,6 +88,24 @@ export const toCrLakh = (value: number): { num: string; unit: string } => {
     .trim();
   return { num, unit };
 };
+
+export const toCrLakh = (value: number): { num: string; unit: string } =>
+  splitCompact(crLakhFormat, value);
+
+// Currency-aware compact parts: INR uses lakh/crore, USD uses $K/$M/$B. `value`
+// is already in the target currency's base unit (rupees or dollars).
+export const toMoneyParts = (
+  value: number,
+  currency: Currency,
+): { num: string; unit: string } =>
+  currency === "USD" ? splitCompact(usdCompactFormat, value) : toCrLakh(value);
+
+// Full-precision currency string for tooltips. `value` is in the target
+// currency's base unit.
+export const formatMoney = (value: number, currency: Currency): string =>
+  currency === "USD"
+    ? numberFormat({ style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value)
+    : formatInr(value);
 
 // Single-string form, e.g. 866_000_000 -> "86.6 Cr", 4_140_000 -> "41.4 L".
 export const formatCrLakh = (value: number): string => {

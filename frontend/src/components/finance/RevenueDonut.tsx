@@ -1,24 +1,25 @@
 import { Chart } from "../Chart";
 import { useBrandTokens } from "../../theme/useBrandTokens";
-import { formatCrLakh, toCrLakh } from "../../utils/format";
-import type { RevenueBreakdownItem } from "../../types/finance";
+import { formatMoney, toMoneyParts } from "../../utils/format";
+import type { Currency, RevenueBreakdownItem } from "../../types/finance";
 
 interface Props {
   /** Combined breakdown entries — same source as the KPI cards. */
   items: RevenueBreakdownItem[];
   /** Colors keyed by segment name. Falls back to the chart palette when missing. */
   colorBySegment: Record<string, string>;
-  /** Whole-number rupee total; formatted here as Cr/L. */
+  /** Whole-number total in the response currency's base unit. */
   total: number;
+  currency: Currency;
   height?: number;
 }
 
 // Thick donut for the Revenue Breakdown card. The Figma reads roughly 50%
 // inner radius — distinctly chunkier than the Overview donut. Center total +
 // legend below.
-export const RevenueDonut = ({ items, colorBySegment, total, height = 300 }: Props) => {
+export const RevenueDonut = ({ items, colorBySegment, total, currency, height = 300 }: Props) => {
   const t = useBrandTokens();
-  const totalParts = toCrLakh(total);
+  const totalParts = toMoneyParts(total, currency);
   return (
     <div style={{ position: "relative" }}>
       <Chart
@@ -29,7 +30,7 @@ export const RevenueDonut = ({ items, colorBySegment, total, height = 300 }: Pro
             formatter() {
               const key = String(this.key ?? "");
               const item = items.find((s) => s.segment === key);
-              const amount = item ? formatCrLakh(item.value) : "";
+              const amount = item ? formatMoney(item.value, currency) : "";
               return `<b>${key}</b><br/>${item?.pct ?? 0}%<br/><span style="color:${t.textSecondary}">${amount}</span>`;
             },
           },

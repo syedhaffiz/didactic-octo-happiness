@@ -1,12 +1,14 @@
 import type {
+  Currency,
   RevenueBreakdownItem,
   RevenueBreakdownResponse,
+  RevenuePortBudgetActual,
   RevenuePortResponse,
   RevenuePortRow,
   RevenueSegmentResponse,
   RevenueSegmentRow,
 } from "../types/finance.js";
-import { PORTS, PROFIT_CENTRES, SEGMENTS } from "./catalog.js";
+import { PORT_LIST, PORTS, PROFIT_CENTRES, SEGMENTS } from "./catalog.js";
 import { pick, range, round, seedFromString, seeded } from "./rand.js";
 
 // Segment order, kept in lockstep with the Figma legend order
@@ -25,19 +27,35 @@ const MONTHLY_BASELINE: Record<string, number> = {
 
 const DAY_MS = 86_400_000;
 
+// Indicative INR→USD rate for the currency toggle. The real API would apply the
+// booked rate; the mock just divides so USD figures land in a plausible range.
+const USD_PER_INR = 1 / 83;
+
 export const buildRevenueBreakdown = (
   from: Date,
   to: Date,
+  zone?: string,
+  port?: string,
+  currency: Currency = "INR",
 ): RevenueBreakdownResponse => {
   // Scale the monthly baseline by the selected window (relative to 30 days) so
   // the breakdown responds to the date-range filter.
   const days = Math.max(1, Math.round((to.getTime() - from.getTime()) / DAY_MS));
   const factor = days / 30;
 
+  // Zone/port nudge the figures so the view visibly responds to those filters
+  // (seeded, so a given filter combination is stable across reloads).
+  const rng = seeded(seedFromString(`revenue:${zone ?? "all"}:${port ?? "all"}`));
+  const filterScale = 0.75 + rng() * 0.5; // 0.75 – 1.25
+  const rate = currency === "USD" ? USD_PER_INR : 1;
+  const toBase = (rupees: number) => Math.round(rupees * rate);
+
   const items: RevenueBreakdownItem[] = SEGMENTS_ORDER.map((segment) => ({
     segment,
-    value: Math.round((MONTHLY_BASELINE[segment] ?? 0) * factor),
+    value: toBase((MONTHLY_BASELINE[segment] ?? 0) * factor * filterScale),
     pct: 0,
+    deltaVsBudget: round(5 + rng() * 13, 0), // +5 – +18
+    deltaVsLastYear: -round(3 + rng() * 9, 0), // -3 – -12
   }));
 
   const total = items.reduce((s, it) => s + it.value, 0);
@@ -45,8 +63,31 @@ export const buildRevenueBreakdown = (
     it.pct = total > 0 ? round((it.value / total) * 100, 1) : 0;
   }
 
-  return { total, items };
+  return {
+    currency,
+    total,
+    totalDeltaVsBudget: round(5 + rng() * 10, 0),
+    totalDeltaVsLastYear: -round(3 + rng() * 8, 0),
+    items,
+    portwise: buildRevenuePortwise(port, factor, filterScale, toBase),
+  };
 };
+
+// Port Wise budget-vs-actual bars. When a port filter is set, only that port is
+// returned; otherwise every port in the catalogue. Each port's budget is seeded
+// so it stays put across reloads; actual is a ±15% swing around it.
+const buildRevenuePortwise = (
+  port: string | undefined,
+  factor: number,
+  filterScale: number,
+  toBase: (rupees: number) => number,
+): RevenuePortBudgetActual[] =>
+  PORT_LIST.filter((p) => !port || p.id === port).map((p) => {
+    const prng = seeded(seedFromString(`revenue:portwise:${p.id}`));
+    const budget = range(prng, 1_800_000_000, 7_000_000_000) * factor * filterScale;
+    const actual = budget * (0.85 + prng() * 0.3);
+    return { port: p.name, budget: toBase(budget), actual: toBase(actual) };
+  });
 
 // Ledger row generators. Both tables share the same shape except for the
 // leading category column (port vs segment), so we factor out the body.

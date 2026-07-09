@@ -61,6 +61,12 @@ export interface RangeParams {
   toDate?: string;
 }
 
+export interface RevenueParams extends RangeParams {
+  zone?: string;
+  port?: string;
+  currency?: Currency;
+}
+
 export interface PortRangeParams extends RangeParams {
   port?: string;
 }
@@ -81,7 +87,7 @@ const httpFinanceApi = {
   overview: (p: RangeParams = {}) => get<OverviewResponse>("/finance/overview", p),
   kpis: (p: RangeParams = {}) => get<KPI[]>("/finance/kpis", p),
   forex: (range: ForexRange = "week") => get<ForexResponse>("/finance/forex", { range }),
-  revenueBreakdown: (p: RangeParams = {}) =>
+  revenueBreakdown: (p: RevenueParams = {}) =>
     get<RevenueBreakdownResponse>("/finance/revenue", p),
   revenuePort: (p: PortOnlyParams = {}) =>
     get<RevenuePortResponse>("/finance/revenue/port", p),
@@ -112,8 +118,8 @@ const mockFinanceApi = {
   overview: (p: RangeParams = {}) => mockDelay(buildOverview(p.fromDate, p.toDate)),
   kpis: (p: RangeParams = {}) => mockDelay(buildKpis(p.fromDate, p.toDate)),
   forex: (range: ForexRange = "week") => mockDelay(buildForex(range, new Date())),
-  revenueBreakdown: (p: RangeParams = {}) =>
-    mockDelay(buildRevenueBreakdown(p.fromDate, p.toDate)),
+  revenueBreakdown: (p: RevenueParams = {}) =>
+    mockDelay(buildRevenueBreakdown(p.fromDate, p.toDate, p.zone, p.port, p.currency)),
   revenuePort: (p: PortOnlyParams = {}) => mockDelay(buildRevenuePort(p.port)),
   revenueSegment: (p: SegmentOnlyParams = {}) => mockDelay(buildRevenueSegment(p.segment)),
   workingCapital: (p: PortRangeParams = {}) =>
