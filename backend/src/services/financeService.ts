@@ -17,11 +17,11 @@ export const financeService = {
   workingCapital: (port: string | undefined, from: Date, to: Date) =>
     financeRepository.getWorkingCapital(port, from, to),
   netMarginProfitability: (
-    port: string | undefined,
+    zone: string | undefined,
     currency: Currency,
     from: Date,
     to: Date,
-  ) => financeRepository.getNetMarginProfitability(port, currency, from, to),
+  ) => financeRepository.getNetMarginProfitability(zone, currency, from, to),
   vesselSales: (port: string | undefined, from: Date, to: Date) =>
     financeRepository.getVesselSales(port, from, to),
   vesselHandling: (port: string | undefined, from: Date, to: Date) =>

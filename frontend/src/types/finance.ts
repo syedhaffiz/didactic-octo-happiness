@@ -129,20 +129,33 @@ export interface RevenueSegmentResponse {
 
 export type Currency = "INR" | "USD";
 
-export interface PortBar {
-  port: string;
-  value: number;
-}
-
-export interface SegmentSlice {
+// One Segment Wise entry — drives both the KPI tiles and the donut slices (they
+// describe the same per-segment figure). `value` is a whole-number amount in the
+// response currency's base unit (rupees for INR, dollars for USD); the UI formats
+// it as Cr/L or $M. `pct` is its share of the total; `deltaVsBudget` is a signed
+// percentage.
+export interface ProfitabilitySegmentItem {
   segment: string;
   value: number;
+  pct: number;
+  deltaVsBudget: number;
+}
+
+// One Port Wise bar pair — budget vs actual for a single port, in the response
+// currency's base unit. The UI scales to Cr (INR) or M (USD) for the chart.
+export interface ProfitabilityPortRow {
+  port: string;
+  budget: number;
+  actual: number;
 }
 
 export interface NetMarginProfitabilityResponse {
-  total: { value: number; unit: "Cr"; deltaPct: number; trend: "up" | "down" };
-  portwise: { currency: Currency; rows: PortBar[] };
-  segmentwise: SegmentSlice[];
+  currency: Currency;
+  // `value` is a whole-number amount in the response currency's base unit; the
+  // two deltas are signed percentages vs budget and vs last year.
+  total: { value: number; deltaVsBudget: number; deltaVsLastYear: number };
+  segmentwise: ProfitabilitySegmentItem[];
+  portwise: ProfitabilityPortRow[];
 }
 
 // --- Vessel Profitability — Sales tab table ------------------------------

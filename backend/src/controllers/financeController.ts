@@ -14,7 +14,8 @@ const portFilterSchema = dateRangeSchema.extend({
   port: z.string().optional(),
 });
 
-const netMarginSchema = portFilterSchema.extend({
+const netMarginSchema = dateRangeSchema.extend({
+  zone: z.string().optional(),
   currency: z.enum(["INR", "USD"]).optional(),
 });
 
@@ -122,7 +123,7 @@ export const getNetMarginProfitability: RequestHandler = async (req, res, next) 
     const q = parse(netMarginSchema, req.query);
     const { from, to } = parseDateRange(q.fromDate, q.toDate);
     const currency: Currency = q.currency ?? "INR";
-    res.json(ok(await financeService.netMarginProfitability(q.port, currency, from, to)));
+    res.json(ok(await financeService.netMarginProfitability(q.zone, currency, from, to)));
   } catch (e) {
     next(e);
   }

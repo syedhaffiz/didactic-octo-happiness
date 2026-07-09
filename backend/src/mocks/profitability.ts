@@ -8,10 +8,10 @@ import type {
   HandlingBatchDetailResponse,
   HandlingBatchDetailRow,
   NetMarginProfitabilityResponse,
-  PortBar,
+  ProfitabilityPortRow,
+  ProfitabilitySegmentItem,
   SalesBatchDetailResponse,
   SalesBatchDetailRow,
-  SegmentSlice,
   VesselHandlingResponse,
   VesselHandlingRow,
   VesselSalesResponse,
@@ -22,6 +22,7 @@ import {
   GRADES,
   ORIGINS,
   PORTS,
+  PORT_LIST,
   PROFIT_CENTRES,
   SEGMENTS,
   VESSELS,
@@ -32,68 +33,88 @@ import { pick, range, round, seedFromString, seeded } from "./rand.js";
 
 // --- Net Margin Profitability ---------------------------------------------
 
-const PORT_CHART_SET = [
-  "Mundra",
-  "PAHD",
-  "Bedi",
-  "Paradip",
-  "Talabira",
-  "Dahej",
-  "Navlakhi",
-  "Dhamra",
-  "Dharamtar",
-  "Gangavaram",
-  "Goa",
-  "Gopalpur",
-  "Haldia",
-  "Hazira",
-  "Kakinada",
-  "Karaikal",
-  "Krishnapatnam",
-];
+// Segment order pinned to the Figma legend (SNS / SEB / TPH / Sagarmala) so the
+// donut colors line up. Baseline per-segment profit for a ~1-month window as
+// whole-number rupee amounts; the UI formats each as Cr / L. The date range and
+// zone filter scale these.
+const SEGMENTS_ORDER = ["SNS", "SEB", "TPH", "Sagarmala"] as const;
 
-const SEGMENT_TREEMAP_SET = ["SNS", "SEB", "Sagarmala", "Old", "TPH"];
+const SEGMENT_BASELINE: Record<string, number> = {
+  SNS: 866_000_000, // 86.6 Cr
+  SEB: 612_000_000, // 61.2 Cr
+  TPH: 336_000_000, // 33.6 Cr
+  Sagarmala: 174_000_000, // 17.4 Cr
+};
 
-const buildPortwise = (port: string | undefined, currency: Currency, months: MonthKey[]): PortBar[] =>
-  PORT_CHART_SET
-    .filter((p) => !port || p.toLowerCase() === port.toLowerCase())
-    .map((p) => {
-      let acc = 0;
-      for (const m of months) {
-        const rng = seeded(seedFromString(`portwise:${currency}:${p}:${m.label}`));
-        acc += range(rng, 0.1, 0.8);
-      }
-      return {
-        port: p,
-        value: round(acc / Math.max(months.length, 1), 1),
-      };
-    });
+const DAY_MS = 86_400_000;
 
-const buildSegmentwise = (months: MonthKey[]): SegmentSlice[] =>
-  SEGMENT_TREEMAP_SET.map((segment) => {
-    let acc = 0;
-    for (const m of months) {
-      const rng = seeded(seedFromString(`segmentwise:${segment}:${m.label}`));
-      acc += range(rng, 30000, 60000);
-    }
-    return {
-      segment,
-      value: Math.round(acc / Math.max(months.length, 1)),
-    };
+// Indicative INR→USD rate for the currency toggle. The real API would apply the
+// booked rate; the mock just divides so USD figures land in a plausible range.
+const USD_PER_INR = 1 / 83;
+
+const buildSegmentwise = (
+  factor: number,
+  filterScale: number,
+  toBase: (rupees: number) => number,
+  rng: () => number,
+): ProfitabilitySegmentItem[] => {
+  const items = SEGMENTS_ORDER.map((segment) => ({
+    segment,
+    value: toBase((SEGMENT_BASELINE[segment] ?? 0) * factor * filterScale),
+    pct: 0,
+    deltaVsBudget: round(5 + rng() * 13, 0), // +5 – +18
+  }));
+  const total = items.reduce((s, it) => s + it.value, 0);
+  for (const it of items) it.pct = total > 0 ? round((it.value / total) * 100, 1) : 0;
+  return items;
+};
+
+// Port Wise budget-vs-actual bars. Budget is seeded per port (stable across
+// reloads); actual is a tight ±5% swing around it, matching the Figma where the
+// two bars sit nearly level.
+const buildPortwise = (
+  factor: number,
+  filterScale: number,
+  toBase: (rupees: number) => number,
+): ProfitabilityPortRow[] =>
+  PORT_LIST.map((p) => {
+    const prng = seeded(seedFromString(`profit:portwise:${p.id}`));
+    const budget = range(prng, 8e11, 7.2e12) * factor * filterScale;
+    const actual = budget * (0.95 + prng() * 0.1);
+    return { port: p.name, budget: toBase(budget), actual: toBase(actual) };
   });
 
 export const buildNetMarginProfitability = (
-  port: string | undefined,
+  zone: string | undefined,
   currency: Currency,
   from: Date,
   to: Date,
 ): NetMarginProfitabilityResponse => {
-  const months = monthsInRange(from, to);
-  const ms = months.length ? months : [{ year: 2025, month: 4, label: "2025-04" } as MonthKey];
+  // Scale the baselines by the selected window (relative to 30 days) so the view
+  // responds to the date-range filter.
+  const days = Math.max(1, Math.round((to.getTime() - from.getTime()) / DAY_MS));
+  const factor = days / 30;
+
+  // "all" (or missing) means the whole book — normalise it away so it doesn't
+  // act as a concrete zone value.
+  const zoneKey = zone && zone !== "all" ? zone : undefined;
+
+  // Zone nudges the figures so the view visibly responds to the filter (seeded,
+  // so a given zone is stable across reloads).
+  const rng = seeded(seedFromString(`profit:${zoneKey ?? "all"}`));
+  const filterScale = 0.75 + rng() * 0.5; // 0.75 – 1.25
+  const rate = currency === "USD" ? USD_PER_INR : 1;
+  const toBase = (rupees: number) => Math.round(rupees * rate);
+
   return {
-    total: { value: 114, unit: "Cr", deltaPct: 8, trend: "up" },
-    portwise: { currency, rows: buildPortwise(port, currency, ms) },
-    segmentwise: buildSegmentwise(ms),
+    currency,
+    total: {
+      value: toBase(1_140_000_000 * factor * filterScale), // ~114 Cr baseline
+      deltaVsBudget: round(8 + rng() * 8, 0), // +8 – +16
+      deltaVsLastYear: -round(4 + rng() * 8, 0), // -4 – -12
+    },
+    segmentwise: buildSegmentwise(factor, filterScale, toBase, rng),
+    portwise: buildPortwise(factor, filterScale, toBase),
   };
 };
 

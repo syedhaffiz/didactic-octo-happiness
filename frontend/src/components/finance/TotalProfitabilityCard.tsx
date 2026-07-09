@@ -1,30 +1,28 @@
-import { Card, Skeleton } from "antd";
-import { AimOutlined, ArrowDownOutlined, ArrowUpOutlined } from "@ant-design/icons";
+import { Card, Divider, Skeleton, Tooltip } from "antd";
+import { AimOutlined } from "@ant-design/icons";
+import { CardTitle } from "../CardTitle";
+import { DeltaStat } from "./DeltaStat";
 import { useBrandTokens } from "../../theme/useBrandTokens";
-import { brand } from "../../theme/tokens";
-import { formatSigned, splitCrValue } from "../../utils/format";
-import type { NetMarginProfitabilityResponse } from "../../types/finance";
+import { formatMoney, toMoneyParts } from "../../utils/format";
+import type { Currency, NetMarginProfitabilityResponse } from "../../types/finance";
 
 interface Props {
   total?: NetMarginProfitabilityResponse["total"];
   loading: boolean;
+  currency: Currency;
 }
 
-// "Total Profitability" headline card — value + unit + trend % vs last year.
-// Card body renders its final structure even while loading; only the numbers
-// swap from Skeleton.Input to text so the card doesn't shift.
-export const TotalProfitabilityCard = ({ total, loading }: Props) => {
+// "Total Profitability" headline card — currency-aware value with two delta
+// lines (vs Budget, vs last year). The card body renders its final structure
+// even while loading; only the numbers swap from Skeleton to text so the card
+// doesn't shift.
+export const TotalProfitabilityCard = ({ total, loading, currency }: Props) => {
   const t = useBrandTokens();
-  const isUp = total?.trend === "up";
-  const deltaColor = isUp ? t.deltaUp : t.deltaDown;
-  const valueParts = total ? splitCrValue(total.value) : null;
+  const valueParts = total ? toMoneyParts(total.value, currency) : null;
   return (
     <Card
-      title={
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-          <AimOutlined style={{ color: t.accentText }} /> Total Profitability
-        </span>
-      }
+      title={<CardTitle icon={<AimOutlined />}>Total Profitability</CardTitle>}
+      style={{ height: "100%" }}
       styles={{ body: { paddingBlock: 28 } }}
     >
       <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: 12 }}>
@@ -32,47 +30,38 @@ export const TotalProfitabilityCard = ({ total, loading }: Props) => {
           {loading || !total ? (
             <Skeleton.Input active style={{ width: 120, height: 40 }} />
           ) : (
-            <div style={{ display: "flex", alignItems: "baseline", gap: 6, justifyContent: "center" }}>
-              <span style={{ fontSize: 44, fontWeight: 800, color: t.headline, lineHeight: 1 }}>
-                {valueParts?.num}
-              </span>
-              <span style={{ fontSize: 18, fontWeight: 600, color: t.textSecondary }}>
-                {valueParts?.unit}
-              </span>
-            </div>
+            <Tooltip title={formatMoney(total.value, currency)}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 6, justifyContent: "center" }}>
+                <span style={{ fontSize: 44, fontWeight: 800, color: t.headline, lineHeight: 1 }}>
+                  {valueParts?.num}
+                </span>
+                <span style={{ fontSize: 18, fontWeight: 600, color: t.textSecondary }}>
+                  {valueParts?.unit}
+                </span>
+              </div>
+            </Tooltip>
           )}
         </div>
         <div style={{ fontSize: 14, color: t.textSecondary }}>Profitability</div>
+        <Divider style={{ margin: "4px 0 0" }} />
         <div
           style={{
-            marginTop: 6,
-            paddingTop: 10,
-            borderTop: `1px solid ${brand.border}`,
             display: "flex",
-            justifyContent: "center",
+            flexDirection: "column",
             alignItems: "center",
             gap: 6,
-            fontSize: 12,
-            minHeight: 18,
+            minHeight: 40,
           }}
         >
           {loading || !total ? (
-            <Skeleton.Input active size="small" style={{ width: 100, height: 12 }} />
+            <>
+              <Skeleton.Input active size="small" style={{ width: 110, height: 12 }} />
+              <Skeleton.Input active size="small" style={{ width: 110, height: 12 }} />
+            </>
           ) : (
             <>
-              <span
-                style={{
-                  color: deltaColor,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 2,
-                  fontWeight: 600,
-                }}
-              >
-                {isUp ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
-                {formatSigned(total.deltaPct)}
-              </span>
-              <span style={{ color: t.textSecondary }}>vs last year</span>
+              <DeltaStat value={total.deltaVsBudget} label="vs Budget" />
+              <DeltaStat value={total.deltaVsLastYear} label="vs last year" />
             </>
           )}
         </div>

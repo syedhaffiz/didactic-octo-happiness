@@ -71,7 +71,8 @@ export interface PortRangeParams extends RangeParams {
   port?: string;
 }
 
-export interface NetMarginParams extends PortRangeParams {
+export interface NetMarginParams extends RangeParams {
+  zone?: string;
   currency?: Currency;
 }
 
@@ -125,7 +126,7 @@ const mockFinanceApi = {
   workingCapital: (p: PortRangeParams = {}) =>
     mockDelay(buildBreakdown("working-capital", p.port, p.fromDate, p.toDate)),
   netMarginProfitability: (p: NetMarginParams = {}) =>
-    mockDelay(buildNetMarginProfitability(p.port, p.currency ?? "INR", p.fromDate, p.toDate)),
+    mockDelay(buildNetMarginProfitability(p.zone, p.currency ?? "INR", p.fromDate, p.toDate)),
   vesselSales: (p: PortRangeParams = {}) =>
     mockDelay(buildVesselSales(p.port, p.fromDate, p.toDate)),
   vesselHandling: (p: PortRangeParams = {}) =>

@@ -156,15 +156,15 @@ export const openApiSpec = {
     "/finance/profitability": {
       get: {
         tags: ["Finance"],
-        summary: "Net Margin Profitability — port bars + total + segment treemap",
+        summary: "Net Margin Profitability — total + segment tiles/donut + port bars",
         parameters: [
           { $ref: "#/components/parameters/FromDate" }, { $ref: "#/components/parameters/ToDate" },
-          { $ref: "#/components/parameters/Port" },
+          { name: "zone", in: "query", schema: { type: "string" } },
           {
             name: "currency",
             in: "query",
             schema: { type: "string", enum: ["INR", "USD"] },
-            description: "Defaults to `INR`. Affects the Port-Wise chart values.",
+            description: "Defaults to `INR`. Scales the Segment and Port-Wise values.",
           },
         ],
         responses: { "200": envelopeResponse("NetMarginProfitabilityResponse") },
@@ -733,45 +733,47 @@ export const openApiSpec = {
       },
 
       // --- Finance: Profitability suite --------------------------------
-      PortBar: {
+      ProfitabilityPortRow: {
         type: "object",
-        required: ["port", "value"],
+        required: ["port", "budget", "actual"],
         properties: {
           port: { type: "string" },
-          value: { type: "number" },
+          budget: { type: "number" },
+          actual: { type: "number" },
         },
       },
-      SegmentSlice: {
+      ProfitabilitySegmentItem: {
         type: "object",
-        required: ["segment", "value"],
+        required: ["segment", "value", "pct", "deltaVsBudget"],
         properties: {
           segment: { type: "string" },
           value: { type: "number" },
+          pct: { type: "number" },
+          deltaVsBudget: { type: "number" },
         },
       },
       NetMarginProfitabilityResponse: {
         type: "object",
-        required: ["total", "portwise", "segmentwise"],
+        required: ["currency", "total", "segmentwise", "portwise"],
         properties: {
+          currency: { type: "string", enum: ["INR", "USD"] },
           total: {
             type: "object",
-            required: ["value", "unit", "deltaPct", "trend"],
+            required: ["value", "deltaVsBudget", "deltaVsLastYear"],
             properties: {
               value: { type: "number" },
-              unit: { type: "string", example: "Cr" },
-              deltaPct: { type: "number" },
-              trend: { type: "string", enum: ["up", "down"] },
+              deltaVsBudget: { type: "number" },
+              deltaVsLastYear: { type: "number" },
             },
+          },
+          segmentwise: {
+            type: "array",
+            items: { $ref: "#/components/schemas/ProfitabilitySegmentItem" },
           },
           portwise: {
-            type: "object",
-            required: ["currency", "rows"],
-            properties: {
-              currency: { type: "string", enum: ["INR", "USD"] },
-              rows: { type: "array", items: { $ref: "#/components/schemas/PortBar" } },
-            },
+            type: "array",
+            items: { $ref: "#/components/schemas/ProfitabilityPortRow" },
           },
-          segmentwise: { type: "array", items: { $ref: "#/components/schemas/SegmentSlice" } },
         },
       },
       VesselSalesRow: {

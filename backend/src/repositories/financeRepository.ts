@@ -51,7 +51,7 @@ export interface FinanceRepository {
   getWorkingCapital(port: string | undefined, from: Date, to: Date): Promise<BreakdownResponse>;
   // --- New Profitability suite ---
   getNetMarginProfitability(
-    port: string | undefined,
+    zone: string | undefined,
     currency: Currency,
     from: Date,
     to: Date,
@@ -97,12 +97,12 @@ class MockFinanceRepository implements FinanceRepository {
     return buildBreakdown("working-capital", port, from, to);
   }
   async getNetMarginProfitability(
-    port: string | undefined,
+    zone: string | undefined,
     currency: Currency,
     from: Date,
     to: Date,
   ) {
-    return buildNetMarginProfitability(port, currency, from, to);
+    return buildNetMarginProfitability(zone, currency, from, to);
   }
   async getVesselSales(port: string | undefined, from: Date, to: Date) {
     return buildVesselSales(port, from, to);
