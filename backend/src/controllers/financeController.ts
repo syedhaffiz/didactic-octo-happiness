@@ -3,7 +3,7 @@ import { z } from "zod";
 import { financeService } from "../services/financeService.js";
 import { parseDateRange } from "../services/dateRange.js";
 import { fail, ok } from "../types/api.js";
-import type { Currency } from "../types/finance.js";
+import type { Currency, HandlingCategory } from "../types/finance.js";
 
 const dateRangeSchema = z.object({
   fromDate: z.string().optional(),
@@ -17,6 +17,14 @@ const portFilterSchema = dateRangeSchema.extend({
 const netMarginSchema = dateRangeSchema.extend({
   zone: z.string().optional(),
   currency: z.enum(["INR", "USD"]).optional(),
+});
+
+const vesselSalesSchema = dateRangeSchema.extend({
+  currency: z.enum(["INR", "USD"]).optional(),
+});
+
+const vesselHandlingSchema = vesselSalesSchema.extend({
+  category: z.enum(["all", "sagarmala", "tph", "cif"]).optional(),
 });
 
 const forexSchema = z.object({
@@ -131,9 +139,10 @@ export const getNetMarginProfitability: RequestHandler = async (req, res, next) 
 
 export const getVesselSales: RequestHandler = async (req, res, next) => {
   try {
-    const q = parse(portFilterSchema, req.query);
+    const q = parse(vesselSalesSchema, req.query);
     const { from, to } = parseDateRange(q.fromDate, q.toDate);
-    res.json(ok(await financeService.vesselSales(q.port, from, to)));
+    const currency: Currency = q.currency ?? "INR";
+    res.json(ok(await financeService.vesselSales(currency, from, to)));
   } catch (e) {
     next(e);
   }
@@ -141,9 +150,11 @@ export const getVesselSales: RequestHandler = async (req, res, next) => {
 
 export const getVesselHandling: RequestHandler = async (req, res, next) => {
   try {
-    const q = parse(portFilterSchema, req.query);
+    const q = parse(vesselHandlingSchema, req.query);
     const { from, to } = parseDateRange(q.fromDate, q.toDate);
-    res.json(ok(await financeService.vesselHandling(q.port, from, to)));
+    const currency: Currency = q.currency ?? "INR";
+    const category: HandlingCategory = q.category ?? "all";
+    res.json(ok(await financeService.vesselHandling(category, currency, from, to)));
   } catch (e) {
     next(e);
   }

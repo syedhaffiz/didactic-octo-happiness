@@ -158,37 +158,76 @@ export interface NetMarginProfitabilityResponse {
   portwise: ProfitabilityPortRow[];
 }
 
+// --- Vessel Profitability -------------------------------------------------
+
+// The four stat tiles above both vessel tables. `revenue` and `totalProfit` are
+// whole-number amounts in the response currency's base unit (rupees for INR,
+// dollars for USD); `totalVolume` is in MT.
+export interface VesselSummary {
+  revenue: number;
+  totalProfit: number;
+  totalVessels: number;
+  totalVolume: number;
+}
+
 // --- Vessel Profitability — Sales tab table ------------------------------
 
+// Per-MT figures are rounded to 2 decimals. `profitPerMtUsd` is always in USD
+// regardless of the currency toggle — it's a column of its own in the design.
 export interface VesselSalesRow {
   batchId: string;
   vessel: string;
   segment: string;
   volume: number;
+  revenue: number;
+  revPerMt: number;
   profit: number;
-  pmtProfit: number;
+  profitPerMt: number;
+  profitPerMtUsd: number;
 }
 
 export interface VesselSalesResponse {
+  currency: Currency;
+  summary: VesselSummary;
   items: VesselSalesRow[];
 }
 
 // --- Vessel Profitability — Handling tab table ---------------------------
 
+// Handling sub-tab. All / Sagarmala / CIF show the same columns (Customer);
+// TPH swaps Customer for Port.
+export type HandlingCategory = "all" | "sagarmala" | "tph" | "cif";
+
+// One row carries both `customer` and `port` — each sub-tab's column set picks
+// the one it displays.
 export interface VesselHandlingRow {
   batchId: string;
   vessel: string;
-  grade: string;
-  origin: string;
+  customer: string;
   port: string;
-  segment: string;
   volume: number;
   profit: number;
   pmtProfit: number;
 }
 
 export interface VesselHandlingResponse {
+  currency: Currency;
+  category: HandlingCategory;
+  summary: VesselSummary;
   items: VesselHandlingRow[];
+}
+
+// --- Batch ID drilldown ---------------------------------------------------
+
+// The six stat tiles above both batch-detail tables. `totalVolume` is in MT;
+// every other figure is a whole-number rupee amount.
+export interface BatchSummary {
+  totalVolume: number;
+  profit: number;
+  roadFreight: number;
+  railwayFreight: number;
+  demurrage: number;
+  penalty: number;
 }
 
 // --- Batch ID drilldown — Sales ------------------------------------------
@@ -205,6 +244,7 @@ export interface SalesBatchDetailRow {
 
 export interface SalesBatchDetailResponse {
   batchId: string;
+  summary: BatchSummary;
   items: SalesBatchDetailRow[];
 }
 
@@ -223,6 +263,7 @@ export interface HandlingBatchDetailRow {
 
 export interface HandlingBatchDetailResponse {
   batchId: string;
+  summary: BatchSummary;
   items: HandlingBatchDetailRow[];
 }
 

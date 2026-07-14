@@ -176,7 +176,13 @@ export const openApiSpec = {
         summary: "Vessel Profitability — Sales tab table",
         parameters: [
           { $ref: "#/components/parameters/FromDate" }, { $ref: "#/components/parameters/ToDate" },
-          { $ref: "#/components/parameters/Port" },
+          {
+            name: "currency",
+            in: "query",
+            schema: { type: "string", enum: ["INR", "USD"] },
+            description:
+              "Defaults to `INR`. Scales every money figure except `profitPerMtUsd`, which is always USD.",
+          },
         ],
         responses: { "200": envelopeResponse("VesselSalesResponse") },
       },
@@ -187,7 +193,18 @@ export const openApiSpec = {
         summary: "Vessel Profitability — Handling tab table",
         parameters: [
           { $ref: "#/components/parameters/FromDate" }, { $ref: "#/components/parameters/ToDate" },
-          { $ref: "#/components/parameters/Port" },
+          {
+            name: "category",
+            in: "query",
+            schema: { type: "string", enum: ["all", "sagarmala", "tph", "cif"] },
+            description: "Handling sub-tab. Defaults to `all`.",
+          },
+          {
+            name: "currency",
+            in: "query",
+            schema: { type: "string", enum: ["INR", "USD"] },
+            description: "Defaults to `INR`. Scales the money figures.",
+          },
         ],
         responses: { "200": envelopeResponse("VesselHandlingResponse") },
       },
@@ -776,35 +793,48 @@ export const openApiSpec = {
           },
         },
       },
+      VesselSummary: {
+        type: "object",
+        required: ["revenue", "totalProfit", "totalVessels", "totalVolume"],
+        properties: {
+          revenue: { type: "number" },
+          totalProfit: { type: "number" },
+          totalVessels: { type: "number" },
+          totalVolume: { type: "number", description: "MT" },
+        },
+      },
       VesselSalesRow: {
         type: "object",
-        required: ["batchId", "vessel", "segment", "volume", "profit", "pmtProfit"],
+        required: ["batchId", "vessel", "segment", "volume", "revenue", "revPerMt", "profit", "profitPerMt", "profitPerMtUsd"],
         properties: {
           batchId: { type: "string" },
           vessel: { type: "string" },
           segment: { type: "string" },
           volume: { type: "number" },
+          revenue: { type: "number" },
+          revPerMt: { type: "number" },
           profit: { type: "number" },
-          pmtProfit: { type: "number" },
+          profitPerMt: { type: "number" },
+          profitPerMtUsd: { type: "number", description: "Always USD, whatever the currency toggle." },
         },
       },
       VesselSalesResponse: {
         type: "object",
-        required: ["items"],
+        required: ["currency", "summary", "items"],
         properties: {
+          currency: { type: "string", enum: ["INR", "USD"] },
+          summary: { $ref: "#/components/schemas/VesselSummary" },
           items: { type: "array", items: { $ref: "#/components/schemas/VesselSalesRow" } },
         },
       },
       VesselHandlingRow: {
         type: "object",
-        required: ["batchId", "vessel", "grade", "origin", "port", "segment", "volume", "profit", "pmtProfit"],
+        required: ["batchId", "vessel", "customer", "port", "volume", "profit", "pmtProfit"],
         properties: {
           batchId: { type: "string" },
           vessel: { type: "string" },
-          grade: { type: "string" },
-          origin: { type: "string" },
+          customer: { type: "string" },
           port: { type: "string" },
-          segment: { type: "string" },
           volume: { type: "number" },
           profit: { type: "number" },
           pmtProfit: { type: "number" },
@@ -812,9 +842,24 @@ export const openApiSpec = {
       },
       VesselHandlingResponse: {
         type: "object",
-        required: ["items"],
+        required: ["currency", "category", "summary", "items"],
         properties: {
+          currency: { type: "string", enum: ["INR", "USD"] },
+          category: { type: "string", enum: ["all", "sagarmala", "tph", "cif"] },
+          summary: { $ref: "#/components/schemas/VesselSummary" },
           items: { type: "array", items: { $ref: "#/components/schemas/VesselHandlingRow" } },
+        },
+      },
+      BatchSummary: {
+        type: "object",
+        required: ["totalVolume", "profit", "roadFreight", "railwayFreight", "demurrage", "penalty"],
+        properties: {
+          totalVolume: { type: "number", description: "MT" },
+          profit: { type: "number" },
+          roadFreight: { type: "number" },
+          railwayFreight: { type: "number" },
+          demurrage: { type: "number" },
+          penalty: { type: "number" },
         },
       },
       SalesBatchDetailRow: {
@@ -832,9 +877,10 @@ export const openApiSpec = {
       },
       SalesBatchDetailResponse: {
         type: "object",
-        required: ["batchId", "items"],
+        required: ["batchId", "summary", "items"],
         properties: {
           batchId: { type: "string" },
+          summary: { $ref: "#/components/schemas/BatchSummary" },
           items: { type: "array", items: { $ref: "#/components/schemas/SalesBatchDetailRow" } },
         },
       },
@@ -854,9 +900,10 @@ export const openApiSpec = {
       },
       HandlingBatchDetailResponse: {
         type: "object",
-        required: ["batchId", "items"],
+        required: ["batchId", "summary", "items"],
         properties: {
           batchId: { type: "string" },
+          summary: { $ref: "#/components/schemas/BatchSummary" },
           items: { type: "array", items: { $ref: "#/components/schemas/HandlingBatchDetailRow" } },
         },
       },

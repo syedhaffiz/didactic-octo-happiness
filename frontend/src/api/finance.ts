@@ -9,6 +9,7 @@ import type {
   ForexRange,
   ForexResponse,
   HandlingBatchDetailResponse,
+  HandlingCategory,
   KPI,
   NetMarginProfitabilityResponse,
   OverviewResponse,
@@ -76,6 +77,14 @@ export interface NetMarginParams extends RangeParams {
   currency?: Currency;
 }
 
+export interface VesselSalesParams extends RangeParams {
+  currency?: Currency;
+}
+
+export interface VesselHandlingParams extends VesselSalesParams {
+  category?: HandlingCategory;
+}
+
 export interface PortOnlyParams {
   port?: string;
 }
@@ -98,9 +107,9 @@ const httpFinanceApi = {
     get<BreakdownResponse>("/finance/working-capital", p),
   netMarginProfitability: (p: NetMarginParams = {}) =>
     get<NetMarginProfitabilityResponse>("/finance/profitability", p),
-  vesselSales: (p: PortRangeParams = {}) =>
+  vesselSales: (p: VesselSalesParams = {}) =>
     get<VesselSalesResponse>("/finance/profitability/vessels/sales", p),
-  vesselHandling: (p: PortRangeParams = {}) =>
+  vesselHandling: (p: VesselHandlingParams = {}) =>
     get<VesselHandlingResponse>("/finance/profitability/vessels/handling", p),
   salesBatchDetail: (batchId: string) =>
     get<SalesBatchDetailResponse>(
@@ -127,10 +136,12 @@ const mockFinanceApi = {
     mockDelay(buildBreakdown("working-capital", p.port, p.fromDate, p.toDate)),
   netMarginProfitability: (p: NetMarginParams = {}) =>
     mockDelay(buildNetMarginProfitability(p.zone, p.currency ?? "INR", p.fromDate, p.toDate)),
-  vesselSales: (p: PortRangeParams = {}) =>
-    mockDelay(buildVesselSales(p.port, p.fromDate, p.toDate)),
-  vesselHandling: (p: PortRangeParams = {}) =>
-    mockDelay(buildVesselHandling(p.port, p.fromDate, p.toDate)),
+  vesselSales: (p: VesselSalesParams = {}) =>
+    mockDelay(buildVesselSales(p.currency ?? "INR", p.fromDate, p.toDate)),
+  vesselHandling: (p: VesselHandlingParams = {}) =>
+    mockDelay(
+      buildVesselHandling(p.category ?? "all", p.currency ?? "INR", p.fromDate, p.toDate),
+    ),
   salesBatchDetail: (batchId: string) => mockDelay(buildSalesBatchDetail(batchId)),
   handlingBatchDetail: (batchId: string) => mockDelay(buildHandlingBatchDetail(batchId)),
   sales: (p: RangeParams = {}) => mockDelay(buildSales(p.fromDate, p.toDate)),

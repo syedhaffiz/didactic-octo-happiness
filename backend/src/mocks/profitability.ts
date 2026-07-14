@@ -4,9 +4,11 @@
 //   3) Batch ID drilldown         — Sales / Handling detail tables
 
 import type {
+  BatchSummary,
   Currency,
   HandlingBatchDetailResponse,
   HandlingBatchDetailRow,
+  HandlingCategory,
   NetMarginProfitabilityResponse,
   ProfitabilityPortRow,
   ProfitabilitySegmentItem,
@@ -16,6 +18,7 @@ import type {
   VesselHandlingRow,
   VesselSalesResponse,
   VesselSalesRow,
+  VesselSummary,
 } from "../types/finance.js";
 import {
   COAL_GRADES,
@@ -118,50 +121,131 @@ export const buildNetMarginProfitability = (
   };
 };
 
-// --- Vessel Profitability — Sales tab -------------------------------------
+// --- Vessel Profitability — shared row basis -------------------------------
 
 const VESSEL_BATCH_PREFIX = "125260";
 const SALES_SEGMENTS = ["SEB", "Domestic", "SNS", "TPH", "CIF Handling"] as const;
+const ROW_COUNT = 18;
+
+// Power / steel / cement offtakers on the Handling tables.
+const CUSTOMERS = [
+  "Tata Power",
+  "NTPC Ltd",
+  "JSW Energy",
+  "Reliance Ind.",
+  "Torrent Power",
+  "GMR Energy",
+  "CESC Ltd",
+  "Essar Power",
+  "India Cements",
+  "Vedanta Ltd",
+  "Hindalco Ind.",
+  "BHEL",
+  "SAIL",
+] as const;
 
 const batchIdForIdx = (idx: number): string =>
   `${VESSEL_BATCH_PREFIX}${(503 + (idx % 9)).toString().padStart(3, "0")}A`;
 
-export const buildVesselSales = (port: string | undefined, from: Date, to: Date): VesselSalesResponse => {
+// Seed the row set off the selected months so the tables respond to the range
+// filter while staying stable across reloads.
+const monthSeed = (prefix: string, from: Date, to: Date): (() => number) => {
   const months = monthsInRange(from, to);
   const ms = months.length ? months : [{ year: 2025, month: 4, label: "2025-04" } as MonthKey];
-  const rng = seeded(seedFromString(`vessel-sales:${port ?? "ALL"}:${ms.map((m) => m.label).join(",")}`));
-  const items = Array.from({ length: 18 }, (_, idx) => ({
+  return seeded(seedFromString(`${prefix}:${ms.map((m) => m.label).join(",")}`));
+};
+
+// Per-MT figures are the primitive: profit and revenue are derived from them so
+// a row's Profit / MT always equals Profit ÷ Volume, as the column name implies.
+interface RowBasis {
+  volume: number;
+  revPerMt: number;
+  revenue: number;
+  pmtProfit: number;
+  profit: number;
+}
+
+const buildRowBasis = (rng: () => number): RowBasis => {
+  const volume = Math.round(range(rng, 2500, 4800));
+  const revPerMt = round(range(rng, 3_500, 5_200), 2); // ₹ / MT
+  const pmtProfit = round(range(rng, 300, 1_500), 2); // ₹ / MT
+  return {
+    volume,
+    revPerMt,
+    revenue: Math.round(volume * revPerMt),
+    pmtProfit,
+    profit: Math.round(volume * pmtProfit),
+  };
+};
+
+// Totals for the four stat tiles, summed from the rows on show so the tiles and
+// the table can never disagree.
+const summarise = (
+  rows: readonly { vessel: string; volume: number; profit: number }[],
+  revenue: number,
+): VesselSummary => ({
+  revenue,
+  totalProfit: rows.reduce((s, r) => s + r.profit, 0),
+  totalVessels: new Set(rows.map((r) => r.vessel)).size,
+  totalVolume: rows.reduce((s, r) => s + r.volume, 0),
+});
+
+// --- Vessel Profitability — Sales tab -------------------------------------
+
+export const buildVesselSales = (
+  currency: Currency,
+  from: Date,
+  to: Date,
+): VesselSalesResponse => {
+  const rng = monthSeed("vessel-sales", from, to);
+  const rate = currency === "USD" ? USD_PER_INR : 1;
+  const bases = Array.from({ length: ROW_COUNT }, () => buildRowBasis(rng));
+
+  const items = bases.map((basis, idx) => ({
     batchId: batchIdForIdx(idx),
     vessel: pick(rng, VESSELS),
     segment: SALES_SEGMENTS[idx % SALES_SEGMENTS.length] ?? "SEB",
-    volume: Math.round(range(rng, 2500, 4800)),
-    profit: Math.round(range(rng, 15_000, 45_000)),
-    pmtProfit: Math.round(range(rng, 2_000, 9_500)),
+    volume: basis.volume,
+    revenue: Math.round(basis.revenue * rate),
+    revPerMt: round(basis.revPerMt * rate, 2),
+    profit: Math.round(basis.profit * rate),
+    profitPerMt: round(basis.pmtProfit * rate, 2),
+    // Always USD — a column of its own, unaffected by the toggle.
+    profitPerMtUsd: round(basis.pmtProfit * USD_PER_INR, 2),
   } satisfies VesselSalesRow));
-  void port; // filter wired in when backend gets real data
-  return { items };
+
+  const revenue = items.reduce((s, r) => s + r.revenue, 0);
+  return { currency, summary: summarise(items, revenue), items };
 };
 
 // --- Vessel Profitability — Handling tab ----------------------------------
 
-const HANDLING_GRADES = ["INDO-4200 GAR", "INDO-3400 GAR", "INDO-4800 GAR", "INDO-3800 GAR"] as const;
+// Each sub-tab is its own seeded row set, so switching category visibly changes
+// the data the way a real category filter would.
+export const buildVesselHandling = (
+  category: HandlingCategory,
+  currency: Currency,
+  from: Date,
+  to: Date,
+): VesselHandlingResponse => {
+  const rng = monthSeed(`vessel-handling:${category}`, from, to);
+  const rate = currency === "USD" ? USD_PER_INR : 1;
+  const bases = Array.from({ length: ROW_COUNT }, () => buildRowBasis(rng));
 
-export const buildVesselHandling = (port: string | undefined, from: Date, to: Date): VesselHandlingResponse => {
-  const months = monthsInRange(from, to);
-  const ms = months.length ? months : [{ year: 2025, month: 4, label: "2025-04" } as MonthKey];
-  const rng = seeded(seedFromString(`vessel-handling:${port ?? "ALL"}:${ms.map((m) => m.label).join(",")}`));
-  const items = Array.from({ length: 18 }, (_, idx) => ({
+  const items = bases.map((basis, idx) => ({
     batchId: batchIdForIdx(idx),
     vessel: pick(rng, VESSELS),
-    grade: HANDLING_GRADES[idx % HANDLING_GRADES.length] ?? "INDO-4200 GAR",
-    origin: pick(rng, ORIGINS),
-    port: port ?? "Hazira",
-    segment: SALES_SEGMENTS[idx % SALES_SEGMENTS.length] ?? "SEB",
-    volume: Math.round(range(rng, 2500, 4800)),
-    profit: Math.round(range(rng, 15_000, 45_000)),
-    pmtProfit: Math.round(range(rng, 2_000, 9_500)),
+    customer: CUSTOMERS[idx % CUSTOMERS.length] ?? CUSTOMERS[0],
+    port: pick(rng, PORTS),
+    volume: basis.volume,
+    profit: Math.round(basis.profit * rate),
+    pmtProfit: round(basis.pmtProfit * rate, 2),
   } satisfies VesselHandlingRow));
-  return { items };
+
+  // Handling has no Revenue column, but the tile above the table still shows it
+  // — take it from the same row basis so the two stay consistent.
+  const revenue = Math.round(bases.reduce((s, b) => s + b.revenue, 0) * rate);
+  return { currency, category, summary: summarise(items, revenue), items };
 };
 
 // --- Sales batch detail ---------------------------------------------------
@@ -181,8 +265,20 @@ const buildPlantName = (rng: () => number, idx: number): string =>
 const buildTradeContractNo = (rng: () => number): string =>
   String(Math.round(range(rng, 12_000_000, 14_000_000)));
 
+// The six stat tiles above a batch-detail table. Volume is in MT; the cost lines
+// are rupee amounts, sized so they land in the crore range the design shows.
+const buildBatchSummary = (rng: () => number): BatchSummary => ({
+  totalVolume: Math.round(range(rng, 45_000, 90_000)),
+  profit: Math.round(range(rng, 2.4e8, 9.6e8)),
+  roadFreight: Math.round(range(rng, 4e7, 1.8e8)),
+  railwayFreight: Math.round(range(rng, 6e7, 2.4e8)),
+  demurrage: Math.round(range(rng, 8e6, 4.5e7)),
+  penalty: Math.round(range(rng, 2e6, 1.8e7)),
+});
+
 export const buildSalesBatchDetail = (batchId: string): SalesBatchDetailResponse => {
   const rng = seeded(seedFromString(`sales-batch-detail:${batchId}`));
+  const summary = buildBatchSummary(rng);
   const items = Array.from({ length: 14 }, (_, idx) => ({
     batchId: batchIdForIdx(idx),
     customerName: CUSTOMER_NAMES[idx % CUSTOMER_NAMES.length] ?? CUSTOMER_NAMES[0]!,
@@ -192,14 +288,15 @@ export const buildSalesBatchDetail = (batchId: string): SalesBatchDetailResponse
     billQuantity: round(range(rng, -8_000_000, 8_000_000), 0),
     cogsValue: round(range(rng, 50_000_000, 250_000_000), 0),
   } satisfies SalesBatchDetailRow));
-  void COAL_GRADES; void GRADES; void SEGMENTS; void PORTS;
-  return { batchId, items };
+  void COAL_GRADES; void GRADES; void SEGMENTS; void ORIGINS;
+  return { batchId, summary, items };
 };
 
 // --- Handling batch detail ------------------------------------------------
 
 export const buildHandlingBatchDetail = (batchId: string): HandlingBatchDetailResponse => {
   const rng = seeded(seedFromString(`handling-batch-detail:${batchId}`));
+  const summary = buildBatchSummary(rng);
   const items = Array.from({ length: 14 }, (_, idx) => ({
     batchId: batchIdForIdx(idx),
     customerName: CUSTOMER_NAMES[idx % CUSTOMER_NAMES.length] ?? CUSTOMER_NAMES[0]!,
@@ -210,5 +307,5 @@ export const buildHandlingBatchDetail = (batchId: string): HandlingBatchDetailRe
     sagarmalaHandlingCalculatedQty: Math.round(range(rng, -25_000_000, -1_000_000)),
     sagarmalaHandlingPostedQty: Math.round(range(rng, -25_000_000, -1_000_000)),
   } satisfies HandlingBatchDetailRow));
-  return { batchId, items };
+  return { batchId, summary, items };
 };

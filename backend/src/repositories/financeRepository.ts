@@ -6,6 +6,7 @@ import type {
   ForexRange,
   ForexResponse,
   HandlingBatchDetailResponse,
+  HandlingCategory,
   KPI,
   NetMarginProfitabilityResponse,
   OverviewResponse,
@@ -56,8 +57,13 @@ export interface FinanceRepository {
     from: Date,
     to: Date,
   ): Promise<NetMarginProfitabilityResponse>;
-  getVesselSales(port: string | undefined, from: Date, to: Date): Promise<VesselSalesResponse>;
-  getVesselHandling(port: string | undefined, from: Date, to: Date): Promise<VesselHandlingResponse>;
+  getVesselSales(currency: Currency, from: Date, to: Date): Promise<VesselSalesResponse>;
+  getVesselHandling(
+    category: HandlingCategory,
+    currency: Currency,
+    from: Date,
+    to: Date,
+  ): Promise<VesselHandlingResponse>;
   getSalesBatchDetail(batchId: string): Promise<SalesBatchDetailResponse>;
   getHandlingBatchDetail(batchId: string): Promise<HandlingBatchDetailResponse>;
   // --- Unchanged ---
@@ -104,11 +110,16 @@ class MockFinanceRepository implements FinanceRepository {
   ) {
     return buildNetMarginProfitability(zone, currency, from, to);
   }
-  async getVesselSales(port: string | undefined, from: Date, to: Date) {
-    return buildVesselSales(port, from, to);
+  async getVesselSales(currency: Currency, from: Date, to: Date) {
+    return buildVesselSales(currency, from, to);
   }
-  async getVesselHandling(port: string | undefined, from: Date, to: Date) {
-    return buildVesselHandling(port, from, to);
+  async getVesselHandling(
+    category: HandlingCategory,
+    currency: Currency,
+    from: Date,
+    to: Date,
+  ) {
+    return buildVesselHandling(category, currency, from, to);
   }
   async getSalesBatchDetail(batchId: string) {
     return buildSalesBatchDetail(batchId);

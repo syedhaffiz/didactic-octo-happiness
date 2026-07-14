@@ -1,9 +1,11 @@
 import { useMemo } from "react";
-import { Card, Table } from "antd";
+import { Card } from "antd";
 import { useParams } from "react-router-dom";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { ErrorRetry } from "../../components/ErrorRetry";
+import { FilterableTable } from "../../components/FilterableTable";
 import { PageHeader } from "../../components/PageHeader";
+import { BatchSummaryCards } from "../../components/finance/BatchSummaryCards";
 import {
   buildHandlingBatchDetailColumns,
   buildSalesBatchDetailColumns,
@@ -53,19 +55,26 @@ const SalesView = ({ batchId }: { batchId: string }) => {
       {q.isError ? (
         <ErrorRetry title="Could not load batch detail" error={q.error} onRetry={q.refetch} />
       ) : (
-        <Card styles={{ body: { padding: 0 } }}>
-          <ErrorBoundary level="section" label="batch detail" resetKeys={[batchId]}>
-            <Table<SalesBatchDetailRow>
-              rowKey={(r, i) => `${r.batchId}-${i}`}
-              size="middle"
-              columns={cols}
-              dataSource={rows}
-              loading={q.isLoading}
-              pagination={{ pageSize: 10, showSizeChanger: false }}
-              scroll={{ x: "max-content" }}
-            />
+        <>
+          <ErrorBoundary level="section" label="batch summary">
+            <BatchSummaryCards summary={q.data?.summary} loading={q.isLoading} />
           </ErrorBoundary>
-        </Card>
+
+          <Card styles={{ body: { padding: 0 } }}>
+            <ErrorBoundary level="section" label="batch detail" resetKeys={[batchId]}>
+              <FilterableTable<SalesBatchDetailRow>
+                key={batchId}
+                rowKey={(r, i) => `${r.batchId}-${i}`}
+                size="middle"
+                columns={cols}
+                dataSource={rows}
+                loading={q.isLoading}
+                pagination={{ pageSize: 10, showSizeChanger: false }}
+                scroll={{ x: "max-content" }}
+              />
+            </ErrorBoundary>
+          </Card>
+        </>
       )}
     </>
   );
@@ -84,19 +93,26 @@ const HandlingView = ({ batchId }: { batchId: string }) => {
       {q.isError ? (
         <ErrorRetry title="Could not load batch detail" error={q.error} onRetry={q.refetch} />
       ) : (
-        <Card styles={{ body: { padding: 0 } }}>
-          <ErrorBoundary level="section" label="batch detail" resetKeys={[batchId]}>
-            <Table<HandlingBatchDetailRow>
-              rowKey={(r, i) => `${r.batchId}-${i}`}
-              size="middle"
-              columns={cols}
-              dataSource={rows}
-              loading={q.isLoading}
-              pagination={{ pageSize: 10, showSizeChanger: false }}
-              scroll={{ x: "max-content" }}
-            />
+        <>
+          <ErrorBoundary level="section" label="batch summary">
+            <BatchSummaryCards summary={q.data?.summary} loading={q.isLoading} />
           </ErrorBoundary>
-        </Card>
+
+          <Card styles={{ body: { padding: 0 } }}>
+            <ErrorBoundary level="section" label="batch detail" resetKeys={[batchId]}>
+              <FilterableTable<HandlingBatchDetailRow>
+                key={batchId}
+                rowKey={(r, i) => `${r.batchId}-${i}`}
+                size="middle"
+                columns={cols}
+                dataSource={rows}
+                loading={q.isLoading}
+                pagination={{ pageSize: 10, showSizeChanger: false }}
+                scroll={{ x: "max-content" }}
+              />
+            </ErrorBoundary>
+          </Card>
+        </>
       )}
     </>
   );
