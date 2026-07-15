@@ -1,6 +1,6 @@
 import type { ColumnsType } from "antd/es/table";
 import { BatchIdLink } from "./BatchIdLink";
-import { textSearchFilter, treeFilter, uniqueValues } from "../columnFilters";
+import { serverTextFilter } from "../columnFilters";
 import { brand } from "../../theme/tokens";
 import type { VesselHandlingRow, VesselSalesRow } from "../../types/finance";
 
@@ -8,6 +8,11 @@ import type { VesselHandlingRow, VesselSalesRow } from "../../types/finance";
 // (Handling All / Sagarmala / CIF). The sets are expected to diverge, and a
 // shared builder would have to be torn apart the first time one of them changes
 // — so they are kept separate and the duplication is deliberate.
+//
+// Every text column uses `serverTextFilter`: the dropdown captures a search
+// term but does NOT filter locally. FilterableTable surfaces the term through
+// the Table's onChange; the page sends it to the API and the backend returns
+// the matches. Numeric columns sort client-side over whatever the API returned.
 
 const SALES_BASE = "/finance/overview/profitability/vessels/sales";
 const HANDLING_BASE = "/finance/overview/profitability/vessels/handling";
@@ -31,7 +36,6 @@ const DecimalCell = ({ value }: { value: number }) =>
 
 // Sales tab -------------------------------------------------------------
 export const buildVesselSalesColumns = (
-  rows: readonly VesselSalesRow[] = [],
   basePath = SALES_BASE,
 ): ColumnsType<VesselSalesRow> => [
   {
@@ -42,7 +46,7 @@ export const buildVesselSalesColumns = (
     fixed: "left",
     sorter: (a, b) => a.batchId.localeCompare(b.batchId),
     render: (v: string) => <BatchIdLink batchId={v} basePath={basePath} />,
-    ...textSearchFilter<VesselSalesRow>((r) => r.batchId, "Search Batch ID"),
+    ...serverTextFilter<VesselSalesRow>("Search Batch ID"),
   },
   {
     title: "Vessel",
@@ -52,7 +56,7 @@ export const buildVesselSalesColumns = (
     fixed: "left",
     sorter: (a, b) => a.vessel.localeCompare(b.vessel),
     render: (v: string) => <VesselCell value={v} />,
-    ...textSearchFilter<VesselSalesRow>((r) => r.vessel, "Search Vessel"),
+    ...serverTextFilter<VesselSalesRow>("Search Vessel"),
   },
   {
     title: "Segment",
@@ -60,7 +64,7 @@ export const buildVesselSalesColumns = (
     key: "segment",
     width: 140,
     sorter: (a, b) => a.segment.localeCompare(b.segment),
-    ...treeFilter<VesselSalesRow>(uniqueValues(rows, (r) => r.segment), (r) => r.segment),
+    ...serverTextFilter<VesselSalesRow>("Search Segment"),
   },
   {
     title: "Volume",
@@ -120,7 +124,6 @@ export const buildVesselSalesColumns = (
 
 // Handling tab — All ----------------------------------------------------
 export const buildHandlingAllColumns = (
-  rows: readonly VesselHandlingRow[] = [],
   basePath = HANDLING_BASE,
 ): ColumnsType<VesselHandlingRow> => [
   {
@@ -131,7 +134,7 @@ export const buildHandlingAllColumns = (
     fixed: "left",
     sorter: (a, b) => a.batchId.localeCompare(b.batchId),
     render: (v: string) => <BatchIdLink batchId={v} basePath={basePath} />,
-    ...textSearchFilter<VesselHandlingRow>((r) => r.batchId, "Search Batch ID"),
+    ...serverTextFilter<VesselHandlingRow>("Search Batch ID"),
   },
   {
     title: "Vessel",
@@ -141,7 +144,7 @@ export const buildHandlingAllColumns = (
     fixed: "left",
     sorter: (a, b) => a.vessel.localeCompare(b.vessel),
     render: (v: string) => <VesselCell value={v} />,
-    ...textSearchFilter<VesselHandlingRow>((r) => r.vessel, "Search Vessel"),
+    ...serverTextFilter<VesselHandlingRow>("Search Vessel"),
   },
   {
     title: "Customer",
@@ -149,7 +152,7 @@ export const buildHandlingAllColumns = (
     key: "customer",
     width: 180,
     sorter: (a, b) => a.customer.localeCompare(b.customer),
-    ...treeFilter<VesselHandlingRow>(uniqueValues(rows, (r) => r.customer), (r) => r.customer),
+    ...serverTextFilter<VesselHandlingRow>("Search Customer"),
   },
   {
     title: "Volume",
@@ -182,7 +185,6 @@ export const buildHandlingAllColumns = (
 
 // Handling tab — Sagarmala ----------------------------------------------
 export const buildHandlingSagarmalaColumns = (
-  rows: readonly VesselHandlingRow[] = [],
   basePath = HANDLING_BASE,
 ): ColumnsType<VesselHandlingRow> => [
   {
@@ -193,7 +195,7 @@ export const buildHandlingSagarmalaColumns = (
     fixed: "left",
     sorter: (a, b) => a.batchId.localeCompare(b.batchId),
     render: (v: string) => <BatchIdLink batchId={v} basePath={basePath} />,
-    ...textSearchFilter<VesselHandlingRow>((r) => r.batchId, "Search Batch ID"),
+    ...serverTextFilter<VesselHandlingRow>("Search Batch ID"),
   },
   {
     title: "Vessel",
@@ -203,7 +205,7 @@ export const buildHandlingSagarmalaColumns = (
     fixed: "left",
     sorter: (a, b) => a.vessel.localeCompare(b.vessel),
     render: (v: string) => <VesselCell value={v} />,
-    ...textSearchFilter<VesselHandlingRow>((r) => r.vessel, "Search Vessel"),
+    ...serverTextFilter<VesselHandlingRow>("Search Vessel"),
   },
   {
     title: "Customer",
@@ -211,7 +213,7 @@ export const buildHandlingSagarmalaColumns = (
     key: "customer",
     width: 180,
     sorter: (a, b) => a.customer.localeCompare(b.customer),
-    ...treeFilter<VesselHandlingRow>(uniqueValues(rows, (r) => r.customer), (r) => r.customer),
+    ...serverTextFilter<VesselHandlingRow>("Search Customer"),
   },
   {
     title: "Volume",
@@ -244,7 +246,6 @@ export const buildHandlingSagarmalaColumns = (
 
 // Handling tab — TPH (Port where the others show Customer) ---------------
 export const buildHandlingTphColumns = (
-  rows: readonly VesselHandlingRow[] = [],
   basePath = HANDLING_BASE,
 ): ColumnsType<VesselHandlingRow> => [
   {
@@ -255,7 +256,7 @@ export const buildHandlingTphColumns = (
     fixed: "left",
     sorter: (a, b) => a.batchId.localeCompare(b.batchId),
     render: (v: string) => <BatchIdLink batchId={v} basePath={basePath} />,
-    ...textSearchFilter<VesselHandlingRow>((r) => r.batchId, "Search Batch ID"),
+    ...serverTextFilter<VesselHandlingRow>("Search Batch ID"),
   },
   {
     title: "Vessel",
@@ -265,7 +266,7 @@ export const buildHandlingTphColumns = (
     fixed: "left",
     sorter: (a, b) => a.vessel.localeCompare(b.vessel),
     render: (v: string) => <VesselCell value={v} />,
-    ...textSearchFilter<VesselHandlingRow>((r) => r.vessel, "Search Vessel"),
+    ...serverTextFilter<VesselHandlingRow>("Search Vessel"),
   },
   {
     title: "Port",
@@ -273,7 +274,7 @@ export const buildHandlingTphColumns = (
     key: "port",
     width: 180,
     sorter: (a, b) => a.port.localeCompare(b.port),
-    ...treeFilter<VesselHandlingRow>(uniqueValues(rows, (r) => r.port), (r) => r.port),
+    ...serverTextFilter<VesselHandlingRow>("Search Port"),
   },
   {
     title: "Volume",
@@ -306,7 +307,6 @@ export const buildHandlingTphColumns = (
 
 // Handling tab — CIF ----------------------------------------------------
 export const buildHandlingCifColumns = (
-  rows: readonly VesselHandlingRow[] = [],
   basePath = HANDLING_BASE,
 ): ColumnsType<VesselHandlingRow> => [
   {
@@ -317,7 +317,7 @@ export const buildHandlingCifColumns = (
     fixed: "left",
     sorter: (a, b) => a.batchId.localeCompare(b.batchId),
     render: (v: string) => <BatchIdLink batchId={v} basePath={basePath} />,
-    ...textSearchFilter<VesselHandlingRow>((r) => r.batchId, "Search Batch ID"),
+    ...serverTextFilter<VesselHandlingRow>("Search Batch ID"),
   },
   {
     title: "Vessel",
@@ -327,7 +327,7 @@ export const buildHandlingCifColumns = (
     fixed: "left",
     sorter: (a, b) => a.vessel.localeCompare(b.vessel),
     render: (v: string) => <VesselCell value={v} />,
-    ...textSearchFilter<VesselHandlingRow>((r) => r.vessel, "Search Vessel"),
+    ...serverTextFilter<VesselHandlingRow>("Search Vessel"),
   },
   {
     title: "Customer",
@@ -335,7 +335,7 @@ export const buildHandlingCifColumns = (
     key: "customer",
     width: 180,
     sorter: (a, b) => a.customer.localeCompare(b.customer),
-    ...treeFilter<VesselHandlingRow>(uniqueValues(rows, (r) => r.customer), (r) => r.customer),
+    ...serverTextFilter<VesselHandlingRow>("Search Customer"),
   },
   {
     title: "Volume",

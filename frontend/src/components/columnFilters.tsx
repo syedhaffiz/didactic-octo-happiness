@@ -62,6 +62,50 @@ export const textSearchFilter = <T,>(
     getValue(record).toLowerCase().includes(String(value).toLowerCase()),
 });
 
+// Server-side variant of textSearchFilter: same Search / Reset dropdown, but
+// with NO `onFilter`, so antd doesn't filter client-side. The selected term is
+// surfaced through the Table's `onChange` (via FilterableTable's controlled
+// mode) and sent to the API as a query param; the backend returns the matches.
+export const serverTextFilter = <T,>(
+  placeholder = "Search",
+): Pick<ColumnType<T>, "filterDropdown" | "filterIcon"> => ({
+  filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
+    <div style={{ padding: 8, minWidth: 240 }} onKeyDown={(e) => e.stopPropagation()}>
+      <Input
+        placeholder={placeholder}
+        value={selectedKeys[0] as string}
+        onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+        onPressEnter={() => confirm()}
+        style={{ marginBottom: 8, display: "block" }}
+        autoFocus
+      />
+      <Flex justify="space-between">
+        <Button
+          size="small"
+          type="link"
+          onClick={() => {
+            clearFilters?.();
+            confirm();
+          }}
+        >
+          Reset
+        </Button>
+        <Button
+          type="primary"
+          icon={<SearchOutlined />}
+          size="small"
+          onClick={() => confirm()}
+        >
+          Search
+        </Button>
+      </Flex>
+    </div>
+  ),
+  filterIcon: (filtered) => (
+    <SearchOutlined style={{ color: filtered ? brand.accent : undefined }} />
+  ),
+});
+
 export const treeFilter = <T,>(
   options: readonly string[],
   getValue: (row: T) => string,

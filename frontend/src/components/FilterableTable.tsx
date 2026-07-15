@@ -6,17 +6,29 @@ import type { ColumnsType, ColumnType } from "antd/es/table";
 import type { FilterValue, Key } from "antd/es/table/interface";
 import { useBrandTokens } from "../theme/useBrandTokens";
 
+type Filters = Record<string, FilterValue | null>;
+
 interface Props<T> extends Omit<TableProps<T>, "columns" | "onChange"> {
   columns: ColumnsType<T>;
+  /**
+   * Controlled filter state. Provide together with `onFilteredValuesChange` to
+   * run in server mode — the table then does NOT filter locally; it reports the
+   * selected terms up and shows whatever `dataSource` the caller supplies.
+   * Omit both to run in client mode (internal state + antd client-side filter).
+   */
+  filteredValues?: Filters;
+  onFilteredValuesChange?: (next: Filters) => void;
+  /** Total row count for the "X of Y rows" label. Server mode only (the
+   *  dataSource is already filtered); defaults to the dataSource length. */
+  total?: number;
 }
 
 // One selected value of one column — the design shows a chip per value, so a
 // column filtered on two values contributes two chips.
-interface ActiveFilter<T> {
+interface ActiveFilter {
   columnKey: string;
   label: string;
   value: Key | boolean;
-  onFilter: NonNullable<ColumnType<T>["onFilter"]>;
 }
 
 const isFilterable = <T,>(col: ColumnsType<T>[number]): col is ColumnType<T> =>
@@ -28,48 +40,67 @@ const labelOf = <T,>(col: ColumnType<T>): string =>
   typeof col.title === "string" ? col.title : String(col.key);
 
 // antd Table with a filter bar above it: the matched-row count, one removable
-// chip per active filter value, and a "Clear all" link. The bar only appears
-// once something is filtered.
+// chip per active filter value, and a "Clear all" link. The bar is always
+// rendered (chips come and go inside it) so the table never jumps.
 //
-// Filter state has to be controlled for any of that to work — a column only
-// drops its selection when its `filteredValue` changes — so this holds the
-// per-column state and feeds it back into the columns. Sorting stays
-// uncontrolled.
+// Two modes:
+//   - client (default): internal filter state, antd filters the dataSource.
+//   - server (pass `onFilteredValuesChange`): the caller owns the filter state,
+//     sends the terms to an API, and supplies pre-filtered rows + `total`.
 //
-// Filters are per-mount: give the element a `key` that changes with the dataset
-// (e.g. the active tab) to start it clean.
-export function FilterableTable<T extends object>({ columns, ...tableProps }: Props<T>) {
+// Either way the filter state has to be controlled into the columns (a column
+// only drops its selection when its `filteredValue` changes). Sorting stays
+// uncontrolled. In client mode, give the element a `key` that changes with the
+// dataset (e.g. the active tab) to start it clean.
+export function FilterableTable<T extends object>({
+  columns,
+  filteredValues,
+  onFilteredValuesChange,
+  total,
+  ...tableProps
+}: Props<T>) {
   const t = useBrandTokens();
-  const [filters, setFilters] = useState<Record<string, FilterValue | null>>({});
+  const serverMode = onFilteredValuesChange !== undefined;
+
+  const [internal, setInternal] = useState<Filters>({});
+  const filters = serverMode ? filteredValues ?? {} : internal;
+  const setFilters = (next: Filters) =>
+    serverMode ? onFilteredValuesChange(next) : setInternal(next);
+
   const rows = useMemo<readonly T[]>(() => tableProps.dataSource ?? [], [tableProps.dataSource]);
 
-  const active = useMemo<ActiveFilter<T>[]>(
+  // Chips — independent of `onFilter`, so server-mode columns (which have none)
+  // still render their selected terms.
+  const active = useMemo<ActiveFilter[]>(
     () =>
       columns.filter(isFilterable).flatMap((col) => {
         const values = filters[String(col.key)];
-        if (!values?.length || !col.onFilter) return [];
-        const { onFilter } = col;
+        if (!values?.length) return [];
         return values.map((value) => ({
           columnKey: String(col.key),
           label: labelOf(col),
           value,
-          onFilter,
         }));
       }),
     [columns, filters],
   );
 
-  // Row count for the bar. Recomputed from the data rather than read off the
-  // Table's onChange, so it stays right when the dataset itself refreshes.
-  // Same semantics as antd: values within a column OR, columns AND.
+  const totalRows = total ?? rows.length;
+
+  // Server mode: rows are already filtered, so the shown count is the row count.
+  // Client mode: replay each column's onFilter (values within a column OR,
+  // columns AND) so the count is right even after the dataset itself refreshes.
   const matchedCount = useMemo(() => {
-    if (active.length === 0) return rows.length;
-    const byColumn = new Map<string, ActiveFilter<T>[]>();
-    for (const f of active) byColumn.set(f.columnKey, [...(byColumn.get(f.columnKey) ?? []), f]);
-    const groups = [...byColumn.values()];
-    return rows.filter((row) => groups.every((g) => g.some((f) => f.onFilter(f.value, row))))
-      .length;
-  }, [active, rows]);
+    if (serverMode || active.length === 0) return rows.length;
+    const filterable = columns.filter(isFilterable);
+    return rows.filter((row) =>
+      filterable.every((col) => {
+        const values = filters[String(col.key)];
+        if (!values?.length || !col.onFilter) return true;
+        return values.some((v) => col.onFilter!(v, row));
+      }),
+    ).length;
+  }, [serverMode, active.length, rows, columns, filters]);
 
   const controlledColumns = useMemo<ColumnsType<T>>(
     () =>
@@ -81,16 +112,13 @@ export function FilterableTable<T extends object>({ columns, ...tableProps }: Pr
     [columns, filters],
   );
 
-  const removeFilter = (columnKey: string, value: Key | boolean) =>
-    setFilters((prev) => {
-      const remaining = (prev[columnKey] ?? []).filter((v) => v !== value);
-      return { ...prev, [columnKey]: remaining.length ? remaining : null };
-    });
+  const removeFilter = (columnKey: string, value: Key | boolean) => {
+    const remaining = (filters[columnKey] ?? []).filter((v) => v !== value);
+    setFilters({ ...filters, [columnKey]: remaining.length ? remaining : null });
+  };
 
   return (
     <>
-      {/* Always rendered — chips come and go inside it, but the bar itself never
-          appears or disappears, so the table below it never jumps. */}
       <Flex
         align="center"
         wrap
@@ -99,9 +127,7 @@ export function FilterableTable<T extends object>({ columns, ...tableProps }: Pr
       >
         <Flex align="center" gap={6} style={{ color: t.textSecondary, fontSize: 13 }}>
           <FilterOutlined />
-          {active.length > 0
-            ? `${matchedCount} of ${rows.length} rows`
-            : `${rows.length} rows`}
+          {active.length > 0 ? `${matchedCount} of ${totalRows} rows` : `${totalRows} rows`}
         </Flex>
         {active.map((f) => (
           <Tag

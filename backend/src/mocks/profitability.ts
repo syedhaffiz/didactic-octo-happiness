@@ -4,6 +4,7 @@
 //   3) Batch ID drilldown         — Sales / Handling detail tables
 
 import type {
+  BatchDetailSearch,
   BatchSummary,
   Currency,
   HandlingBatchDetailResponse,
@@ -16,8 +17,10 @@ import type {
   SalesBatchDetailRow,
   VesselHandlingResponse,
   VesselHandlingRow,
+  VesselHandlingSearch,
   VesselSalesResponse,
   VesselSalesRow,
+  VesselSalesSearch,
   VesselSummary,
 } from "../types/finance.js";
 import {
@@ -178,8 +181,8 @@ const buildRowBasis = (rng: () => number): RowBasis => {
   };
 };
 
-// Totals for the four stat tiles, summed from the rows on show so the tiles and
-// the table can never disagree.
+// Totals for the four stat tiles, summed over the FULL row set (before the
+// search filter) so the KPIs stay put while a search only narrows the table.
 const summarise = (
   rows: readonly { vessel: string; volume: number; profit: number }[],
   revenue: number,
@@ -190,18 +193,23 @@ const summarise = (
   totalVolume: rows.reduce((s, r) => s + r.volume, 0),
 });
 
+// Case-insensitive substring match; an empty / missing term matches everything.
+const matchesTerm = (value: string, term: string | undefined): boolean =>
+  !term || value.toLowerCase().includes(term.toLowerCase());
+
 // --- Vessel Profitability — Sales tab -------------------------------------
 
 export const buildVesselSales = (
   currency: Currency,
   from: Date,
   to: Date,
+  search: VesselSalesSearch = {},
 ): VesselSalesResponse => {
   const rng = monthSeed("vessel-sales", from, to);
   const rate = currency === "USD" ? USD_PER_INR : 1;
   const bases = Array.from({ length: ROW_COUNT }, () => buildRowBasis(rng));
 
-  const items = bases.map((basis, idx) => ({
+  const allItems = bases.map((basis, idx) => ({
     batchId: batchIdForIdx(idx),
     vessel: pick(rng, VESSELS),
     segment: SALES_SEGMENTS[idx % SALES_SEGMENTS.length] ?? "SEB",
@@ -214,8 +222,21 @@ export const buildVesselSales = (
     profitPerMtUsd: round(basis.pmtProfit * USD_PER_INR, 2),
   } satisfies VesselSalesRow));
 
-  const revenue = items.reduce((s, r) => s + r.revenue, 0);
-  return { currency, summary: summarise(items, revenue), items };
+  // Summary is over the full set; the search only narrows the returned rows.
+  const revenue = allItems.reduce((s, r) => s + r.revenue, 0);
+  const items = allItems.filter(
+    (r) =>
+      matchesTerm(r.batchId, search.batchId) &&
+      matchesTerm(r.vessel, search.vessel) &&
+      matchesTerm(r.segment, search.segment),
+  );
+
+  return {
+    currency,
+    summary: summarise(allItems, revenue),
+    total: allItems.length,
+    items,
+  };
 };
 
 // --- Vessel Profitability — Handling tab ----------------------------------
@@ -227,12 +248,13 @@ export const buildVesselHandling = (
   currency: Currency,
   from: Date,
   to: Date,
+  search: VesselHandlingSearch = {},
 ): VesselHandlingResponse => {
   const rng = monthSeed(`vessel-handling:${category}`, from, to);
   const rate = currency === "USD" ? USD_PER_INR : 1;
   const bases = Array.from({ length: ROW_COUNT }, () => buildRowBasis(rng));
 
-  const items = bases.map((basis, idx) => ({
+  const allItems = bases.map((basis, idx) => ({
     batchId: batchIdForIdx(idx),
     vessel: pick(rng, VESSELS),
     customer: CUSTOMERS[idx % CUSTOMERS.length] ?? CUSTOMERS[0],
@@ -245,7 +267,22 @@ export const buildVesselHandling = (
   // Handling has no Revenue column, but the tile above the table still shows it
   // — take it from the same row basis so the two stay consistent.
   const revenue = Math.round(bases.reduce((s, b) => s + b.revenue, 0) * rate);
-  return { currency, category, summary: summarise(items, revenue), items };
+  // Summary is over the full set; the search only narrows the returned rows.
+  const items = allItems.filter(
+    (r) =>
+      matchesTerm(r.batchId, search.batchId) &&
+      matchesTerm(r.vessel, search.vessel) &&
+      matchesTerm(r.customer, search.customer) &&
+      matchesTerm(r.port, search.port),
+  );
+
+  return {
+    currency,
+    category,
+    summary: summarise(allItems, revenue),
+    total: allItems.length,
+    items,
+  };
 };
 
 // --- Sales batch detail ---------------------------------------------------
@@ -276,10 +313,24 @@ const buildBatchSummary = (rng: () => number): BatchSummary => ({
   penalty: Math.round(range(rng, 2e6, 1.8e7)),
 });
 
-export const buildSalesBatchDetail = (batchId: string): SalesBatchDetailResponse => {
+// Both batch-detail tables search on the same four text columns; matching each
+// row's fields against the search terms is shared.
+const matchesBatchRow = (
+  row: { batchId: string; customerName: string; plantName: string; tradeContractNo: string },
+  search: BatchDetailSearch,
+): boolean =>
+  matchesTerm(row.batchId, search.batchId) &&
+  matchesTerm(row.customerName, search.customerName) &&
+  matchesTerm(row.plantName, search.plantName) &&
+  matchesTerm(row.tradeContractNo, search.tradeContractNo);
+
+export const buildSalesBatchDetail = (
+  batchId: string,
+  search: BatchDetailSearch = {},
+): SalesBatchDetailResponse => {
   const rng = seeded(seedFromString(`sales-batch-detail:${batchId}`));
   const summary = buildBatchSummary(rng);
-  const items = Array.from({ length: 14 }, (_, idx) => ({
+  const allItems = Array.from({ length: 14 }, (_, idx) => ({
     batchId: batchIdForIdx(idx),
     customerName: CUSTOMER_NAMES[idx % CUSTOMER_NAMES.length] ?? CUSTOMER_NAMES[0]!,
     plantName: buildPlantName(rng, idx),
@@ -289,15 +340,20 @@ export const buildSalesBatchDetail = (batchId: string): SalesBatchDetailResponse
     cogsValue: round(range(rng, 50_000_000, 250_000_000), 0),
   } satisfies SalesBatchDetailRow));
   void COAL_GRADES; void GRADES; void SEGMENTS; void ORIGINS;
-  return { batchId, summary, items };
+  // Summary is over the full set; the search only narrows the returned rows.
+  const items = allItems.filter((r) => matchesBatchRow(r, search));
+  return { batchId, summary, total: allItems.length, items };
 };
 
 // --- Handling batch detail ------------------------------------------------
 
-export const buildHandlingBatchDetail = (batchId: string): HandlingBatchDetailResponse => {
+export const buildHandlingBatchDetail = (
+  batchId: string,
+  search: BatchDetailSearch = {},
+): HandlingBatchDetailResponse => {
   const rng = seeded(seedFromString(`handling-batch-detail:${batchId}`));
   const summary = buildBatchSummary(rng);
-  const items = Array.from({ length: 14 }, (_, idx) => ({
+  const allItems = Array.from({ length: 14 }, (_, idx) => ({
     batchId: batchIdForIdx(idx),
     customerName: CUSTOMER_NAMES[idx % CUSTOMER_NAMES.length] ?? CUSTOMER_NAMES[0]!,
     plantName: buildPlantName(rng, idx),
@@ -307,5 +363,7 @@ export const buildHandlingBatchDetail = (batchId: string): HandlingBatchDetailRe
     sagarmalaHandlingCalculatedQty: Math.round(range(rng, -25_000_000, -1_000_000)),
     sagarmalaHandlingPostedQty: Math.round(range(rng, -25_000_000, -1_000_000)),
   } satisfies HandlingBatchDetailRow));
-  return { batchId, summary, items };
+  // Summary is over the full set; the search only narrows the returned rows.
+  const items = allItems.filter((r) => matchesBatchRow(r, search));
+  return { batchId, summary, total: allItems.length, items };
 };

@@ -189,7 +189,17 @@ export interface VesselSalesRow {
 export interface VesselSalesResponse {
   currency: Currency;
   summary: VesselSummary;
+  /** Total rows before the search filter — drives the "X of Y rows" count. */
+  total: number;
   items: VesselSalesRow[];
+}
+
+// Per-column search terms (case-insensitive substring). Every field is
+// optional; an omitted field matches everything.
+export interface VesselSalesSearch {
+  batchId?: string;
+  vessel?: string;
+  segment?: string;
 }
 
 // --- Vessel Profitability — Handling tab table ---------------------------
@@ -214,7 +224,18 @@ export interface VesselHandlingResponse {
   currency: Currency;
   category: HandlingCategory;
   summary: VesselSummary;
+  /** Total rows before the search filter — drives the "X of Y rows" count. */
+  total: number;
   items: VesselHandlingRow[];
+}
+
+// Per-column search terms (case-insensitive substring). Every field is
+// optional; an omitted field matches everything.
+export interface VesselHandlingSearch {
+  batchId?: string;
+  vessel?: string;
+  customer?: string;
+  port?: string;
 }
 
 // --- Batch ID drilldown ---------------------------------------------------
@@ -228,6 +249,15 @@ export interface BatchSummary {
   railwayFreight: number;
   demurrage: number;
   penalty: number;
+}
+
+// Per-column search terms for both batch-detail tables (case-insensitive
+// substring). Every field is optional; an omitted field matches everything.
+export interface BatchDetailSearch {
+  batchId?: string;
+  customerName?: string;
+  plantName?: string;
+  tradeContractNo?: string;
 }
 
 // --- Batch ID drilldown — Sales ------------------------------------------
@@ -245,6 +275,8 @@ export interface SalesBatchDetailRow {
 export interface SalesBatchDetailResponse {
   batchId: string;
   summary: BatchSummary;
+  /** Total rows before the search filter — drives the "X of Y rows" count. */
+  total: number;
   items: SalesBatchDetailRow[];
 }
 
@@ -264,6 +296,8 @@ export interface HandlingBatchDetailRow {
 export interface HandlingBatchDetailResponse {
   batchId: string;
   summary: BatchSummary;
+  /** Total rows before the search filter — drives the "X of Y rows" count. */
+  total: number;
   items: HandlingBatchDetailRow[];
 }
 

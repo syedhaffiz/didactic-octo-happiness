@@ -21,10 +21,28 @@ const netMarginSchema = dateRangeSchema.extend({
 
 const vesselSalesSchema = dateRangeSchema.extend({
   currency: z.enum(["INR", "USD"]).optional(),
+  // Per-column search terms (case-insensitive substring).
+  batchId: z.string().optional(),
+  vessel: z.string().optional(),
+  segment: z.string().optional(),
 });
 
-const vesselHandlingSchema = vesselSalesSchema.extend({
+const vesselHandlingSchema = dateRangeSchema.extend({
+  currency: z.enum(["INR", "USD"]).optional(),
   category: z.enum(["all", "sagarmala", "tph", "cif"]).optional(),
+  // Per-column search terms (case-insensitive substring).
+  batchId: z.string().optional(),
+  vessel: z.string().optional(),
+  customer: z.string().optional(),
+  port: z.string().optional(),
+});
+
+// Per-column search terms for the batch-detail drilldown tables.
+const batchDetailSchema = z.object({
+  batchId: z.string().optional(),
+  customerName: z.string().optional(),
+  plantName: z.string().optional(),
+  tradeContractNo: z.string().optional(),
 });
 
 const forexSchema = z.object({
@@ -142,7 +160,8 @@ export const getVesselSales: RequestHandler = async (req, res, next) => {
     const q = parse(vesselSalesSchema, req.query);
     const { from, to } = parseDateRange(q.fromDate, q.toDate);
     const currency: Currency = q.currency ?? "INR";
-    res.json(ok(await financeService.vesselSales(currency, from, to)));
+    const search = { batchId: q.batchId, vessel: q.vessel, segment: q.segment };
+    res.json(ok(await financeService.vesselSales(currency, from, to, search)));
   } catch (e) {
     next(e);
   }
@@ -154,7 +173,13 @@ export const getVesselHandling: RequestHandler = async (req, res, next) => {
     const { from, to } = parseDateRange(q.fromDate, q.toDate);
     const currency: Currency = q.currency ?? "INR";
     const category: HandlingCategory = q.category ?? "all";
-    res.json(ok(await financeService.vesselHandling(category, currency, from, to)));
+    const search = {
+      batchId: q.batchId,
+      vessel: q.vessel,
+      customer: q.customer,
+      port: q.port,
+    };
+    res.json(ok(await financeService.vesselHandling(category, currency, from, to, search)));
   } catch (e) {
     next(e);
   }
@@ -167,7 +192,8 @@ export const getSalesBatchDetail: RequestHandler = async (req, res, next) => {
       res.status(400).json(fail("bad_request", "batchId is required"));
       return;
     }
-    res.json(ok(await financeService.salesBatchDetail(batchId)));
+    const search = parse(batchDetailSchema, req.query);
+    res.json(ok(await financeService.salesBatchDetail(batchId, search)));
   } catch (e) {
     next(e);
   }
@@ -180,7 +206,8 @@ export const getHandlingBatchDetail: RequestHandler = async (req, res, next) => 
       res.status(400).json(fail("bad_request", "batchId is required"));
       return;
     }
-    res.json(ok(await financeService.handlingBatchDetail(batchId)));
+    const search = parse(batchDetailSchema, req.query);
+    res.json(ok(await financeService.handlingBatchDetail(batchId, search)));
   } catch (e) {
     next(e);
   }

@@ -1,12 +1,15 @@
 import type {
   ApprovedBudgetFilters,
   ApprovedBudgetResponse,
+  BatchDetailSearch,
   BreakdownResponse,
   Currency,
   ForexRange,
   ForexResponse,
   HandlingBatchDetailResponse,
   HandlingCategory,
+  VesselHandlingSearch,
+  VesselSalesSearch,
   KPI,
   NetMarginProfitabilityResponse,
   OverviewResponse,
@@ -57,15 +60,27 @@ export interface FinanceRepository {
     from: Date,
     to: Date,
   ): Promise<NetMarginProfitabilityResponse>;
-  getVesselSales(currency: Currency, from: Date, to: Date): Promise<VesselSalesResponse>;
+  getVesselSales(
+    currency: Currency,
+    from: Date,
+    to: Date,
+    search: VesselSalesSearch,
+  ): Promise<VesselSalesResponse>;
   getVesselHandling(
     category: HandlingCategory,
     currency: Currency,
     from: Date,
     to: Date,
+    search: VesselHandlingSearch,
   ): Promise<VesselHandlingResponse>;
-  getSalesBatchDetail(batchId: string): Promise<SalesBatchDetailResponse>;
-  getHandlingBatchDetail(batchId: string): Promise<HandlingBatchDetailResponse>;
+  getSalesBatchDetail(
+    batchId: string,
+    search: BatchDetailSearch,
+  ): Promise<SalesBatchDetailResponse>;
+  getHandlingBatchDetail(
+    batchId: string,
+    search: BatchDetailSearch,
+  ): Promise<HandlingBatchDetailResponse>;
   // --- Unchanged ---
   getSales(from: Date, to: Date): Promise<SalesResponse>;
   getApprovedBudget(filters: ApprovedBudgetFilters): Promise<ApprovedBudgetResponse>;
@@ -110,22 +125,28 @@ class MockFinanceRepository implements FinanceRepository {
   ) {
     return buildNetMarginProfitability(zone, currency, from, to);
   }
-  async getVesselSales(currency: Currency, from: Date, to: Date) {
-    return buildVesselSales(currency, from, to);
+  async getVesselSales(
+    currency: Currency,
+    from: Date,
+    to: Date,
+    search: VesselSalesSearch,
+  ) {
+    return buildVesselSales(currency, from, to, search);
   }
   async getVesselHandling(
     category: HandlingCategory,
     currency: Currency,
     from: Date,
     to: Date,
+    search: VesselHandlingSearch,
   ) {
-    return buildVesselHandling(category, currency, from, to);
+    return buildVesselHandling(category, currency, from, to, search);
   }
-  async getSalesBatchDetail(batchId: string) {
-    return buildSalesBatchDetail(batchId);
+  async getSalesBatchDetail(batchId: string, search: BatchDetailSearch) {
+    return buildSalesBatchDetail(batchId, search);
   }
-  async getHandlingBatchDetail(batchId: string) {
-    return buildHandlingBatchDetail(batchId);
+  async getHandlingBatchDetail(batchId: string, search: BatchDetailSearch) {
+    return buildHandlingBatchDetail(batchId, search);
   }
   async getSales(from: Date, to: Date) {
     return buildSales(from, to);

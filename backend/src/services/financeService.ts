@@ -1,9 +1,12 @@
 import { financeRepository } from "../repositories/financeRepository.js";
 import type {
   ApprovedBudgetFilters,
+  BatchDetailSearch,
   Currency,
   ForexRange,
   HandlingCategory,
+  VesselHandlingSearch,
+  VesselSalesSearch,
 } from "../types/finance.js";
 
 export const financeService = {
@@ -27,16 +30,19 @@ export const financeService = {
     from: Date,
     to: Date,
   ) => financeRepository.getNetMarginProfitability(zone, currency, from, to),
-  vesselSales: (currency: Currency, from: Date, to: Date) =>
-    financeRepository.getVesselSales(currency, from, to),
+  vesselSales: (currency: Currency, from: Date, to: Date, search: VesselSalesSearch) =>
+    financeRepository.getVesselSales(currency, from, to, search),
   vesselHandling: (
     category: HandlingCategory,
     currency: Currency,
     from: Date,
     to: Date,
-  ) => financeRepository.getVesselHandling(category, currency, from, to),
-  salesBatchDetail: (batchId: string) => financeRepository.getSalesBatchDetail(batchId),
-  handlingBatchDetail: (batchId: string) => financeRepository.getHandlingBatchDetail(batchId),
+    search: VesselHandlingSearch,
+  ) => financeRepository.getVesselHandling(category, currency, from, to, search),
+  salesBatchDetail: (batchId: string, search: BatchDetailSearch) =>
+    financeRepository.getSalesBatchDetail(batchId, search),
+  handlingBatchDetail: (batchId: string, search: BatchDetailSearch) =>
+    financeRepository.getHandlingBatchDetail(batchId, search),
   sales: (from: Date, to: Date) => financeRepository.getSales(from, to),
   approvedBudget: (filters: ApprovedBudgetFilters) =>
     financeRepository.getApprovedBudget(filters),

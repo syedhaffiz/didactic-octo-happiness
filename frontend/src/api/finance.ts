@@ -4,6 +4,7 @@ import type { ApiEnvelope } from "../types/api";
 import type {
   ApprovedBudgetParams,
   ApprovedBudgetResponse,
+  BatchDetailSearch,
   BreakdownResponse,
   Currency,
   ForexRange,
@@ -79,10 +80,20 @@ export interface NetMarginParams extends RangeParams {
 
 export interface VesselSalesParams extends RangeParams {
   currency?: Currency;
+  // Per-column search terms (case-insensitive substring, filtered server-side).
+  batchId?: string;
+  vessel?: string;
+  segment?: string;
 }
 
-export interface VesselHandlingParams extends VesselSalesParams {
+export interface VesselHandlingParams extends RangeParams {
+  currency?: Currency;
   category?: HandlingCategory;
+  // Per-column search terms (case-insensitive substring, filtered server-side).
+  batchId?: string;
+  vessel?: string;
+  customer?: string;
+  port?: string;
 }
 
 export interface PortOnlyParams {
@@ -111,13 +122,15 @@ const httpFinanceApi = {
     get<VesselSalesResponse>("/finance/profitability/vessels/sales", p),
   vesselHandling: (p: VesselHandlingParams = {}) =>
     get<VesselHandlingResponse>("/finance/profitability/vessels/handling", p),
-  salesBatchDetail: (batchId: string) =>
+  salesBatchDetail: (batchId: string, search: BatchDetailSearch = {}) =>
     get<SalesBatchDetailResponse>(
       `/finance/profitability/vessels/sales/${encodeURIComponent(batchId)}`,
+      search,
     ),
-  handlingBatchDetail: (batchId: string) =>
+  handlingBatchDetail: (batchId: string, search: BatchDetailSearch = {}) =>
     get<HandlingBatchDetailResponse>(
       `/finance/profitability/vessels/handling/${encodeURIComponent(batchId)}`,
+      search,
     ),
   sales: (p: RangeParams = {}) => get<SalesResponse>("/finance/sales", p),
   approvedBudget: (p: ApprovedBudgetParams = {}) =>
@@ -137,13 +150,26 @@ const mockFinanceApi = {
   netMarginProfitability: (p: NetMarginParams = {}) =>
     mockDelay(buildNetMarginProfitability(p.zone, p.currency ?? "INR", p.fromDate, p.toDate)),
   vesselSales: (p: VesselSalesParams = {}) =>
-    mockDelay(buildVesselSales(p.currency ?? "INR", p.fromDate, p.toDate)),
+    mockDelay(
+      buildVesselSales(p.currency ?? "INR", p.fromDate, p.toDate, {
+        batchId: p.batchId,
+        vessel: p.vessel,
+        segment: p.segment,
+      }),
+    ),
   vesselHandling: (p: VesselHandlingParams = {}) =>
     mockDelay(
-      buildVesselHandling(p.category ?? "all", p.currency ?? "INR", p.fromDate, p.toDate),
+      buildVesselHandling(p.category ?? "all", p.currency ?? "INR", p.fromDate, p.toDate, {
+        batchId: p.batchId,
+        vessel: p.vessel,
+        customer: p.customer,
+        port: p.port,
+      }),
     ),
-  salesBatchDetail: (batchId: string) => mockDelay(buildSalesBatchDetail(batchId)),
-  handlingBatchDetail: (batchId: string) => mockDelay(buildHandlingBatchDetail(batchId)),
+  salesBatchDetail: (batchId: string, search: BatchDetailSearch = {}) =>
+    mockDelay(buildSalesBatchDetail(batchId, search)),
+  handlingBatchDetail: (batchId: string, search: BatchDetailSearch = {}) =>
+    mockDelay(buildHandlingBatchDetail(batchId, search)),
   sales: (p: RangeParams = {}) => mockDelay(buildSales(p.fromDate, p.toDate)),
   approvedBudget: (p: ApprovedBudgetParams = {}) => mockDelay(buildApprovedBudget(p)),
 };
