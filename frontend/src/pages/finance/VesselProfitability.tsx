@@ -57,7 +57,7 @@ const handlingColumnsFor: Record<
 export const VesselProfitability = () => {
   const [tab] = useVesselTab();
   const [category] = useHandlingCategory();
-  const { value, fromDate, toDate, setRange } = useMonthRangeWithDefault(6);
+  const { value, fromDate, toDate, setRange } = useMonthRangeWithDefault();
   const [rawCurrency, setRawCurrency] = useUrlParam("currency");
   const currency: Currency = isCurrency(rawCurrency) ? rawCurrency : "INR";
 

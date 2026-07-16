@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 import dayjs, { type Dayjs } from "dayjs";
 import { useUrlDateRange } from "./useUrlParam";
+import { ytdRange } from "./datePresets";
 
 const RANGE_FMT = "YYYY-MM-DD";
 const PILL_FMT = "DD MMM YY";
@@ -123,22 +124,19 @@ export interface MonthRangeWithDefault {
 }
 
 // Month range backed by the same `fromDate` / `toDate` URL params as the day
-// picker. Defaults to the last `months` calendar months (inclusive of the
-// current month). The month picker emits month-start dates, so we normalise to
-// whole-month bounds — first day of the first month through the last day of the
-// last month — which is what flows to the API.
-export const useMonthRangeWithDefault = (months = 6): MonthRangeWithDefault => {
+// picker. Defaults to fiscal YTD — first of the current fiscal year (01-Apr)
+// through today (see ytdRange for the 01-Apr edge case). A user-picked range
+// comes from the month picker as month-start dates, so those are normalised to
+// whole-month bounds — first day of the first month through the last day of
+// the last month — which is what flows to the API.
+export const useMonthRangeWithDefault = (): MonthRangeWithDefault => {
   const [tuple, setUrlRange] = useUrlDateRange();
 
-  const today = useMemo(() => dayjs(), []);
-  const defaultStart = useMemo(
-    () => today.subtract(months - 1, "month").startOf("month"),
-    [today, months],
-  );
-  const defaultEnd = useMemo(() => today.endOf("month"), [today]);
+  // Stable so the default doesn't drift across re-renders.
+  const [defaultStart, defaultEnd] = useMemo(() => ytdRange(), []);
 
   const start = (tuple?.[0] ?? defaultStart).startOf("month");
-  const end = (tuple?.[1] ?? defaultEnd).endOf("month");
+  const end = tuple?.[1] ? tuple[1].endOf("month") : defaultEnd;
 
   const setRange = useCallback(
     (next: [Dayjs | null, Dayjs | null] | null) => {

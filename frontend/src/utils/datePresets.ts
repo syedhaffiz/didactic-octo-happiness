@@ -11,7 +11,8 @@ const fiscalYearStart = (d: Dayjs): Dayjs => {
 // YTD — first of the current fiscal year through today. When today *is* the
 // first of the fiscal year there's no elapsed range yet, so fall back to the
 // whole previous fiscal year (e.g. 01-Apr-2026 → 01-Apr-2025 … 31-Mar-2026).
-const ytdRange = (): [Dayjs, Dayjs] => {
+// Exported for pages that default their range filter to YTD.
+export const ytdRange = (): [Dayjs, Dayjs] => {
   const today = dayjs().startOf("day");
   const start = fiscalYearStart(today);
   if (today.isSame(start, "day")) {
