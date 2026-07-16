@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Card } from "antd";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import type { FilterValue } from "antd/es/table/interface";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { ErrorRetry } from "../../components/ErrorRetry";
@@ -42,13 +42,25 @@ const toSearch = (filters: Filters): BatchDetailSearch => ({
   tradeContractNo: term(filters, "tradeContractNo"),
 });
 
+// Query string for the "back to list" links. Carries whatever filters the list
+// page forwarded onto the detail URL (date range, handling category, currency)
+// so returning restores them, with the tab forced to this batch's mode. Sales
+// is the default tab, represented by the absence of ?tab (matches useVesselTab).
+const backSearch = (mode: "sales" | "handling", current: URLSearchParams): string => {
+  const out = new URLSearchParams(current);
+  if (mode === "sales") out.delete("tab");
+  else out.set("tab", mode);
+  const s = out.toString();
+  return s ? `?${s}` : "";
+};
+
 // Breadcrumb ancestors of a batch-detail page. The Sales/Handling level is a
 // tab on the Vessel Profitability page (not its own route), so it links back
 // there with the matching ?tab — the path segments themselves aren't routable.
-const crumbsFor = (mode: "sales" | "handling") => [
+const crumbsFor = (mode: "sales" | "handling", search: string) => [
   { label: "Gross Margin Profitability", to: "/finance/overview/profitability" },
-  { label: "Vessel Profitability", to: `${VESSELS_PATH}?tab=${mode}` },
-  { label: mode === "sales" ? "Sales" : "Handling", to: `${VESSELS_PATH}?tab=${mode}` },
+  { label: "Vessel Profitability", to: `${VESSELS_PATH}${search}` },
+  { label: mode === "sales" ? "Sales" : "Handling", to: `${VESSELS_PATH}${search}` },
 ];
 
 // Single batch-detail page, parameterised by mode. The Sales and Handling
@@ -63,6 +75,7 @@ export const BatchDetail = ({ mode }: Props) => {
 };
 
 const SalesView = ({ batchId }: { batchId: string }) => {
+  const [urlParams] = useSearchParams();
   // Search terms are owned here and sent to the API, which returns the matching
   // rows. The table runs in FilterableTable's server mode — no local filtering.
   const [search, setSearch] = useState<Filters>({});
@@ -74,7 +87,10 @@ const SalesView = ({ batchId }: { batchId: string }) => {
   const cols = useMemo(() => buildSalesBatchDetailColumns(), []);
   return (
     <>
-      <PageHeader title={`Batch ID - ${batchId}`} breadcrumb={crumbsFor("sales")} />
+      <PageHeader
+        title={`Batch ID - ${batchId}`}
+        breadcrumb={crumbsFor("sales", backSearch("sales", urlParams))}
+      />
       {q.isError ? (
         <ErrorRetry title="Could not load batch detail" error={q.error} onRetry={q.refetch} />
       ) : (
@@ -106,6 +122,7 @@ const SalesView = ({ batchId }: { batchId: string }) => {
 };
 
 const HandlingView = ({ batchId }: { batchId: string }) => {
+  const [urlParams] = useSearchParams();
   const [search, setSearch] = useState<Filters>({});
   const q = useApi(
     ["finance", "handling-batch-detail", batchId, JSON.stringify(toSearch(search))],
@@ -115,7 +132,10 @@ const HandlingView = ({ batchId }: { batchId: string }) => {
   const cols = useMemo(() => buildHandlingBatchDetailColumns(), []);
   return (
     <>
-      <PageHeader title={`Batch ID - ${batchId}`} breadcrumb={crumbsFor("handling")} />
+      <PageHeader
+        title={`Batch ID - ${batchId}`}
+        breadcrumb={crumbsFor("handling", backSearch("handling", urlParams))}
+      />
       {q.isError ? (
         <ErrorRetry title="Could not load batch detail" error={q.error} onRetry={q.refetch} />
       ) : (
