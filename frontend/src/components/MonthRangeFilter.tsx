@@ -1,6 +1,7 @@
 import { DatePicker } from "antd";
 import type { Dayjs } from "dayjs";
 import { FilterField } from "./filters/FilterField";
+import { monthRangePresets } from "../utils/datePresets";
 
 const { RangePicker } = DatePicker;
 
@@ -17,6 +18,7 @@ export const MonthRangeFilter = ({ value, onChange }: MonthRangeFilterProps) => 
       picker="month"
       value={value ?? null}
       onChange={(v) => onChange(v as [Dayjs | null, Dayjs | null] | null)}
+      presets={monthRangePresets}
       format="MMM YY"
       allowEmpty={[true, true]}
       style={{ width: "100%" }}
