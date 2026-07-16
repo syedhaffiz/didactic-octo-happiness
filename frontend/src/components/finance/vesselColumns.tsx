@@ -1,6 +1,6 @@
 import type { ColumnsType } from "antd/es/table";
 import { BatchIdLink } from "./BatchIdLink";
-import { serverTextFilter } from "../columnFilters";
+import { serverTextFilter, treeFilter } from "../columnFilters";
 import { brand } from "../../theme/tokens";
 import type { VesselHandlingRow, VesselSalesRow } from "../../types/finance";
 
@@ -244,9 +244,13 @@ export const buildHandlingSagarmalaColumns = (
   },
 ];
 
-// Handling tab — TPH (Port where the others show Customer) ---------------
+// Handling tab — TPH (Port where the others show Customer). Port filters
+// client-side via the tree filter — `ports` are the checkbox options, derived
+// by the page from the loaded rows — unlike the text columns, whose terms go
+// to the API.
 export const buildHandlingTphColumns = (
   basePath = HANDLING_BASE,
+  ports: readonly string[] = [],
 ): ColumnsType<VesselHandlingRow> => [
   {
     title: "Batch ID",
@@ -274,7 +278,7 @@ export const buildHandlingTphColumns = (
     key: "port",
     width: 180,
     sorter: (a, b) => a.port.localeCompare(b.port),
-    ...serverTextFilter<VesselHandlingRow>("Search Port"),
+    ...treeFilter<VesselHandlingRow>(ports, (r) => r.port),
   },
   {
     title: "Volume",

@@ -19,6 +19,7 @@ import {
   buildHandlingTphColumns,
   buildVesselSalesColumns,
 } from "../../components/finance/vesselColumns";
+import { uniqueValues } from "../../components/columnFilters";
 import { financeApi } from "../../api/finance";
 import { useApi } from "../../api/useApi";
 import { useMonthRangeWithDefault } from "../../utils/useDateRangeWithDefault";
@@ -67,10 +68,11 @@ export const VesselProfitability = () => {
   const [salesSearch, setSalesSearch] = useState<Filters>({});
   const [handlingSearch, setHandlingSearch] = useState<Filters>({});
 
-  // TPH searches on Port; the other sub-tabs search on Customer. Gate the term
-  // by category so a stale Customer term doesn't filter the TPH query.
+  // The non-TPH sub-tabs search on Customer (server-side). TPH's Port column
+  // filters client-side instead (tree filter over the loaded rows), so no port
+  // term is sent to the API. Gate the Customer term by category so a stale
+  // term doesn't filter the TPH query.
   const handlingCustomer = category === "tph" ? undefined : term(handlingSearch, "customer");
-  const handlingPort = category === "tph" ? term(handlingSearch, "port") : undefined;
 
   const salesQ = useApi(
     [
@@ -104,7 +106,6 @@ export const VesselProfitability = () => {
       term(handlingSearch, "batchId"),
       term(handlingSearch, "vessel"),
       handlingCustomer,
-      handlingPort,
     ],
     () =>
       financeApi.vesselHandling({
@@ -115,15 +116,23 @@ export const VesselProfitability = () => {
         batchId: term(handlingSearch, "batchId"),
         vessel: term(handlingSearch, "vessel"),
         customer: handlingCustomer,
-        port: handlingPort,
       }),
   );
 
   const salesRows = salesQ.data?.items ?? [];
-  const handlingRows = handlingQ.data?.items ?? [];
+  const handlingRows = useMemo(() => handlingQ.data?.items ?? [], [handlingQ.data]);
 
   const salesColumns = useMemo(() => buildVesselSalesColumns(), []);
-  const handlingColumns = useMemo(() => handlingColumnsFor[category](), [category]);
+  // TPH gets its Port tree-filter options from the loaded rows — the API result
+  // isn't port-filtered, so the option list stays complete while a selection is
+  // active.
+  const handlingColumns = useMemo(
+    () =>
+      category === "tph"
+        ? buildHandlingTphColumns(undefined, uniqueValues(handlingRows, (r) => r.port))
+        : handlingColumnsFor[category](),
+    [category, handlingRows],
+  );
 
   const isSales = tab === "sales";
   const { isError, error, refetch, isLoading, data } = isSales ? salesQ : handlingQ;

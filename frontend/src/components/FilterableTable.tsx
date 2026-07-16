@@ -87,11 +87,13 @@ export function FilterableTable<T extends object>({
 
   const totalRows = total ?? rows.length;
 
-  // Server mode: rows are already filtered, so the shown count is the row count.
-  // Client mode: replay each column's onFilter (values within a column OR,
-  // columns AND) so the count is right even after the dataset itself refreshes.
+  // Replay each column's onFilter (values within a column OR, columns AND) so
+  // the count is right even after the dataset itself refreshes. Columns without
+  // an onFilter pass through — in server mode those are already filtered into
+  // `rows`, so this also counts correctly when server-filtered and client-
+  // filtered (e.g. tree-filter) columns are mixed in one table.
   const matchedCount = useMemo(() => {
-    if (serverMode || active.length === 0) return rows.length;
+    if (active.length === 0) return rows.length;
     const filterable = columns.filter(isFilterable);
     return rows.filter((row) =>
       filterable.every((col) => {
@@ -100,7 +102,7 @@ export function FilterableTable<T extends object>({
         return values.some((v) => col.onFilter!(v, row));
       }),
     ).length;
-  }, [serverMode, active.length, rows, columns, filters]);
+  }, [active.length, rows, columns, filters]);
 
   const controlledColumns = useMemo<ColumnsType<T>>(
     () =>
