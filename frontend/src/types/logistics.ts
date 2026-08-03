@@ -19,22 +19,24 @@ export interface HandlingRateRow {
   rake: number; // INR/MT
 }
 
-// --- Portwise PDA (drilldown pie: Ports -> Operations) ---------------------
-export interface PdaPiePoint {
-  name: string;
-  y: number;
-  drilldown: string | null;
-}
-
-export interface PdaDrilldownSeries {
+// --- Portwise PDA ----------------------------------------------------------
+// PDA = Port Disbursement Account. One row per port + vessel-type combination,
+// with the quantity handled and the per-metric-tonne (PMT) cost in USD and INR.
+export interface PdaRow {
   id: string;
-  tier: string; // label for the child slices, e.g. "Operations"
-  data: PdaPiePoint[];
+  port: string;
+  vesselType: string;
+  qty: number; // MT
+  totalWithGst: number;
+  pmtUsd: number; // per metric tonne, USD
+  pmtInr: number; // per metric tonne, INR
 }
 
-export interface PdaRootPie {
-  rootName: string; // e.g. "Ports"
-  root: PdaPiePoint[];
+// A fiscal-year half (e.g. "FY 25-26 H1"), driving the PDA card's period
+// dropdown; the chosen `period` is passed to the PDA endpoint.
+export interface PdaPeriod {
+  period: string; // "2025-26-H1"
+  periodDisplay: string; // "FY 25-26 H1"
 }
 
 // --- DP Handling Agents — Outstanding Payments (grouped column) ------------
@@ -59,6 +61,14 @@ export interface HandlingRatesResponse {
   items: HandlingRateRow[];
 }
 
+export interface PdaResponse {
+  items: PdaRow[];
+}
+
+export interface PdaPeriodResponse {
+  period: PdaPeriod[];
+}
+
 // Drives the fiscal-year dropdown in the Handling Rates card header.
 export interface FiscalYear {
   fiscalYear: string; // "2025-26"
@@ -69,8 +79,7 @@ export interface FiscalYearResponse {
   fiscalYear: FiscalYear[];
 }
 
-// Portwise PDA returns PdaRootPie, and DP Handling Agents returns
-// DpHandlingOutstanding, directly.
+// DP Handling Agents returns DpHandlingOutstanding directly.
 
 export interface LogisticsFilters {
   fromDate?: string;

@@ -6,16 +6,16 @@ import type {
   FiscalYearResponse,
   HandlingRatesResponse,
   LogisticsFilters,
-  PdaDrilldownSeries,
-  PdaRootPie,
+  PdaPeriodResponse,
+  PdaResponse,
   VesselsSailedResponse,
 } from "../types/logistics";
 import {
   buildFiscalYears,
   buildHandlingRates,
   buildOutstanding,
-  buildPdaDrill,
-  buildPdaRoot,
+  buildPda,
+  buildPdaPeriods,
   buildVesselsSailed,
 } from "../mocks/logistics";
 
@@ -43,10 +43,9 @@ const httpLogisticsApi = {
   fiscalYears: () => get<FiscalYearResponse>("/logistics/fiscal-year"),
   handlingRates: (year?: string) =>
     get<HandlingRatesResponse>("/logistics/handling-rates", { year }),
-  pda: () => get<PdaRootPie>("/logistics/pda"),
+  pda: (period?: string) => get<PdaResponse>("/logistics/pda", { period }),
+  pdaPeriods: () => get<PdaPeriodResponse>("/logistics/pda/periods"),
   outstanding: () => get<DpHandlingOutstanding>("/logistics/outstanding"),
-  pdaDrill: (path: string) =>
-    get<PdaDrilldownSeries>("/logistics/pda/drill", { path }),
 };
 
 const mockLogisticsApi = {
@@ -55,13 +54,9 @@ const mockLogisticsApi = {
   fiscalYears: () => mockDelay<FiscalYearResponse>({ fiscalYear: buildFiscalYears() }),
   handlingRates: (year?: string) =>
     mockDelay<HandlingRatesResponse>({ items: buildHandlingRates(year) }),
-  pda: () => mockDelay(buildPdaRoot()),
+  pda: (period?: string) => mockDelay<PdaResponse>({ items: buildPda(period) }),
+  pdaPeriods: () => mockDelay<PdaPeriodResponse>({ period: buildPdaPeriods() }),
   outstanding: () => mockDelay(buildOutstanding()),
-  pdaDrill: (path: string) => {
-    const level = buildPdaDrill(path);
-    if (!level) return Promise.reject(new Error(`not_found: Unknown drilldown path: ${path}`));
-    return mockDelay(level);
-  },
 };
 
 export const logisticsApi = USE_MOCK_DATA ? mockLogisticsApi : httpLogisticsApi;

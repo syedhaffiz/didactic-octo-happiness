@@ -3,16 +3,16 @@ import type {
   FiscalYearResponse,
   HandlingRatesResponse,
   LogisticsFilters,
-  PdaDrilldownSeries,
-  PdaRootPie,
+  PdaPeriodResponse,
+  PdaResponse,
   VesselsSailedResponse,
 } from "../types/logistics.js";
 import {
   buildFiscalYears,
   buildHandlingRates,
   buildOutstanding,
-  buildPdaDrill,
-  buildPdaRoot,
+  buildPda,
+  buildPdaPeriods,
   buildVesselsSailed,
 } from "../mocks/logistics.js";
 
@@ -20,9 +20,9 @@ export interface LogisticsRepository {
   getVesselsSailed(filters: LogisticsFilters): Promise<VesselsSailedResponse>;
   getFiscalYears(): Promise<FiscalYearResponse>;
   getHandlingRates(year: string | undefined): Promise<HandlingRatesResponse>;
-  getPda(): Promise<PdaRootPie>;
+  getPda(period: string | undefined): Promise<PdaResponse>;
+  getPdaPeriods(): Promise<PdaPeriodResponse>;
   getOutstanding(): Promise<DpHandlingOutstanding>;
-  getPdaDrill(path: string): Promise<PdaDrilldownSeries | null>;
 }
 
 class MockLogisticsRepository implements LogisticsRepository {
@@ -35,14 +35,14 @@ class MockLogisticsRepository implements LogisticsRepository {
   async getHandlingRates(year: string | undefined) {
     return { items: buildHandlingRates(year) };
   }
-  async getPda() {
-    return buildPdaRoot();
+  async getPda(period: string | undefined) {
+    return { items: buildPda(period) };
+  }
+  async getPdaPeriods() {
+    return { period: buildPdaPeriods() };
   }
   async getOutstanding() {
     return buildOutstanding();
-  }
-  async getPdaDrill(path: string) {
-    return buildPdaDrill(path);
   }
 }
 

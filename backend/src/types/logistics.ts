@@ -33,31 +33,24 @@ export interface FiscalYearResponse {
   fiscalYear: FiscalYear[];
 }
 
-// --- Portwise PDA (drilldown pie: Ports -> Operations) ---------------------
-// PDA = Port Disbursement Account. Root pie is by port; drilling a port slice
-// fetches the per-operation (shipping-agent) split for that port.
-
-// A single pie slice. `drilldown` is the id of the child level, or null for a
-// leaf slice.
-export interface PdaPiePoint {
-  name: string;
-  y: number;
-  drilldown: string | null;
-}
-
-// One drilldown level, fetched lazily on slice click. `tier` labels what the
-// child slices represent (e.g. "Operations").
-export interface PdaDrilldownSeries {
+// --- Portwise PDA ----------------------------------------------------------
+// PDA = Port Disbursement Account. One row per port + vessel-type combination,
+// with the quantity handled and the per-metric-tonne (PMT) cost in USD and INR.
+export interface PdaRow {
   id: string;
-  tier: string;
-  data: PdaPiePoint[];
+  port: string;
+  vesselType: string;
+  qty: number; // MT
+  totalWithGst: number;
+  pmtUsd: number; // per metric tonne, USD
+  pmtInr: number; // per metric tonne, INR
 }
 
-// Only the root level (by port) ships with the page; deeper levels are fetched
-// on demand via the drill endpoint.
-export interface PdaRootPie {
-  rootName: string; // e.g. "Ports"
-  root: PdaPiePoint[];
+// A fiscal-year half (e.g. "FY 25-26 H1"), driving the PDA card's period
+// dropdown; the chosen `period` is passed to the PDA endpoint.
+export interface PdaPeriod {
+  period: string; // "2025-26-H1"
+  periodDisplay: string; // "FY 25-26 H1"
 }
 
 // --- DP Handling Agents — Outstanding Payments (grouped column) ------------
@@ -84,8 +77,15 @@ export interface HandlingRatesResponse {
   items: HandlingRateRow[];
 }
 
-// Portwise PDA returns PdaRootPie, and DP Handling Agents returns
-// DpHandlingOutstanding, directly.
+export interface PdaResponse {
+  items: PdaRow[];
+}
+
+export interface PdaPeriodResponse {
+  period: PdaPeriod[];
+}
+
+// DP Handling Agents returns DpHandlingOutstanding directly.
 
 export interface LogisticsFilters {
   fromDate?: string;

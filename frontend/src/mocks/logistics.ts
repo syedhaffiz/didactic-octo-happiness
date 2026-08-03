@@ -7,9 +7,8 @@ import type {
   DpHandlingOutstanding,
   FiscalYear,
   HandlingRateRow,
-  PdaDrilldownSeries,
-  PdaPiePoint,
-  PdaRootPie,
+  PdaPeriod,
+  PdaRow,
   VesselSailedRow,
 } from "../types/logistics";
 
@@ -113,67 +112,74 @@ export const buildHandlingRates = (year?: string): HandlingRateRow[] => {
 };
 
 // --- Portwise PDA ----------------------------------------------------------
-interface PdaPort {
-  id: string;
-  name: string;
-  value: number;
+// One row per port + vessel-type combination. Pinned to the design exports for
+// the default period; other periods apply a deterministic factor so switching
+// the dropdown visibly changes the table.
+interface PdaBaseRow {
+  port: string;
+  vesselType: string;
+  qty: number; // MT
+  totalWithGst: number;
+  pmtUsd: number;
+  pmtInr: number;
 }
-const PDA_PORTS: PdaPort[] = [
-  { id: "pradip", name: "Pradip", value: 17900 },
-  { id: "goa", name: "Goa", value: 7000 },
-  { id: "krishnapatnam", name: "Krishnapatnam", value: 3200 },
-  { id: "gangavaram", name: "Gangavaram", value: 1500 },
-];
-const PDA_OTHERS = 70400;
 
-const PDA_AGENTS = [
-  "GAC Shipping (INDIA) PVT LTD",
-  "Taurus Shipping Pvt Ltd",
-  "Seahorse Ship Agencies",
-  "J M Baxi & Co",
+const PDA_ROWS: PdaBaseRow[] = [
+  { port: "Haldia", vesselType: "Supramax", qty: 33000, totalWithGst: 72984.5, pmtUsd: 2.21, pmtInr: 210.11 },
+  { port: "Haldia", vesselType: "Panamax", qty: 33000, totalWithGst: 94264.81, pmtUsd: 2.86, pmtInr: 271.37 },
+  { port: "Haldia", vesselType: "Cape", qty: 90000, totalWithGst: 101808.54, pmtUsd: 1.13, pmtInr: 107.46 },
+  { port: "Haldia", vesselType: "Cape", qty: 90000, totalWithGst: 104664.36, pmtUsd: 1.16, pmtInr: 110.48 },
+  { port: "Paradip", vesselType: "Supramax", qty: 60000, totalWithGst: 57001.91, pmtUsd: 0.95, pmtInr: 90.25 },
+  { port: "Paradip", vesselType: "Panamax", qty: 75000, totalWithGst: 77650.15, pmtUsd: 1.04, pmtInr: 98.36 },
+  { port: "Paradip", vesselType: "Cape", qty: 120000, totalWithGst: 153943.91, pmtUsd: 1.28, pmtInr: 121.87 },
+  { port: "Dhamra", vesselType: "Supramax", qty: 60500, totalWithGst: 134799.05, pmtUsd: 2.23, pmtInr: 211.67 },
 ];
 
-const pdaDrillId = (portId: string) => `pda-${portId}`;
+// Fiscal-year halves for the dropdown, latest first; the first is the default.
+const PDA_PERIODS = ["2025-26-H1", "2025-26-H2", "2024-25-H1", "2024-25-H2"];
+const DEFAULT_PDA_PERIOD = PDA_PERIODS[0]!;
 
-export const buildPdaRoot = (): PdaRootPie => ({
-  rootName: "Ports",
-  root: [
-    ...PDA_PORTS.map(
-      (p): PdaPiePoint => ({ name: p.name, y: p.value, drilldown: pdaDrillId(p.id) }),
-    ),
-    { name: "Others", y: PDA_OTHERS, drilldown: null },
-  ],
-});
+// "2025-26-H1" -> "FY 25-26 H1"
+const pdaPeriodDisplay = (period: string): string => {
+  const [start = "", end = "", half = ""] = period.split("-");
+  return `FY ${start.slice(2)}-${end} ${half}`.trim();
+};
 
-export const buildPdaDrill = (path: string): PdaDrilldownSeries | null => {
-  const port = PDA_PORTS.find((p) => pdaDrillId(p.id) === path);
-  if (!port) return null;
+export const buildPdaPeriods = (): PdaPeriod[] =>
+  PDA_PERIODS.map((p) => ({ period: p, periodDisplay: pdaPeriodDisplay(p) }));
 
-  const rng = seeded(seedFromString(`log-pda-${port.id}`));
-  const count = intRange(rng, 2, 3);
-  const agents = PDA_AGENTS.slice(0, count);
+const round2 = (n: number) => Math.round(n * 100) / 100;
 
-  const weights = agents.map(() => range(rng, 0.4, 1));
-  const weightSum = weights.reduce((a, b) => a + b, 0);
-  const data: PdaPiePoint[] = agents.map((name, i) => ({
-    name,
-    y: Math.round((weights[i]! / weightSum) * port.value),
-    drilldown: null,
-  }));
-
-  return { id: path, tier: "Operations", data };
+// Rows depend on the selected period. The default period returns the pinned
+// design figures; other periods apply a deterministic per-period variation.
+export const buildPda = (period?: string): PdaRow[] => {
+  const p = period ?? DEFAULT_PDA_PERIOD;
+  const rows = PDA_ROWS.map((r, i): PdaRow => ({ id: `pda-${i + 1}`, ...r }));
+  if (p === DEFAULT_PDA_PERIOD) return rows;
+  return rows.map((r) => {
+    const rng = seeded(seedFromString(`log-pda-${r.id}-${p}`));
+    const factor = 0.85 + rng() * 0.3; // ±15%
+    return {
+      ...r,
+      qty: roundTo(r.qty * factor, 50),
+      totalWithGst: round2(r.totalWithGst * factor),
+      pmtUsd: round2(r.pmtUsd * factor),
+      pmtInr: round2(r.pmtInr * factor),
+    };
+  });
 };
 
 // --- DP Handling Agents — Outstanding Payments -----------------------------
 // Outstanding amount owed to each handling agent, grouped by category. Values
 // pinned to the design exports (in the port's local currency).
+const HANDLING_AGENTS = ["GAC Shipping (INDIA) PVT LTD", "Taurus Shipping Pvt Ltd"];
 const OUTSTANDING_CATEGORIES = ["Operations", "Pradip"];
 
 export const buildOutstanding = (): DpHandlingOutstanding => ({
   unit: "Local Currency",
   categories: [...OUTSTANDING_CATEGORIES],
   series: [
-    { agent: PDA_AGENTS[0]!, data: [98_440_000, 138_260_000] },
-    { agent: PDA_AGENTS[1]!, data: [146_240_000, 1_230_000] },
+    { agent: HANDLING_AGENTS[0]!, data: [98_440_000, 138_260_000] },
+    { agent: HANDLING_AGENTS[1]!, data: [146_240_000, 1_230_000] },
   ],
 });

@@ -1,178 +1,147 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Card, Empty } from "antd";
-import Highcharts from "highcharts";
-// Chart.tsx registers the drilldown module (after the Highcharts core import),
-// so importing Chart here guarantees drilldown is available.
-import { Chart } from "../Chart";
-import { ErrorBoundary } from "../ErrorBoundary";
+import { useMemo } from "react";
+import { Card, Empty, Select, Skeleton, Table } from "antd";
+import type { ColumnsType } from "antd/es/table";
+import { AimOutlined } from "@ant-design/icons";
+import { brand } from "../../theme/tokens";
+import { useBrandTokens } from "../../theme/useBrandTokens";
 import { ErrorRetry } from "../ErrorRetry";
 import { logisticsApi } from "../../api/logistics";
 import { useApi } from "../../api/useApi";
-import { brand, fontFamily, logisticsColors } from "../../theme/tokens";
-import type { PdaDrilldownSeries, PdaPiePoint } from "../../types/logistics";
+import { useUrlParam } from "../../utils/useUrlParam";
+import type { PdaRow } from "../../types/logistics";
 
-// Root slices read as a navy ramp (matching the design); drilled "Operations"
-// levels use a distinct categorical palette so the change in tier is obvious.
-const { pdaRoot, pdaDrill } = logisticsColors;
+// Two-decimal, no grouping — matches the design's figures (e.g. "90000.00").
+const fmt2 = (n: number) => n.toFixed(2);
 
-const rootColorFor = (i: number) => pdaRoot[i % pdaRoot.length];
-const drillColorFor = (i: number) => pdaDrill[i % pdaDrill.length];
-
-// Tooltip: entity name, its PDA volume and the share of the level it sits in.
-const tooltipFormatter = function (this: Highcharts.Point): string {
-  const pct = typeof this.percentage === "number" ? this.percentage : 0;
-  const header = `<span style="font-size:13px;font-weight:700;color:${brand.headline}">${this.name}</span><br/>`;
-  return (
-    header +
-    `<b>PDA:</b> ${Highcharts.numberFormat(this.y ?? 0, 0)}<br/>` +
-    `<b>Share:</b> ${pct.toFixed(1)}%`
-  );
-};
-
-const toPoint = (pt: PdaPiePoint, color?: string) => ({
-  name: pt.name,
-  y: pt.y,
-  drilldown: pt.drilldown ?? undefined,
-  ...(color ? { color } : {}),
-});
-
-const toDrilldownSeries = (lvl: PdaDrilldownSeries): Highcharts.SeriesOptionsType =>
-  ({
-    id: lvl.id,
-    name: lvl.tier,
-    type: "pie",
-    data: lvl.data.map((pt, i) => toPoint(pt, drillColorFor(i))),
-  }) as Highcharts.SeriesOptionsType;
+// Column header with a smaller, muted unit suffix (e.g. "Qty (in MT)").
+const unitHeader = (label: string, unit: string) => (
+  <span>
+    {label} <span style={{ fontWeight: 400, color: brand.textMuted }}>({unit})</span>
+  </span>
+);
 
 interface Props {
   title: string;
-  height?: number;
 }
 
-// Portwise PDA pie. Fetches its own root (per-port PDA); each port slice click
-// then fetches that port's operations split from the drill endpoint and adds it
-// via addSeriesAsDrilldown. Fetched levels are cached per id so drill-up/re-drill
-// is instant. The Spin overlay shows while a level is in flight.
-export const PortwisePdaCard = ({ title, height = 360 }: Props) => {
-  const { data: root, isLoading, isError, error, refetch } = useApi(
-    ["logistics", "pda"],
-    () => logisticsApi.pda(),
+// Portwise PDA (Port Disbursement Account): a per-port / per-vessel-type table
+// of quantity handled and the per-metric-tonne cost with GST, in USD and INR.
+// The header dropdown selects a fiscal-year half; the chosen period drives the
+// query and is mirrored to the URL so the view is shareable.
+export const PortwisePdaCard = ({ title }: Props) => {
+  const t = useBrandTokens();
+
+  // Period list drives the header dropdown; the first entry is the default.
+  const periods = useApi(["logistics", "pda-periods"], () => logisticsApi.pdaPeriods());
+  const [period, setPeriod] = useUrlParam("pdaPeriod");
+  const defaultPeriod = periods.data?.period[0]?.period;
+  const activePeriod = period ?? defaultPeriod;
+
+  // Rows depend on the selected period. Wait for a period to resolve before
+  // firing (unless the period list failed, in which case fall back to the API's
+  // own default period so the table still loads).
+  const { data, isLoading, isError, error, refetch } = useApi(
+    ["logistics", "pda", activePeriod, periods.isError],
+    () =>
+      activePeriod
+        ? logisticsApi.pda(activePeriod)
+        : periods.isError
+          ? logisticsApi.pda(undefined)
+          : new Promise<never>(() => {}),
   );
-  const [drilling, setDrilling] = useState(false);
-  // id -> already-fetched level. Reset whenever the root payload changes.
-  const cacheRef = useRef<Map<string, PdaDrilldownSeries>>(new Map());
-  useEffect(() => {
-    cacheRef.current.clear();
-  }, [root]);
+  const rows = data?.items;
 
-  const options = useMemo<Highcharts.Options>(() => {
-    const rootSlices = root?.root ?? [];
-    return {
-      chart: {
-        type: "pie",
-        height,
-        style: { fontFamily },
-        events: {
-          drilldown(this: Highcharts.Chart, e: Highcharts.DrilldownEventObject) {
-            if (e.seriesOptions) return; // already present
-            const id = (e.point as Highcharts.Point & { drilldown?: string }).drilldown;
-            if (!id) return;
-            const chart = this;
-
-            const cached = cacheRef.current.get(id);
-            if (cached) {
-              chart.addSeriesAsDrilldown(e.point, toDrilldownSeries(cached));
-              return;
-            }
-
-            setDrilling(true);
-            logisticsApi
-              .pdaDrill(id)
-              .then((level) => {
-                cacheRef.current.set(id, level);
-                chart.addSeriesAsDrilldown(e.point, toDrilldownSeries(level));
-              })
-              .catch(() => {
-                /* swallow — chart stays at the current level */
-              })
-              .finally(() => setDrilling(false));
-          },
-        },
+  const columns: ColumnsType<PdaRow> = useMemo(
+    () => [
+      {
+        title: "Ports",
+        dataIndex: "port",
+        key: "port",
+        sorter: (a, b) => a.port.localeCompare(b.port),
+        render: (v: string) => <span style={{ color: t.linkBlue, fontWeight: 500 }}>{v}</span>,
       },
-      title: { text: undefined },
-      tooltip: { useHTML: true, formatter: tooltipFormatter },
-      plotOptions: {
-        pie: {
-          borderRadius: 4,
-          // Pin the diameter so the pie keeps a constant size across levels —
-          // otherwise the longer drilled labels (agent names) reserve more room
-          // and shrink it on drill. `crop:false` / `overflow:"allow"` let those
-          // long labels extend past the plot instead of squeezing the pie.
-          size: "72%",
-          center: ["50%", "50%"],
-          dataLabels: [
-            {
-              enabled: true,
-              distance: 14,
-              format: "<b>{point.name}</b>",
-              crop: false,
-              overflow: "allow",
-            },
-            {
-              enabled: true,
-              distance: "-30%",
-              filter: { property: "percentage", operator: ">", value: 4 },
-              format: "{point.percentage:.1f}%",
-              style: { fontSize: "11px", textOutline: "none", color: brand.white },
-            },
-          ],
-        },
+      {
+        title: "Vessel Type",
+        dataIndex: "vesselType",
+        key: "vesselType",
+        sorter: (a, b) => a.vesselType.localeCompare(b.vesselType),
+        render: (v: string) => <span style={{ color: t.linkBlue, fontWeight: 500 }}>{v}</span>,
       },
-      series: [
-        {
-          type: "pie",
-          name: root?.rootName ?? "Ports",
-          data: rootSlices.map((pt, i) => toPoint(pt, rootColorFor(i))),
-        },
-      ],
-      drilldown: {
-        breadcrumbs: {
-          buttonTheme: { style: { color: brand.accent, fontWeight: "bold" } },
-        },
-        activeDataLabelStyle: { color: brand.white, textDecoration: "none" },
-        // Empty — every level is supplied lazily by the drilldown handler.
-        series: [],
+      {
+        title: unitHeader("Qty", "in MT"),
+        dataIndex: "qty",
+        key: "qty",
+        align: "right",
+        sorter: (a, b) => a.qty - b.qty,
+        render: (v: number) => <span style={{ color: t.linkBlue, fontWeight: 600 }}>{fmt2(v)}</span>,
       },
-    };
-  }, [root, height]);
+      {
+        title: "Total with GST",
+        dataIndex: "totalWithGst",
+        key: "totalWithGst",
+        align: "right",
+        sorter: (a, b) => a.totalWithGst - b.totalWithGst,
+        render: fmt2,
+      },
+      {
+        title: unitHeader("PMT", "IN USD"),
+        dataIndex: "pmtUsd",
+        key: "pmtUsd",
+        align: "right",
+        sorter: (a, b) => a.pmtUsd - b.pmtUsd,
+        render: fmt2,
+      },
+      {
+        title: unitHeader("PMT", "IN INR"),
+        dataIndex: "pmtInr",
+        key: "pmtInr",
+        align: "right",
+        sorter: (a, b) => a.pmtInr - b.pmtInr,
+        render: fmt2,
+      },
+    ],
+    [t.linkBlue],
+  );
 
-  const hasData = (root?.root?.length ?? 0) > 0;
+  const cardTitle = (
+    <span>
+      <AimOutlined style={{ color: t.accentText, marginRight: 8 }} />
+      {title}
+    </span>
+  );
+
+  const periodSelect = (
+    <Select
+      size="small"
+      value={activePeriod}
+      onChange={(v) => setPeriod(v === defaultPeriod ? undefined : v)}
+      options={(periods.data?.period ?? []).map((p) => ({
+        value: p.period,
+        label: p.periodDisplay,
+      }))}
+      loading={periods.isLoading}
+      placeholder="Period"
+      style={{ width: 150 }}
+    />
+  );
 
   return (
-    <Card
-      title={<span style={{ fontWeight: 700, fontSize: 15 }}>{title}</span>}
-      // Flex column so the body fills the (stretched) card height and the chart
-      // sits centered — no dead space when this card is shorter than its row peer.
-      style={{ height: "100%", display: "flex", flexDirection: "column" }}
-      styles={{
-        header: { borderBottom: "none" },
-        body: {
-          paddingTop: 0,
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-        },
-      }}
-    >
+    <Card title={cardTitle} extra={periodSelect} style={{ height: "100%" }}>
       {isError ? (
         <ErrorRetry title="Could not load Portwise PDA" error={error} onRetry={refetch} />
-      ) : !hasData && !isLoading ? (
-        <Empty description="No PDA data" style={{ padding: 32 }} />
+      ) : isLoading || !rows ? (
+        <Skeleton active paragraph={{ rows: 8 }} />
+      ) : rows.length === 0 ? (
+        <Empty description="No PDA data" />
       ) : (
-        <ErrorBoundary level="section" label={title}>
-          <Chart loading={isLoading || drilling} options={options} />
-        </ErrorBoundary>
+        <Table<PdaRow>
+          rowKey="id"
+          columns={columns}
+          dataSource={rows}
+          pagination={false}
+          size="middle"
+          scroll={{ x: "max-content" }}
+        />
       )}
     </Card>
   );

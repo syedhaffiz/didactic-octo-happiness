@@ -27,10 +27,10 @@ export const LogisticsPage = () => {
         <Col xs={24}>
           <VesselSailedCard fromDate={fromDate} toDate={toDate} />
         </Col>
-        <Col xs={24} lg={12}>
+        <Col xs={24} lg={10}>
           <HandlingRatesCard />
         </Col>
-        <Col xs={24} lg={12}>
+        <Col xs={24} lg={14}>
           <PortwisePdaCard title="Portwise PDA" />
         </Col>
         <Col xs={24}>

@@ -5,7 +5,7 @@ export const logisticsService = {
   vesselsSailed: (filters: LogisticsFilters) => logisticsRepository.getVesselsSailed(filters),
   fiscalYears: () => logisticsRepository.getFiscalYears(),
   handlingRates: (year: string | undefined) => logisticsRepository.getHandlingRates(year),
-  pda: () => logisticsRepository.getPda(),
+  pda: (period: string | undefined) => logisticsRepository.getPda(period),
+  pdaPeriods: () => logisticsRepository.getPdaPeriods(),
   outstanding: () => logisticsRepository.getOutstanding(),
-  pdaDrill: (path: string) => logisticsRepository.getPdaDrill(path),
 };

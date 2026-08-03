@@ -4,7 +4,7 @@ import {
   getHandlingRates,
   getOutstanding,
   getPda,
-  getPdaDrill,
+  getPdaPeriods,
   getVesselsSailed,
 } from "../controllers/logisticsController.js";
 
@@ -16,9 +16,10 @@ router.get("/vessels-sailed", getVesselsSailed);
 // year (e.g. ?year=2025-26) to /handling-rates.
 router.get("/fiscal-year", getFiscalYears);
 router.get("/handling-rates", getHandlingRates);
+// Portwise PDA table; the card passes the chosen half-year (e.g. ?period=2025-26-H1).
 router.get("/pda", getPda);
-// Lazy PDA drilldown level: /api/logistics/pda/drill?path=pda-pradip
-router.get("/pda/drill", getPdaDrill);
+// Fiscal-year-half list for the PDA card's period dropdown.
+router.get("/pda/periods", getPdaPeriods);
 router.get("/outstanding", getOutstanding);
 
 export default router;
