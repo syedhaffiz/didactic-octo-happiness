@@ -19,6 +19,25 @@ const envelope = (dataSchema: object) => ({
   },
 });
 
+// Shared query parameters for every Market Share data endpoint. `fiscalYears`
+// and `quarters` are comma-joined multiselect values; the rest are filter ids.
+const marketShareParams = [
+  { $ref: "#/components/parameters/FromDate" },
+  { $ref: "#/components/parameters/ToDate" },
+  ...[
+    "fiscalYears", "quarters", "share", "zone", "port", "origin", "segment",
+    "addressable", "industry", "category", "shipperName", "receiverName",
+  ].map((name) => ({
+    name,
+    in: "query",
+    schema: { type: "string" },
+    description:
+      name === "fiscalYears" || name === "quarters"
+        ? `Market Share filter: ${name} (comma-joined multiselect)`
+        : `Market Share filter: ${name}`,
+  })),
+];
+
 export const openApiSpec = {
   openapi: "3.0.3",
   info: {
@@ -446,44 +465,67 @@ export const openApiSpec = {
         },
       },
     },
-    "/marketing/market-share": {
+    "/marketing/market-share/split": {
       get: {
         tags: ["Marketing"],
-        summary: "Market share — root pies (Own/Non-Own) + shipper/receiver bars",
-        description: "Returns only the root level of each pie. Deeper levels are fetched on demand via `/marketing/market-share/drill`.",
-        parameters: [{ $ref: "#/components/parameters/FromDate" }, { $ref: "#/components/parameters/ToDate" }],
-        responses: { "200": envelopeResponse("MarketShareResponse") },
+        summary: "Market Share — own vs non-own split (aggregate donut)",
+        parameters: marketShareParams,
+        responses: { "200": envelopeResponse("MarketShareSplitResponse") },
       },
     },
-    "/marketing/market-share/drill": {
+    "/marketing/market-share/import-quantity": {
       get: {
         tags: ["Marketing"],
-        summary: "One lazily-loaded Market Share drilldown level",
-        parameters: [
-          {
-            name: "dim",
-            in: "query",
-            required: true,
-            schema: { type: "string", enum: ["geographic", "businessType"] },
-            description: "Which pie to drill: geographic (Zone→Port) or businessType (Port→Business Type).",
-          },
-          {
-            name: "path",
-            in: "query",
-            required: true,
-            schema: { type: "string" },
-            description: "Drilldown node id from the clicked point (e.g. `geo-own`, `geo-zone-1`, `business-mundra`).",
-          },
-        ],
-        responses: {
-          "200": envelopeResponse("MarketShareDrilldownSeries"),
-          "404": {
-            description: "Unknown path",
-            content: {
-              "application/json": { schema: envelope({ $ref: "#/components/schemas/ApiError" }) },
-            },
-          },
-        },
+        summary: "Market Share — Import Quantity (MMT) by fiscal year",
+        parameters: marketShareParams,
+        responses: { "200": envelopeResponse("MarketSharePairedResponse") },
+      },
+    },
+    "/marketing/market-share/by-category": {
+      get: {
+        tags: ["Marketing"],
+        summary: "Market Share — by business category",
+        parameters: marketShareParams,
+        responses: { "200": envelopeResponse("MarketSharePairedResponse") },
+      },
+    },
+    "/marketing/market-share/quarterwise": {
+      get: {
+        tags: ["Marketing"],
+        summary: "Market Share — Quarterwise Import (quarter × fiscal year)",
+        parameters: marketShareParams,
+        responses: { "200": envelopeResponse("MarketShareQuarterwiseResponse") },
+      },
+    },
+    "/marketing/market-share/industrywise": {
+      get: {
+        tags: ["Marketing"],
+        summary: "Market Share — Industry Wise Import",
+        parameters: marketShareParams,
+        responses: { "200": envelopeResponse("MarketSharePairedResponse") },
+      },
+    },
+    "/marketing/market-share/originwise": {
+      get: {
+        tags: ["Marketing"],
+        summary: "Market Share — Origin Wise Import",
+        parameters: marketShareParams,
+        responses: { "200": envelopeResponse("MarketSharePairedResponse") },
+      },
+    },
+    "/marketing/market-share/portwise": {
+      get: {
+        tags: ["Marketing"],
+        summary: "Market Share — Port Wise Import",
+        parameters: marketShareParams,
+        responses: { "200": envelopeResponse("MarketSharePairedResponse") },
+      },
+    },
+    "/marketing/market-share/filters": {
+      get: {
+        tags: ["Marketing"],
+        summary: "Market Share — Filters side-panel dropdown options",
+        responses: { "200": envelopeResponse("MarketShareFilterOptions") },
       },
     },
     "/marketing/ocean-freight": {
@@ -1137,57 +1179,61 @@ export const openApiSpec = {
           items: { type: "array", items: { $ref: "#/components/schemas/IndexChart" } },
         },
       },
-      MarketSharePiePoint: {
+      PairedBarRow: {
         type: "object",
-        required: ["name", "y", "drilldown", "own", "nonOwn"],
+        required: ["category", "own", "nonOwn"],
         properties: {
-          name: { type: "string" },
-          y: { type: "number" },
-          drilldown: { type: "string", nullable: true },
-          own: { type: "number" },
-          nonOwn: { type: "number" },
+          category: { type: "string" },
+          own: { type: "number", description: "Own volume" },
+          nonOwn: { type: "number", description: "Non-own volume" },
         },
       },
-      MarketShareDrilldownSeries: {
+      QuarterGroup: {
         type: "object",
-        required: ["id", "tier", "data"],
+        required: ["quarter", "rows"],
         properties: {
-          id: { type: "string" },
-          tier: { type: "string", example: "Zone" },
-          data: { type: "array", items: { $ref: "#/components/schemas/MarketSharePiePoint" } },
+          quarter: { type: "string", example: "QTR - 1" },
+          rows: { type: "array", items: { $ref: "#/components/schemas/PairedBarRow" } },
         },
       },
-      MarketShareRootPie: {
+      MarketShareSplitResponse: {
         type: "object",
-        required: ["rootName", "root"],
+        required: ["unit", "own", "nonOwn", "total"],
         properties: {
-          rootName: { type: "string", example: "Market Share" },
-          root: { type: "array", items: { $ref: "#/components/schemas/MarketSharePiePoint" } },
+          unit: { type: "string", example: "MMT" },
+          own: { type: "number", description: "Own share" },
+          nonOwn: { type: "number", description: "Non-own share" },
+          total: { type: "number" },
         },
       },
-      ShipperReceiverRow: {
+      MarketSharePairedResponse: {
         type: "object",
-        required: ["port", "shipperOwn", "shipperNonOwn", "receiverOwn", "receiverNonOwn"],
+        required: ["unit", "rows"],
         properties: {
-          port: { type: "string" },
-          shipperOwn: { type: "number" },
-          shipperNonOwn: { type: "number" },
-          receiverOwn: { type: "number" },
-          receiverNonOwn: { type: "number" },
+          unit: { type: "string", example: "MMT" },
+          rows: { type: "array", items: { $ref: "#/components/schemas/PairedBarRow" } },
         },
       },
-      MarketShareResponse: {
+      MarketShareQuarterwiseResponse: {
         type: "object",
-        required: ["unit", "geographic", "businessType", "shipperReceiver"],
+        required: ["unit", "groups"],
         properties: {
-          unit: { type: "string", example: "MT" },
-          geographic: { $ref: "#/components/schemas/MarketShareDrilldownPie" },
-          businessType: { $ref: "#/components/schemas/MarketShareDrilldownPie" },
-          shipperReceiver: {
-            type: "array",
-            items: { $ref: "#/components/schemas/ShipperReceiverRow" },
-          },
+          unit: { type: "string", example: "MMT" },
+          groups: { type: "array", items: { $ref: "#/components/schemas/QuarterGroup" } },
         },
+      },
+      MarketShareFilterOptions: {
+        type: "object",
+        required: [
+          "fiscalYears", "shares", "zones", "ports", "origins", "segments",
+          "addressable", "industries", "categories", "shipperNames", "receiverNames",
+        ],
+        properties: Object.fromEntries(
+          [
+            "fiscalYears", "shares", "zones", "ports", "origins", "segments",
+            "addressable", "industries", "categories", "shipperNames", "receiverNames",
+          ].map((k) => [k, { type: "array", items: { $ref: "#/components/schemas/FilterRef" } }]),
+        ),
       },
       FreightSeries: {
         type: "object",

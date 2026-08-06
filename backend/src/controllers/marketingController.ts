@@ -49,30 +49,97 @@ export const getIndex: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const getMarketShare: RequestHandler = async (req, res, next) => {
+// Shared query schema for every Market Share data endpoint. Multiselect
+// filters (fiscalYears, quarters) arrive comma-joined; the rest are ids.
+const marketShareFilterSchema = z.object({
+  fiscalYears: z.string().optional(),
+  quarters: z.string().optional(),
+  share: z.string().optional(),
+  zone: z.string().optional(),
+  port: z.string().optional(),
+  origin: z.string().optional(),
+  segment: z.string().optional(),
+  addressable: z.string().optional(),
+  industry: z.string().optional(),
+  category: z.string().optional(),
+  shipperName: z.string().optional(),
+  receiverName: z.string().optional(),
+  fromDate: z.string().optional(),
+  toDate: z.string().optional(),
+});
+
+export const getMarketShareSplit: RequestHandler = async (req, res, next) => {
   try {
-    const q = parse(dateRangeSchema, req.query);
-    res.json(ok(await marketingService.marketShare(q)));
+    res.json(ok(await marketingService.marketShareSplit(parse(marketShareFilterSchema, req.query))));
   } catch (e) {
     next(e);
   }
 };
 
-const marketShareDrillSchema = z.object({
-  dim: z.enum(["geographic", "businessType"]),
-  path: z.string().min(1),
-});
-
-// Lazy drilldown: one level of a Market Share pie, fetched on slice click.
-export const getMarketShareDrill: RequestHandler = async (req, res, next) => {
+export const getMarketShareImportQuantity: RequestHandler = async (req, res, next) => {
   try {
-    const q = parse(marketShareDrillSchema, req.query);
-    const level = await marketingService.marketShareDrill(q.dim, q.path);
-    if (!level) {
-      res.status(404).json(fail("not_found", `Unknown drilldown path: ${q.path}`));
-      return;
-    }
-    res.json(ok(level));
+    res.json(
+      ok(await marketingService.marketShareImportQuantity(parse(marketShareFilterSchema, req.query))),
+    );
+  } catch (e) {
+    next(e);
+  }
+};
+
+export const getMarketShareByCategory: RequestHandler = async (req, res, next) => {
+  try {
+    res.json(
+      ok(await marketingService.marketShareByCategory(parse(marketShareFilterSchema, req.query))),
+    );
+  } catch (e) {
+    next(e);
+  }
+};
+
+export const getMarketShareQuarterwise: RequestHandler = async (req, res, next) => {
+  try {
+    res.json(
+      ok(await marketingService.marketShareQuarterwise(parse(marketShareFilterSchema, req.query))),
+    );
+  } catch (e) {
+    next(e);
+  }
+};
+
+export const getMarketShareIndustrywise: RequestHandler = async (req, res, next) => {
+  try {
+    res.json(
+      ok(await marketingService.marketShareIndustrywise(parse(marketShareFilterSchema, req.query))),
+    );
+  } catch (e) {
+    next(e);
+  }
+};
+
+export const getMarketShareOriginwise: RequestHandler = async (req, res, next) => {
+  try {
+    res.json(
+      ok(await marketingService.marketShareOriginwise(parse(marketShareFilterSchema, req.query))),
+    );
+  } catch (e) {
+    next(e);
+  }
+};
+
+export const getMarketSharePortwise: RequestHandler = async (req, res, next) => {
+  try {
+    res.json(
+      ok(await marketingService.marketSharePortwise(parse(marketShareFilterSchema, req.query))),
+    );
+  } catch (e) {
+    next(e);
+  }
+};
+
+// Dropdown option lists for the Filters side-panel.
+export const getMarketShareFilterOptions: RequestHandler = async (_req, res, next) => {
+  try {
+    res.json(ok(await marketingService.marketShareFilterOptions()));
   } catch (e) {
     next(e);
   }

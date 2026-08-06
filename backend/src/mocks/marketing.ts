@@ -2,25 +2,37 @@
 // stable across runs. Mirrored in frontend/src/mocks/marketing.ts.
 
 import { seeded, seedFromString, range, round } from "./rand.js";
+import {
+  ADDRESSABLE_LIST,
+  CATEGORY_LIST,
+  FISCAL_YEAR_LIST,
+  INDUSTRY_LIST,
+  ORIGIN_LIST,
+  PORT_LIST,
+  RECEIVER_NAME_LIST,
+  SEGMENT_LIST,
+  SHARE_LIST,
+  SHIPPER_NAME_LIST,
+  ZONE_LIST,
+} from "./catalog.js";
 import type {
   IndexCadence,
   IndexChart,
   IndexMovementResponse,
   IndexRange,
   IndexSeries,
-  MarketShareResponse,
-  MarketShareDimension,
-  MarketShareRootPie,
-  MarketShareDrilldownSeries,
-  MarketSharePiePoint,
-  ShipperReceiverRow,
+  MarketShareFilters,
+  MarketShareFilterOptions,
+  MarketSharePairedResponse,
+  MarketShareQuarterwiseResponse,
+  MarketShareSplitResponse,
+  PairedBarRow,
   OceanFreightResponse,
   FreightChart,
   FreightSeries,
   TargetResponse,
   BarRow,
   BudgetActualRow,
-  MarketShareFilters,
   OceanFreightFilters,
   TargetFilters,
 } from "../types/marketing.js";
@@ -147,176 +159,146 @@ export const buildIndexMovement = (r: IndexRange): IndexMovementResponse => ({
 
 
 // --- Market Share ----------------------------------------------------------
+// Seven independently-fetched cards. Every builder seeds its RNG from the full
+// filter set (via `seedFor`) so changing any filter deterministically shifts
+// the numbers — a stand-in for the per-query re-aggregation a real backend
+// would do. `own` = the client's own volume; `nonOwn` = competitors (display
+// labels applied by the UI).
 
-// Base geographic dataset: Zone -> Port with the Own / Non-Own volume split (MT).
-// Drives both the geographic pie and the business-type pie.
-interface PortDatum {
-  port: string;
-  own: number;
-  nonOwn: number;
-}
-const ZONE_PORTS: { zone: string; ports: PortDatum[] }[] = [
-  { zone: "Zone-1", ports: [
-    { port: "MUNDRA", own: 679970, nonOwn: 325005 },
-    { port: "TUNA", own: 203238, nonOwn: 479834 },
-  ] },
-  { zone: "Zone-2", ports: [
-    { port: "NAVLAKHI", own: 135803, nonOwn: 439935 },
-  ] },
-  { zone: "Zone-3", ports: [
-    { port: "HAZIRA", own: 300000, nonOwn: 464700 },
-    { port: "DAHEJ", own: 368271, nonOwn: 296349 },
-  ] },
-  { zone: "Zone-4", ports: [
-    { port: "DHARAMTAR", own: 60500, nonOwn: 405911 },
-  ] },
-  { zone: "Zone-5", ports: [
-    { port: "KRISHNAPATNAM", own: 172411, nonOwn: 673416 },
-    { port: "NEW MANGALORE", own: 76471, nonOwn: 174295 },
-  ] },
-  { zone: "Zone-6", ports: [
-    { port: "TUTICORIN", own: 80000, nonOwn: 470384 },
-  ] },
-  { zone: "Zone-7", ports: [
-    { port: "GANGAVARAM", own: 197000, nonOwn: 240500 },
-  ] },
-  { zone: "Zone-8", ports: [
-    { port: "DHAMRA", own: 192040, nonOwn: 839219 },
-    { port: "HALDIA", own: 86094, nonOwn: 120003 },
-  ] },
-];
+const MMT = "MMT";
+const FISCAL_YEARS = ["FY 2022-23", "FY 2023-24", "FY 2024-25", "FY 2025-26"];
 
-// Per-port End-User share of the Own volume (rest is Trader). Stable per port.
-const ENDUSER_RATIO: Record<string, number> = {
-  MUNDRA: 0.894, TUNA: 1.0, NAVLAKHI: 1.0, HAZIRA: 0.63, DAHEJ: 0.795,
-  DHARAMTAR: 1.0, KRISHNAPATNAM: 1.0, "NEW MANGALORE": 1.0, TUTICORIN: 1.0,
-  GANGAVARAM: 0.62, DHAMRA: 1.0, HALDIA: 0.65,
-};
+// One RNG seeded from the card key + the whole filter object.
+const seedFor = (f: MarketShareFilters, key: string) =>
+  seeded(seedFromString(`mkt-share-${key}-${JSON.stringify(f)}`));
 
-const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+const roundStep = (n: number, step: number) => Math.round(n / step) * step;
 
-const totalsOf = (ports: PortDatum[]) =>
-  ports.reduce(
-    (acc, p) => ({ own: acc.own + p.own, nonOwn: acc.nonOwn + p.nonOwn }),
-    { own: 0, nonOwn: 0 },
-  );
-
-// Builds the root Own / Non-Own slices shared by both pies. The "Own" slice
-// drills into `ownDrilldownId`; "Non-Own" is a leaf.
-const rootSlices = (
-  ownDrilldownId: string,
-  totalOwn: number,
-  totalNonOwn: number,
-): MarketSharePiePoint[] => [
-  { name: "Own", y: totalOwn, drilldown: ownDrilldownId, own: totalOwn, nonOwn: totalNonOwn },
-  { name: "Non-Own", y: totalNonOwn, drilldown: null, own: totalOwn, nonOwn: totalNonOwn },
-];
-
-const grandTotals = () => totalsOf(ZONE_PORTS.flatMap((z) => z.ports));
-
-// Root pies (the only data shipped with the page). Deeper levels are produced
-// by the level builders below and served lazily through the drill endpoint.
-const geographicRoot = (): MarketShareRootPie => {
-  const g = grandTotals();
-  return { rootName: "Market Share", root: rootSlices("geo-own", g.own, g.nonOwn) };
-};
-const businessTypeRoot = (): MarketShareRootPie => {
-  const g = grandTotals();
-  return { rootName: "Market Share", root: rootSlices("business-own", g.own, g.nonOwn) };
-};
-
-// Geographic: Market -> Zone -> Port. All levels keyed by id:
-//   geo-own            -> the 8 zones
-//   geo-<zone-slug>    -> that zone's ports (leaf)
-const geographicLevels = (): MarketShareDrilldownSeries[] => {
-  const zoneLevel: MarketSharePiePoint[] = ZONE_PORTS.map((z) => {
-    const t = totalsOf(z.ports);
-    return { name: z.zone, y: t.own, drilldown: `geo-${slug(z.zone)}`, own: t.own, nonOwn: t.nonOwn };
-  });
-  const portSeries: MarketShareDrilldownSeries[] = ZONE_PORTS.map((z) => ({
-    id: `geo-${slug(z.zone)}`,
-    tier: "Port",
-    data: z.ports.map((p) => ({ name: p.port, y: p.own, drilldown: null, own: p.own, nonOwn: p.nonOwn })),
-  }));
-  return [{ id: "geo-own", tier: "Zone", data: zoneLevel }, ...portSeries];
-};
-
-// Business Type: Market -> Port -> Business Type. Levels keyed by id:
-//   business-own         -> every port
-//   business-<port-slug> -> that port's Trader / End-User split (leaf)
-const businessTypeLevels = (): MarketShareDrilldownSeries[] => {
-  const allPorts = ZONE_PORTS.flatMap((z) => z.ports);
-  const portLevel: MarketSharePiePoint[] = allPorts.map((p) => ({
-    name: p.port,
-    y: p.own,
-    drilldown: `business-${slug(p.port)}`,
-    own: p.own,
-    nonOwn: p.nonOwn,
-  }));
-  const businessSeries: MarketShareDrilldownSeries[] = allPorts.map((p) => {
-    const endUser = Math.round(p.own * (ENDUSER_RATIO[p.port] ?? 0.8));
-    const trader = p.own - endUser;
+// Grouped own/non-own rows whose magnitudes step across categories via
+// per-category `weights` (keeps the descending shape seen in the Figma), with
+// a little deterministic jitter so filter changes are visible.
+const weightedRows = (
+  f: MarketShareFilters,
+  key: string,
+  categories: string[],
+  ownBase: number,
+  nonBase: number,
+  weights: number[],
+  step = 1,
+): PairedBarRow[] => {
+  const rng = seedFor(f, key);
+  return categories.map((category, i) => {
+    const w = weights[i] ?? 1;
     return {
-      id: `business-${slug(p.port)}`,
-      tier: "Business Type",
-      data: [
-        { name: "End-User", y: endUser, drilldown: null, own: endUser, nonOwn: 0 },
-        { name: "Trader", y: trader, drilldown: null, own: trader, nonOwn: 0 },
-      ],
+      category,
+      own: roundStep(ownBase * w * range(rng, 0.85, 1.15), step),
+      nonOwn: roundStep(nonBase * w * range(rng, 0.85, 1.15), step),
     };
   });
-  return [{ id: "business-own", tier: "Port", data: portLevel }, ...businessSeries];
 };
 
-// Resolves a single drilldown level for the given dimension + node id. Returns
-// null for an unknown id so the controller can answer 404.
-export const buildMarketShareDrill = (
-  dim: MarketShareDimension,
-  path: string,
-): MarketShareDrilldownSeries | null => {
-  const levels = dim === "geographic" ? geographicLevels() : businessTypeLevels();
-  return levels.find((s) => s.id === path) ?? null;
+// Grouped rows drawn from flat [lo, hi] ranges (used where the Figma bars are
+// noisy rather than smoothly descending, e.g. Port Wise).
+const rangeRows = (
+  f: MarketShareFilters,
+  key: string,
+  categories: string[],
+  own: [number, number],
+  non: [number, number],
+  step = 1,
+): PairedBarRow[] => {
+  const rng = seedFor(f, key);
+  return categories.map((category) => ({
+    category,
+    own: roundStep(range(rng, own[0], own[1]), step),
+    nonOwn: roundStep(range(rng, non[0], non[1]), step),
+  }));
 };
 
-// Shipper vs Receiver volume per port, each split Own / Non-Own (MT).
-const SHIPPER_RECEIVER: ShipperReceiverRow[] = [
-  { port: "MUNDRA",        shipperOwn: 679970,  shipperNonOwn: 325004,  receiverOwn: 1403215, receiverNonOwn: 325004,
-    shipperOwnEntities: ["ADANI: 679K MT"],                     shipperNonOwnEntities: ["SHREE CEMENT", "TATA POWER"],
-    receiverOwnEntities: ["APL", "AEL SNS", "ACC/AMBUJA"],      receiverNonOwnEntities: ["SHREE CEMENT", "TATA POWER"] },
-  { port: "KANDLA",        shipperOwn: 0,        shipperNonOwn: 709668,  receiverOwn: 0,       receiverNonOwn: 709668,
-    shipperOwnEntities: [],                                      shipperNonOwnEntities: ["ULTRATECH CEMENT", "SHREE CEMENT", "AGARWAL COAL"],
-    receiverOwnEntities: [],                                     receiverNonOwnEntities: ["ULTRATECH CEMENT", "KUTCH CHEMICALS", "JSW TRADING"] },
-  { port: "KRISHNAPATNAM", shipperOwn: 172411,  shipperNonOwn: 673415,  receiverOwn: 172411,  receiverNonOwn: 673415,
-    shipperOwnEntities: ["ADANI: 172K MT"],                     shipperNonOwnEntities: ["ULTRATECH CEMENT", "JSW STEEL", "MY HOME GROUP"],
-    receiverOwnEntities: ["AEL SNS"],                            receiverNonOwnEntities: ["CHETTINAD CEMENT", "SEMBCORP", "JINDAL POWER"] },
-  { port: "DHAMRA",        shipperOwn: 192040,  shipperNonOwn: 839219,  receiverOwn: 192040,  receiverNonOwn: 839219,
-    shipperOwnEntities: ["ADANI: 192K MT"],                     shipperNonOwnEntities: ["RUNGTA MINES", "RASHMI GROUP", "OCL IRON"],
-    receiverOwnEntities: ["AEL SNS"],                            receiverNonOwnEntities: ["RUNGTA MINES", "RASHMI GROUP", "OCL IRON"] },
-  { port: "VIZAG",         shipperOwn: 0,        shipperNonOwn: 818241,  receiverOwn: 0,       receiverNonOwn: 818241,
-    shipperOwnEntities: [],                                      shipperNonOwnEntities: ["JSW STEEL", "MAHINDRA SPONGE", "JSPL"],
-    receiverOwnEntities: [],                                     receiverNonOwnEntities: ["JSW/BHUSHAN", "AMNS", "AGARWAL COAL"] },
-  { port: "DAHEJ",         shipperOwn: 368271,  shipperNonOwn: 296349,  receiverOwn: 405509,  receiverNonOwn: 296349,
-    shipperOwnEntities: ["ADANI: 368K MT"],                     shipperNonOwnEntities: ["GRASIM", "HINDUSTAN ZINC", "RELIANCE"],
-    receiverOwnEntities: ["AEL SNS", "APL"],                     receiverNonOwnEntities: ["GRASIM", "HINDALCO", "WONDER CEMENT"] },
-  { port: "HAZIRA",        shipperOwn: 300000,  shipperNonOwn: 464700,  receiverOwn: 395615,  receiverNonOwn: 464700,
-    shipperOwnEntities: ["ADANI: 300K MT"],                     shipperNonOwnEntities: ["RELIANCE"],
-    receiverOwnEntities: ["AEL SNS", "RELIANCE"],                receiverNonOwnEntities: ["RELIANCE"] },
-  { port: "TUNA",          shipperOwn: 203238,  shipperNonOwn: 479834,  receiverOwn: 203238,  receiverNonOwn: 479834,
-    shipperOwnEntities: ["ADANI: 203K MT"],                     shipperNonOwnEntities: ["SWISS SINGAPORE", "WONDER CEMENT", "JSW TRADING"],
-    receiverOwnEntities: ["AEL SNS"],                            receiverNonOwnEntities: ["SWISS SINGAPORE", "WONDER CEMENT", "COMSOL ENERGY"] },
-  { port: "NAVLAKHI",      shipperOwn: 135803,  shipperNonOwn: 439935,  receiverOwn: 135803,  receiverNonOwn: 439935,
-    shipperOwnEntities: ["ADANI: 135K MT"],                     shipperNonOwnEntities: ["AGARWAL COAL", "MOHIT MINERALS", "BHATIA COAL"],
-    receiverOwnEntities: ["AEL SNS"],                            receiverNonOwnEntities: ["FC AGARWAL", "AGARWAL COAL", "TARANJOT"] },
-  { port: "TUTICORIN",     shipperOwn: 80000,   shipperNonOwn: 470384,  receiverOwn: 80000,   receiverNonOwn: 470384,
-    shipperOwnEntities: ["ADANI: 80K MT"],                      shipperNonOwnEntities: ["TATA INTERNATIONAL", "DHAR COAL", "AGARWAL COAL"],
-    receiverOwnEntities: ["MOXIE POWER GEN"],                    receiverNonOwnEntities: ["TATA INT.", "DHAR COAL", "NLC TAMILNADU"] },
+// Card 1 — Market Share Split (aggregate donut, MMT).
+export const buildMarketShareSplit = (
+  f: MarketShareFilters = {},
+): MarketShareSplitResponse => {
+  const rng = seedFor(f, "split");
+  const own = round(range(rng, 150, 240), 2);
+  const nonOwn = round(range(rng, 380, 460), 2);
+  return { unit: MMT, own, nonOwn, total: round(own + nonOwn, 2) };
+};
+
+// Card 2 — Import Quantity (MMT) by fiscal year.
+export const buildImportQuantity = (
+  f: MarketShareFilters = {},
+): MarketSharePairedResponse => ({
+  unit: MMT,
+  rows: weightedRows(f, "import-qty", FISCAL_YEARS, 40, 86, [1.1, 1.08, 0.98, 0.8]),
+});
+
+// Card 3 — Market Share by Category.
+const CATEGORIES = ["Trader", "End User", "Trader cum End-User"];
+export const buildByCategory = (
+  f: MarketShareFilters = {},
+): MarketSharePairedResponse => ({
+  unit: MMT,
+  rows: weightedRows(f, "by-category", CATEGORIES, 263, 396, [1, 0.6, 0.04]),
+});
+
+// Card 4 — Quarterwise Import (QTR-1..4 × fiscal year).
+const QUARTERS = ["QTR - 1", "QTR - 2", "QTR - 3", "QTR - 4"];
+export const buildQuarterwise = (
+  f: MarketShareFilters = {},
+): MarketShareQuarterwiseResponse => ({
+  unit: MMT,
+  groups: QUARTERS.map((quarter, qi) => ({
+    quarter,
+    rows: weightedRows(f, `qtr-${qi}`, FISCAL_YEARS, 19, 20, [1, 1, 1, 1]),
+  })),
+});
+
+// Card 5 — Industry Wise Import.
+const INDUSTRIES = ["Cement", "Chemical", "Power", "Retail", "SEB", "Sponge"];
+export const buildIndustrywise = (
+  f: MarketShareFilters = {},
+): MarketSharePairedResponse => ({
+  unit: MMT,
+  rows: weightedRows(f, "industry", INDUSTRIES, 29, 40, [0.17, 0.12, 1, 0.9, 0.1, 0.55]),
+});
+
+// Card 6 — Origin Wise Import.
+const ORIGINS = ["Aust", "INDO", "MOZBQ", "Others", "RSA", "Russia", "USA"];
+export const buildOriginwise = (
+  f: MarketShareFilters = {},
+): MarketSharePairedResponse => ({
+  unit: MMT,
+  rows: weightedRows(f, "origin", ORIGINS, 23, 45, [0.15, 0.09, 1, 0.8, 0.09, 0.55, 0.49]),
+});
+
+// Card 7 — Port Wise (taller scale, MT).
+const MS_PORTS = [
+  "Mundra", "PAHD", "Bedi", "Paradip", "Talabira", "Dahej", "Navlakhi", "Dhamra",
+  "Dharamtar", "Gangavaram", "Goa", "Gopalpur", "Haldia", "Hazira", "Kakinada",
+  "Karaikal", "Krishnapatnam", "MHDA", "Tuticorin",
 ];
-
-export const buildMarketShare = (_f: MarketShareFilters = {}): MarketShareResponse => ({
+export const buildPortwise = (
+  f: MarketShareFilters = {},
+): MarketSharePairedResponse => ({
   unit: "MT",
-  geographic: geographicRoot(),
-  businessType: businessTypeRoot(),
-  shipperReceiver: SHIPPER_RECEIVER.map((r) => ({ ...r })),
+  rows: rangeRows(f, "portwise", MS_PORTS, [20000, 220000], [40000, 420000], 1000),
+});
+
+// Dropdown option lists for the Filters side-panel. Quarter is a fixed frontend
+// list (Q1–Q4), so it is intentionally omitted.
+export const buildMarketShareFilterOptions = (): MarketShareFilterOptions => ({
+  fiscalYears: [...FISCAL_YEAR_LIST],
+  shares: [...SHARE_LIST],
+  zones: [...ZONE_LIST],
+  ports: [...PORT_LIST],
+  origins: [...ORIGIN_LIST],
+  segments: [...SEGMENT_LIST],
+  addressable: [...ADDRESSABLE_LIST],
+  industries: [...INDUSTRY_LIST],
+  categories: [...CATEGORY_LIST],
+  shipperNames: [...SHIPPER_NAME_LIST],
+  receiverNames: [...RECEIVER_NAME_LIST],
 });
 
 // --- Ocean Freight ---------------------------------------------------------

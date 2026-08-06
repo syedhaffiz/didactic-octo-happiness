@@ -1,6 +1,8 @@
 // Marketing module types. Mirrored in frontend/src/types/marketing.ts —
 // kept manually in sync (a shared workspace is overkill at this scope).
 
+import type { FilterRef } from "./api.js";
+
 // Index Movement window — 1 Month or 2 Months. Stored as the digit so the
 // URL param reads "1" / "2".
 export type IndexRange = "1" | "2";
@@ -28,59 +30,86 @@ export interface IndexMovementResponse {
 }
 
 // --- Market Share ----------------------------------------------------------
-// Two drilldown pies + one stacked/grouped column chart.
-//   geographic   : Market (Own/Non-Own) -> Zone -> Port
-//   businessType : Market (Own/Non-Own) -> Port -> Business Type (Trader/End-User)
-//   shipperReceiver : per-port Shipper vs Receiver volume, each split Own/Non-Own
+// Seven cards, each served from its own endpoint under /marketing/market-share.
+// Every data endpoint accepts the shared MarketShareFilters query below.
+//   split          : own vs non-own donut (aggregate MMT)
+//   import-quantity: grouped bars per fiscal year
+//   by-category    : grouped bars per business category (Trader / End-User / …)
+//   quarterwise    : grouped bars, one group per quarter × fiscal year
+//   industrywise   : grouped bars per industry
+//   originwise     : grouped bars per origin country
+//   portwise       : grouped bars per port
+//
+// `own` = the client's own volume; `nonOwn` = competitors. The brand-facing
+// labels live only in the frontend display layer — these keys stay neutral.
 
-// A single pie slice. `own`/`nonOwn` carry the absolute split for this entity
-// so the tooltip can show the Own-vs-Others share at every level. `drilldown`
-// is the id of the child series, or null for a leaf slice.
-export interface MarketSharePiePoint {
-  name: string;
-  y: number;
-  drilldown: string | null;
+// A grouped own/non-own bar row (one x-axis category, two columns).
+export interface PairedBarRow {
+  category: string;
   own: number;
   nonOwn: number;
 }
 
-// One drilldown level, fetched lazily on slice click. `tier` is the label for
-// what the child slices represent (e.g. "Zone", "Port", "Business Type") —
-// used as the series name. A point whose `drilldown` is a non-null id is itself
-// drillable (its children are fetched on click).
-export interface MarketShareDrilldownSeries {
-  id: string;
-  tier: string;
-  data: MarketSharePiePoint[];
+// Quarterwise Import: one group per quarter (QTR-1..4), each with a paired row
+// per fiscal year.
+export interface QuarterGroup {
+  quarter: string;
+  rows: PairedBarRow[];
 }
 
-// Only the root level (Own / Non-Own) ships with the page. Deeper levels are
-// fetched on demand via the drill endpoint.
-export interface MarketShareRootPie {
-  rootName: string; // e.g. "Market Share"
-  root: MarketSharePiePoint[];
+export interface MarketShareSplitResponse {
+  unit: string; // "MMT"
+  own: number;
+  nonOwn: number;
+  total: number;
 }
 
-// Which pie a drill request targets.
-export type MarketShareDimension = "geographic" | "businessType";
-
-export interface ShipperReceiverRow {
-  port: string;
-  shipperOwn: number;
-  shipperNonOwn: number;
-  receiverOwn: number;
-  receiverNonOwn: number;
-  shipperOwnEntities?: string[];
-  shipperNonOwnEntities?: string[];
-  receiverOwnEntities?: string[];
-  receiverNonOwnEntities?: string[];
+// Shared response for the five simple grouped-bar cards (import-quantity,
+// by-category, industrywise, originwise, portwise).
+export interface MarketSharePairedResponse {
+  unit: string;
+  rows: PairedBarRow[];
 }
 
-export interface MarketShareResponse {
-  unit: "MT";
-  geographic: MarketShareRootPie;
-  businessType: MarketShareRootPie;
-  shipperReceiver: ShipperReceiverRow[];
+export interface MarketShareQuarterwiseResponse {
+  unit: string;
+  groups: QuarterGroup[];
+}
+
+// Shared filter query for every Market Share data endpoint. `fiscalYears` and
+// `quarters` are multiselect, arriving comma-joined (e.g. "FY24-25,FY25-26").
+// The rest are single-select ids from the filter-options endpoint.
+export interface MarketShareFilters {
+  fiscalYears?: string;
+  quarters?: string;
+  share?: string;
+  zone?: string;
+  port?: string;
+  origin?: string;
+  segment?: string;
+  addressable?: string;
+  industry?: string;
+  category?: string;
+  shipperName?: string;
+  receiverName?: string;
+  fromDate?: string;
+  toDate?: string;
+}
+
+// Dropdown option lists for the Filters side-panel. Quarter is a fixed frontend
+// list (Q1–Q4), so it is intentionally absent here.
+export interface MarketShareFilterOptions {
+  fiscalYears: FilterRef[];
+  shares: FilterRef[];
+  zones: FilterRef[];
+  ports: FilterRef[];
+  origins: FilterRef[];
+  segments: FilterRef[];
+  addressable: FilterRef[];
+  industries: FilterRef[];
+  categories: FilterRef[];
+  shipperNames: FilterRef[];
+  receiverNames: FilterRef[];
 }
 
 // --- Ocean Freight ---------------------------------------------------------
@@ -123,11 +152,6 @@ export interface TargetResponse {
 }
 
 // --- Filters ---------------------------------------------------------------
-
-export interface MarketShareFilters {
-  fromDate?: string;
-  toDate?: string;
-}
 
 export interface OceanFreightFilters {
   dischargePort?: string;

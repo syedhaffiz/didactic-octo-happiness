@@ -2,10 +2,11 @@ import type {
   IndexRange,
   IndexChart,
   IndexMovementResponse,
-  MarketShareResponse,
   MarketShareFilters,
-  MarketShareDimension,
-  MarketShareDrilldownSeries,
+  MarketShareFilterOptions,
+  MarketSharePairedResponse,
+  MarketShareQuarterwiseResponse,
+  MarketShareSplitResponse,
   OceanFreightResponse,
   OceanFreightFilters,
   TargetResponse,
@@ -14,8 +15,14 @@ import type {
 import {
   buildIndexMovement,
   buildOneIndexChart,
-  buildMarketShare,
-  buildMarketShareDrill,
+  buildMarketShareSplit,
+  buildImportQuantity,
+  buildByCategory,
+  buildQuarterwise,
+  buildIndustrywise,
+  buildOriginwise,
+  buildPortwise,
+  buildMarketShareFilterOptions,
   buildOceanFreight,
   buildTarget,
 } from "../mocks/marketing.js";
@@ -23,11 +30,15 @@ import {
 export interface MarketingRepository {
   getIndices(range: IndexRange): Promise<IndexMovementResponse>;
   getIndex(code: string, range: IndexRange): Promise<IndexChart | null>;
-  getMarketShare(filters: MarketShareFilters): Promise<MarketShareResponse>;
-  getMarketShareDrill(
-    dim: MarketShareDimension,
-    path: string,
-  ): Promise<MarketShareDrilldownSeries | null>;
+  // Market Share — one method per card, all sharing the filter query.
+  getMarketShareSplit(filters: MarketShareFilters): Promise<MarketShareSplitResponse>;
+  getMarketShareImportQuantity(filters: MarketShareFilters): Promise<MarketSharePairedResponse>;
+  getMarketShareByCategory(filters: MarketShareFilters): Promise<MarketSharePairedResponse>;
+  getMarketShareQuarterwise(filters: MarketShareFilters): Promise<MarketShareQuarterwiseResponse>;
+  getMarketShareIndustrywise(filters: MarketShareFilters): Promise<MarketSharePairedResponse>;
+  getMarketShareOriginwise(filters: MarketShareFilters): Promise<MarketSharePairedResponse>;
+  getMarketSharePortwise(filters: MarketShareFilters): Promise<MarketSharePairedResponse>;
+  getMarketShareFilterOptions(): Promise<MarketShareFilterOptions>;
   getOceanFreight(filters: OceanFreightFilters): Promise<OceanFreightResponse>;
   getTarget(filters: TargetFilters): Promise<TargetResponse>;
 }
@@ -39,11 +50,29 @@ class MockMarketingRepository implements MarketingRepository {
   async getIndex(code: string, range: IndexRange) {
     return buildOneIndexChart(code, range);
   }
-  async getMarketShare(filters: MarketShareFilters) {
-    return buildMarketShare(filters);
+  async getMarketShareSplit(filters: MarketShareFilters) {
+    return buildMarketShareSplit(filters);
   }
-  async getMarketShareDrill(dim: MarketShareDimension, path: string) {
-    return buildMarketShareDrill(dim, path);
+  async getMarketShareImportQuantity(filters: MarketShareFilters) {
+    return buildImportQuantity(filters);
+  }
+  async getMarketShareByCategory(filters: MarketShareFilters) {
+    return buildByCategory(filters);
+  }
+  async getMarketShareQuarterwise(filters: MarketShareFilters) {
+    return buildQuarterwise(filters);
+  }
+  async getMarketShareIndustrywise(filters: MarketShareFilters) {
+    return buildIndustrywise(filters);
+  }
+  async getMarketShareOriginwise(filters: MarketShareFilters) {
+    return buildOriginwise(filters);
+  }
+  async getMarketSharePortwise(filters: MarketShareFilters) {
+    return buildPortwise(filters);
+  }
+  async getMarketShareFilterOptions() {
+    return buildMarketShareFilterOptions();
   }
   async getOceanFreight(filters: OceanFreightFilters) {
     return buildOceanFreight(filters);
