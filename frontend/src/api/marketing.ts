@@ -5,10 +5,11 @@ import type {
   IndexRange,
   IndexChart,
   IndexMovementResponse,
-  MarketShareResponse,
   MarketShareParams,
-  MarketShareDimension,
-  MarketShareDrilldownSeries,
+  MarketShareFilterOptions,
+  MarketSharePairedResponse,
+  MarketShareQuarterwiseResponse,
+  MarketShareSplitResponse,
   OceanFreightResponse,
   OceanFreightParams,
   TargetResponse,
@@ -17,8 +18,14 @@ import type {
 import {
   buildIndexMovement,
   buildOneIndexChart,
-  buildMarketShare,
-  buildMarketShareDrill,
+  buildMarketShareSplit,
+  buildImportQuantity,
+  buildByCategory,
+  buildQuarterwise,
+  buildIndustrywise,
+  buildOriginwise,
+  buildPortwise,
+  buildMarketShareFilterOptions,
   buildOceanFreight,
   buildTarget,
 } from "../mocks/marketing";
@@ -45,10 +52,23 @@ const httpMarketingApi = {
     get<IndexMovementResponse>("/marketing/indices", { range }),
   indexOne: (code: string, range: IndexRange = "1") =>
     get<IndexChart>(`/marketing/indices/${encodeURIComponent(code)}`, { range }),
-  marketShare: (p: MarketShareParams = {}) =>
-    get<MarketShareResponse>("/marketing/market-share", p),
-  marketShareDrill: (dim: MarketShareDimension, path: string) =>
-    get<MarketShareDrilldownSeries>("/marketing/market-share/drill", { dim, path }),
+  // Market Share — one call per card, all sharing the filter query.
+  marketShareSplit: (p: MarketShareParams = {}) =>
+    get<MarketShareSplitResponse>("/marketing/market-share/split", p),
+  marketShareImportQuantity: (p: MarketShareParams = {}) =>
+    get<MarketSharePairedResponse>("/marketing/market-share/import-quantity", p),
+  marketShareByCategory: (p: MarketShareParams = {}) =>
+    get<MarketSharePairedResponse>("/marketing/market-share/by-category", p),
+  marketShareQuarterwise: (p: MarketShareParams = {}) =>
+    get<MarketShareQuarterwiseResponse>("/marketing/market-share/quarterwise", p),
+  marketShareIndustrywise: (p: MarketShareParams = {}) =>
+    get<MarketSharePairedResponse>("/marketing/market-share/industrywise", p),
+  marketShareOriginwise: (p: MarketShareParams = {}) =>
+    get<MarketSharePairedResponse>("/marketing/market-share/originwise", p),
+  marketSharePortwise: (p: MarketShareParams = {}) =>
+    get<MarketSharePairedResponse>("/marketing/market-share/portwise", p),
+  marketShareFilterOptions: () =>
+    get<MarketShareFilterOptions>("/marketing/market-share/filters"),
   oceanFreight: (p: OceanFreightParams = {}) =>
     get<OceanFreightResponse>("/marketing/ocean-freight", p),
   target: (p: TargetParams = {}) => get<TargetResponse>("/marketing/target", p),
@@ -63,12 +83,14 @@ const mockMarketingApi = {
     }
     return mockDelay(result);
   },
-  marketShare: (p: MarketShareParams = {}) => mockDelay(buildMarketShare(p)),
-  marketShareDrill: (dim: MarketShareDimension, path: string) => {
-    const level = buildMarketShareDrill(dim, path);
-    if (!level) return Promise.reject(new Error(`not_found: Unknown drilldown path: ${path}`));
-    return mockDelay(level);
-  },
+  marketShareSplit: (p: MarketShareParams = {}) => mockDelay(buildMarketShareSplit(p)),
+  marketShareImportQuantity: (p: MarketShareParams = {}) => mockDelay(buildImportQuantity(p)),
+  marketShareByCategory: (p: MarketShareParams = {}) => mockDelay(buildByCategory(p)),
+  marketShareQuarterwise: (p: MarketShareParams = {}) => mockDelay(buildQuarterwise(p)),
+  marketShareIndustrywise: (p: MarketShareParams = {}) => mockDelay(buildIndustrywise(p)),
+  marketShareOriginwise: (p: MarketShareParams = {}) => mockDelay(buildOriginwise(p)),
+  marketSharePortwise: (p: MarketShareParams = {}) => mockDelay(buildPortwise(p)),
+  marketShareFilterOptions: () => mockDelay(buildMarketShareFilterOptions()),
   oceanFreight: (p: OceanFreightParams = {}) => mockDelay(buildOceanFreight(p)),
   target: (p: TargetParams = {}) => mockDelay(buildTarget(p)),
 };

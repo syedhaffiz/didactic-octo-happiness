@@ -165,27 +165,17 @@ export const marketingColors = {
     "#3E81F4",
     "#F69C50",
   ],
-  // Market Share revamp — drilldown pies + shipper/receiver bars.
+  // Market Share revamp — per-card own vs non-own color pairs, sampled from the
+  // Figma. Each card carries its own pairing so the seven charts read as the
+  // design intends. (Series display labels live in marketShareSeriesLabels.)
   marketShare: {
-    own: "#1B365D", // dark navy — Own root slice / shipper-own bar
-    nonOwn: "#A5C8ED", // light blue — Non-Own root slice / shipper-non-own bar
-    receiverOwn: "#2E5B88", // medium blue — Own receiver bar
-    receiverNonOwn: "#D0D0D0", // grey — Non-Own receiver bar
-    // Categorical palette for drilled levels (zones / ports / business type).
-    drill: [
-      "#3E81F4",
-      "#7E57D8",
-      "#1BA05A",
-      "#F36C2A",
-      "#0BA0C1",
-      "#F7836E",
-      "#9B5BD0",
-      "#37A089",
-      "#F69C50",
-      "#5FA0E6",
-      "#C2477E",
-      "#2A7A68",
-    ],
+    split: { own: "#1B365D", nonOwn: "#5B9BF5" }, // donut — dark navy / blue
+    importQuantity: { own: "#0E2A5C", nonOwn: "#4E86F7" },
+    byCategory: { own: "#0E6E63", nonOwn: "#35C6C0" }, // teal pair
+    quarterwise: { own: "#4B2E83", nonOwn: "#B49BE0" }, // purple pair
+    industrywise: { own: "#0E2A5C", nonOwn: "#7FA8DE" },
+    originwise: { own: "#0E6E63", nonOwn: "#7FD0D8" },
+    portwise: { own: "#0E2A5C", nonOwn: "#4E86F7" },
   },
   // Target above 2% — Port Wise bars (navy).
   portBar: "#264165",
@@ -205,5 +195,10 @@ export const logisticsColors = {
   // DP Handling Agents — Outstanding Payments columns (purple / blue per agent).
   outstandingSeries: ["#7A2BBE", "#3E64D6"],
 } as const;
+
+// Market Share series display labels. The client's brand name is intentionally
+// confined to this single constant — the user authorized it as on-screen copy
+// for the Market Share screen only (data keys stay `own`/`nonOwn`).
+export const marketShareSeriesLabels = { own: "Adani", nonOwn: "Non-Adani" } as const;
 
 export const fontFamily = '"Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';

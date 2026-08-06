@@ -24,48 +24,62 @@ export interface IndexMovementResponse {
 }
 
 // --- Market Share ----------------------------------------------------------
-// Mirror of backend/src/types/marketing.ts.
+// Mirror of backend/src/types/marketing.ts. Seven cards, each with its own
+// endpoint; all accept the shared MarketShareParams query.
+// `own` = the client's own volume; `nonOwn` = competitors. Brand-facing series
+// labels are applied only in the UI (see marketShareSeriesLabels in tokens.ts).
 
-export interface MarketSharePiePoint {
+// A filter dropdown option (id sent to the API, name shown to the user).
+export interface FilterRef {
+  id: string;
   name: string;
-  y: number;
-  drilldown: string | null;
+}
+
+// A grouped own/non-own bar row (one x-axis category, two columns).
+export interface PairedBarRow {
+  category: string;
   own: number;
   nonOwn: number;
 }
 
-// One drilldown level, fetched lazily on slice click.
-export interface MarketShareDrilldownSeries {
-  id: string;
-  tier: string;
-  data: MarketSharePiePoint[];
+// Quarterwise Import: one group per quarter, each with a paired row per FY.
+export interface QuarterGroup {
+  quarter: string;
+  rows: PairedBarRow[];
 }
 
-// Only the root level ships with the page; deeper levels are fetched on demand.
-export interface MarketShareRootPie {
-  rootName: string;
-  root: MarketSharePiePoint[];
+export interface MarketShareSplitResponse {
+  unit: string; // "MMT"
+  own: number;
+  nonOwn: number;
+  total: number;
 }
 
-export type MarketShareDimension = "geographic" | "businessType";
-
-export interface ShipperReceiverRow {
-  port: string;
-  shipperOwn: number;
-  shipperNonOwn: number;
-  receiverOwn: number;
-  receiverNonOwn: number;
-  shipperOwnEntities?: string[];
-  shipperNonOwnEntities?: string[];
-  receiverOwnEntities?: string[];
-  receiverNonOwnEntities?: string[];
+// Shared response for the five simple grouped-bar cards.
+export interface MarketSharePairedResponse {
+  unit: string;
+  rows: PairedBarRow[];
 }
 
-export interface MarketShareResponse {
-  unit: "MT";
-  geographic: MarketShareRootPie;
-  businessType: MarketShareRootPie;
-  shipperReceiver: ShipperReceiverRow[];
+export interface MarketShareQuarterwiseResponse {
+  unit: string;
+  groups: QuarterGroup[];
+}
+
+// Dropdown option lists for the Filters side-panel. Quarter is a fixed frontend
+// list (Q1–Q4), so it is intentionally absent here.
+export interface MarketShareFilterOptions {
+  fiscalYears: FilterRef[];
+  shares: FilterRef[];
+  zones: FilterRef[];
+  ports: FilterRef[];
+  origins: FilterRef[];
+  segments: FilterRef[];
+  addressable: FilterRef[];
+  industries: FilterRef[];
+  categories: FilterRef[];
+  shipperNames: FilterRef[];
+  receiverNames: FilterRef[];
 }
 
 // --- Ocean Freight ---------------------------------------------------------
@@ -109,7 +123,21 @@ export interface TargetResponse {
 
 // --- Filter params ---------------------------------------------------------
 
+// Shared query for every Market Share data endpoint. `fiscalYears` / `quarters`
+// are multiselect, sent comma-joined; the rest are single-select ids.
 export interface MarketShareParams {
+  fiscalYears?: string;
+  quarters?: string;
+  share?: string;
+  zone?: string;
+  port?: string;
+  origin?: string;
+  segment?: string;
+  addressable?: string;
+  industry?: string;
+  category?: string;
+  shipperName?: string;
+  receiverName?: string;
   fromDate?: string;
   toDate?: string;
 }

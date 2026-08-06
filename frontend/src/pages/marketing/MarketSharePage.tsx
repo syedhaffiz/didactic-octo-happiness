@@ -1,66 +1,150 @@
+import { useState } from "react";
 import { Col, Row } from "antd";
+import {
+  PieChartOutlined,
+  BarChartOutlined,
+  AppstoreOutlined,
+  LineChartOutlined,
+  ShopOutlined,
+  GlobalOutlined,
+  EnvironmentOutlined,
+} from "@ant-design/icons";
 import { PageHeader } from "../../components/PageHeader";
-import { DateRangeFilter } from "../../components/DateRangeFilter";
-import { ErrorRetry } from "../../components/ErrorRetry";
-import { DrilldownPieCard } from "../../components/marketing/DrilldownPieCard";
-import { ShipperReceiverCard } from "../../components/marketing/ShipperReceiverCard";
+import { MarketShareFilters } from "../../components/marketing/MarketShareFilters";
+import { MarketShareFilterDrawer } from "../../components/marketing/MarketShareFilterDrawer";
+import { AppliedFilterTags } from "../../components/marketing/AppliedFilterTags";
+import { MarketShareSplitCard } from "../../components/marketing/MarketShareSplitCard";
+import { PairedColumnCard } from "../../components/marketing/PairedColumnCard";
+import { QuarterwiseImportCard } from "../../components/marketing/QuarterwiseImportCard";
 import { marketingApi } from "../../api/marketing";
 import { useApi } from "../../api/useApi";
-import {
-  formatDateRangePill,
-  useDateRangeWithDefault,
-} from "../../utils/useDateRangeWithDefault";
+import { marketingColors } from "../../theme/tokens";
+import { useBrandTokens } from "../../theme/useBrandTokens";
+import { useMarketShareFilters } from "../../utils/useMarketShareFilters";
+
+const C = marketingColors.marketShare;
 
 export const MarketSharePage = () => {
-  const { start, end, value, fromDate, toDate, setRange } = useDateRangeWithDefault(1);
+  const t = useBrandTokens();
+  const filters = useMarketShareFilters();
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const { data, isLoading, isError, error, refetch } = useApi(
-    ["marketing", "market-share", fromDate, toDate],
-    () => marketingApi.marketShare({ fromDate, toDate }),
+  const { data: options } = useApi(
+    ["marketing", "market-share", "filter-options"],
+    marketingApi.marketShareFilterOptions,
+    { cache: true },
   );
 
-  return (
-    <>
-      <PageHeader
-        title="Market Share"
-        datePill={formatDateRangePill(start, end)}
-        filters={<DateRangeFilter value={value} onChange={setRange} />}
-      />
+  const params = filters.params;
+  const key = (card: string) => ["marketing", "market-share", card, params];
 
-      {isError ? (
-        <ErrorRetry title="Could not load market share" error={error} onRetry={refetch} />
-      ) : (
-        <Row gutter={[16, 16]}>
-          <Col xs={24} lg={12}>
-            {/* Chart 1 — Geographic dominance: Market -> Zone -> Port */}
-            <DrilldownPieCard
-              title="Market Share"
-              subtitle="Click a slice to drill down: Market → Zone → Port"
-              dim="geographic"
-              root={data?.geographic}
-              loading={isLoading}
+  return (
+    <div>
+      {/* Header + filters stick to the top while the page scrolls with the
+          window (no nested scrollbar). The opaque background hides cards
+          passing underneath; negative offsets cancel the Content padding so it
+          spans edge-to-edge. */}
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 20,
+          background: t.pageBg,
+          margin: "-24px -24px 0",
+          padding: "24px 24px 8px",
+        }}
+      >
+        <PageHeader
+          title="Market Share"
+          filters={
+            <MarketShareFilters
+              filters={filters}
+              fiscalYearOptions={options?.fiscalYears ?? []}
+              onOpenFilters={() => setDrawerOpen(true)}
+            />
+          }
+        />
+        <AppliedFilterTags filters={filters} options={options} />
+      </div>
+
+      {/* The seven cards flow in normal document order and scroll with the
+          window. */}
+      <div style={{ paddingTop: 4 }}>
+        <Row gutter={[16, 16]} align="stretch">
+          <Col xs={24} lg={8}>
+            <MarketShareSplitCard
+              title="Market Share Split"
+              icon={<PieChartOutlined />}
+              queryKey={key("split")}
+              fetcher={() => marketingApi.marketShareSplit(params)}
             />
           </Col>
-          <Col xs={24} lg={12}>
-            {/* Chart 2 — Commercial model: Market -> Port -> Business Type */}
-            <DrilldownPieCard
-              title="Market Share by Business Type"
-              subtitle="Click a slice to drill down: Market → Port → Business Type"
-              dim="businessType"
-              root={data?.businessType}
-              loading={isLoading}
+          <Col xs={24} lg={8}>
+            <PairedColumnCard
+              title="Import Quantity (MMT)"
+              icon={<BarChartOutlined />}
+              colorPair={C.importQuantity}
+              queryKey={key("import-quantity")}
+              fetcher={() => marketingApi.marketShareImportQuantity(params)}
+            />
+          </Col>
+          <Col xs={24} lg={8}>
+            <PairedColumnCard
+              title="Market Share by Category"
+              icon={<AppstoreOutlined />}
+              colorPair={C.byCategory}
+              queryKey={key("by-category")}
+              fetcher={() => marketingApi.marketShareByCategory(params)}
             />
           </Col>
           <Col xs={24}>
-            {/* Chart 3 — Operational balance: Shipper vs Receiver per port */}
-            <ShipperReceiverCard
-              title="Market Share by Receiver vs Shipper"
-              rows={data?.shipperReceiver}
-              loading={isLoading}
+            <QuarterwiseImportCard
+              title="Quarterwise Import"
+              icon={<LineChartOutlined />}
+              queryKey={key("quarterwise")}
+              fetcher={() => marketingApi.marketShareQuarterwise(params)}
+            />
+          </Col>
+          <Col xs={24} lg={12}>
+            <PairedColumnCard
+              title="Industry Wise Import"
+              icon={<ShopOutlined />}
+              colorPair={C.industrywise}
+              queryKey={key("industrywise")}
+              fetcher={() => marketingApi.marketShareIndustrywise(params)}
+            />
+          </Col>
+          <Col xs={24} lg={12}>
+            <PairedColumnCard
+              title="Origin Wise Import"
+              icon={<GlobalOutlined />}
+              colorPair={C.originwise}
+              queryKey={key("originwise")}
+              fetcher={() => marketingApi.marketShareOriginwise(params)}
+            />
+          </Col>
+          <Col xs={24}>
+            <PairedColumnCard
+              title="Port Wise"
+              icon={<EnvironmentOutlined />}
+              colorPair={C.portwise}
+              queryKey={key("portwise")}
+              fetcher={() => marketingApi.marketSharePortwise(params)}
+              labelRotation={-45}
+              height={420}
+              showDataLabels={false}
             />
           </Col>
         </Row>
-      )}
-    </>
+      </div>
+
+      <MarketShareFilterDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        options={options}
+        values={filters.single}
+        onApply={filters.setSingleBatch}
+      />
+    </div>
   );
 };

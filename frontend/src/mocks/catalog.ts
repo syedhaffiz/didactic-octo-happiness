@@ -86,6 +86,61 @@ export const ORIGIN_LIST: IdName[] = [
   { id: "usa", name: "USA" },
 ];
 
+// === Market Share filter catalogues ========================================
+// Reference lists that power the Market Share Filters side-panel dropdowns.
+// (Ports / Zones / Origins / Segments reuse the lists above.)
+
+export const FISCAL_YEAR_LIST: IdName[] = [
+  { id: "fy22-23", name: "FY 2022-23" },
+  { id: "fy23-24", name: "FY 2023-24" },
+  { id: "fy24-25", name: "FY 2024-25" },
+  { id: "fy25-26", name: "FY 2025-26" },
+];
+
+export const SHARE_LIST: IdName[] = [
+  { id: "volume", name: "Volume" },
+  { id: "value", name: "Value" },
+];
+
+export const ADDRESSABLE_LIST: IdName[] = [
+  { id: "addressable", name: "Addressable" },
+  { id: "non-addressable", name: "Non-Addressable" },
+];
+
+export const INDUSTRY_LIST: IdName[] = [
+  { id: "cement", name: "Cement" },
+  { id: "chemical", name: "Chemical" },
+  { id: "power", name: "Power" },
+  { id: "retail", name: "Retail" },
+  { id: "seb", name: "SEB" },
+  { id: "sponge", name: "Sponge" },
+];
+
+// The "Category" dropdown classifies volume by party. The brand name appears
+// here as an authorized display value (see the Market Share screen).
+export const CATEGORY_LIST: IdName[] = [
+  { id: "adani", name: "Adani" },
+  { id: "non-adani", name: "Non-Adani" },
+];
+
+export const SHIPPER_NAME_LIST: IdName[] = [
+  { id: "ultratech-cement", name: "Ultratech Cement" },
+  { id: "shree-cement", name: "Shree Cement" },
+  { id: "jsw-steel", name: "JSW Steel" },
+  { id: "agarwal-coal", name: "Agarwal Coal" },
+  { id: "tata-international", name: "Tata International" },
+  { id: "swiss-singapore", name: "Swiss Singapore" },
+];
+
+export const RECEIVER_NAME_LIST: IdName[] = [
+  { id: "chettinad-cement", name: "Chettinad Cement" },
+  { id: "sembcorp", name: "Sembcorp" },
+  { id: "jindal-power", name: "Jindal Power" },
+  { id: "wonder-cement", name: "Wonder Cement" },
+  { id: "hindalco", name: "Hindalco" },
+  { id: "nlc-tamilnadu", name: "NLC Tamilnadu" },
+];
+
 export const GRADE_LIST: GradeDetail[] = [
   { id: "indo-4200-gar", name: "INDO-4200 GAR", group_name: "INDO" },
   { id: "indo-3400-gar", name: "INDO-3400 GAR", group_name: "INDO" },
