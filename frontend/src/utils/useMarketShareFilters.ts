@@ -93,6 +93,9 @@ export const useMarketShareFilters = (): MarketShareFiltersState => {
   }, [params]);
 
   const dateRange = useMemo<[Dayjs, Dayjs] | null>(() => {
+    // Year/Quarter take precedence: the Date Range is treated as unset while
+    // either is active (keeps the picker, tags and API params consistent).
+    if (params.get("fiscalYears") || params.get("quarters")) return null;
     const f = params.get("fromDate");
     const t = params.get("toDate");
     if (!f || !t) return null;
@@ -106,6 +109,14 @@ export const useMarketShareFilters = (): MarketShareFiltersState => {
     for (const k of ALL_KEYS) {
       const v = params.get(k);
       if (v) out[k] = v;
+    }
+    // Year/Quarter and Date Range are mutually exclusive. Year/Quarter (the
+    // default "All" period) take precedence: when either is set, the Date Range
+    // is ignored. The setters keep the two apart, but this also guards against a
+    // hand-edited URL carrying both.
+    if (out.fiscalYears || out.quarters) {
+      delete out.fromDate;
+      delete out.toDate;
     }
     return out as MarketShareParams;
   }, [params]);
@@ -131,8 +142,23 @@ export const useMarketShareFilters = (): MarketShareFiltersState => {
   );
 
   const setMulti = useCallback(
-    (key: MsMultiKey, values: string[]) => setKey(key, values.length ? values.join(",") : undefined),
-    [setKey],
+    (key: MsMultiKey, values: string[]) => {
+      setParams(
+        (prev) => {
+          const out = new URLSearchParams(prev);
+          if (values.length) out.set(key, values.join(","));
+          else out.delete(key);
+          // Setting Year/Quarter clears any Date Range (mutually exclusive).
+          if (values.length && (key === "fiscalYears" || key === "quarters")) {
+            out.delete("fromDate");
+            out.delete("toDate");
+          }
+          return out;
+        },
+        { replace: true },
+      );
+    },
+    [setParams],
   );
 
   // Apply many keys atomically. A per-key loop of setSingle/setMulti would NOT
@@ -167,6 +193,9 @@ export const useMarketShareFilters = (): MarketShareFiltersState => {
           } else {
             out.set("fromDate", range[0].format(FMT));
             out.set("toDate", range[1].format(FMT));
+            // Setting a Date Range clears Year/Quarter (mutually exclusive).
+            out.delete("fiscalYears");
+            out.delete("quarters");
           }
           return out;
         },

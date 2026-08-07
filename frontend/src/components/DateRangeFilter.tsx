@@ -8,9 +8,10 @@ const { RangePicker } = DatePicker;
 export interface DateRangeFilterProps {
   value?: [Dayjs | null, Dayjs | null] | null;
   onChange: (value: [Dayjs | null, Dayjs | null] | null) => void;
+  disabled?: boolean;
 }
 
-export const DateRangeFilter = ({ value, onChange }: DateRangeFilterProps) => (
+export const DateRangeFilter = ({ value, onChange, disabled = false }: DateRangeFilterProps) => (
   <FilterField label="Date Range" width={220}>
     <RangePicker
       value={value ?? null}
@@ -19,6 +20,7 @@ export const DateRangeFilter = ({ value, onChange }: DateRangeFilterProps) => (
       placeholder={["Select", ""]}
       format="DD MMM YY"
       allowEmpty={[true, true]}
+      disabled={disabled}
       style={{ width: "100%" }}
     />
   </FilterField>

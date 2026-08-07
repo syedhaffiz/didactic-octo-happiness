@@ -14,6 +14,7 @@ interface Props {
   width?: number;
   placeholder?: string;
   loading?: boolean;
+  disabled?: boolean;
 }
 
 // Multiselect dropdown (label above the control) for the Market Share Year and
@@ -26,6 +27,7 @@ export const MultiSelectFilter = ({
   width = 200,
   placeholder = "All",
   loading = false,
+  disabled = false,
 }: Props) => (
   <FilterField label={label} width={width}>
     <Select
@@ -35,6 +37,7 @@ export const MultiSelectFilter = ({
       onChange={onChange}
       options={options}
       loading={loading}
+      disabled={disabled}
       placeholder={placeholder}
       maxTagCount="responsive"
       style={{ width: "100%" }}
