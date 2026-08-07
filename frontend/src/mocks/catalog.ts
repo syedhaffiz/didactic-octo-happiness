@@ -97,9 +97,11 @@ export const FISCAL_YEAR_LIST: IdName[] = [
   { id: "fy25-26", name: "FY 2025-26" },
 ];
 
+// The "Share" dropdown filters volume by party. The brand name appears here as
+// an authorized display value (see the Market Share screen).
 export const SHARE_LIST: IdName[] = [
-  { id: "volume", name: "Volume" },
-  { id: "value", name: "Value" },
+  { id: "adani", name: "Adani" },
+  { id: "non-adani", name: "Non-Adani" },
 ];
 
 export const ADDRESSABLE_LIST: IdName[] = [
@@ -116,11 +118,12 @@ export const INDUSTRY_LIST: IdName[] = [
   { id: "sponge", name: "Sponge" },
 ];
 
-// The "Category" dropdown classifies volume by party. The brand name appears
-// here as an authorized display value (see the Market Share screen).
+// The "Category" dropdown holds the business categories (matches the
+// "Market Share by Category" chart).
 export const CATEGORY_LIST: IdName[] = [
-  { id: "adani", name: "Adani" },
-  { id: "non-adani", name: "Non-Adani" },
+  { id: "trader", name: "Trader" },
+  { id: "end-user", name: "End User" },
+  { id: "trader-cum-end-user", name: "Trader cum End-User" },
 ];
 
 export const SHIPPER_NAME_LIST: IdName[] = [

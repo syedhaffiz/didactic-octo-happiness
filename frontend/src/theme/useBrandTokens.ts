@@ -47,6 +47,10 @@ export const useBrandTokens = () => {
     // Backdrop behind the chart-loading Spin overlay.
     loadingOverlay: isDark ? brandDark.loadingOverlay : brand.loadingOverlay,
 
+    // Applied-filter tag pill (lavender border on a faint fill).
+    filterTagBg: isDark ? brandDark.filterTagBg : brand.filterTagBg,
+    filterTagBorder: isDark ? brandDark.filterTagBorder : brand.filterTagBorder,
+
     isDark,
   };
 };

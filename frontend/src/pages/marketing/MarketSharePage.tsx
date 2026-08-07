@@ -142,8 +142,7 @@ export const MarketSharePage = () => {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         options={options}
-        values={filters.single}
-        onApply={filters.setSingleBatch}
+        filters={filters}
       />
     </div>
   );

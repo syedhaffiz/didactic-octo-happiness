@@ -5,9 +5,15 @@ import type { MarketShareParams, MarketShareFilterOptions } from "../types/marke
 
 const FMT = "YYYY-MM-DD";
 
-// Single-select filter keys — live in the Filters side-panel. Each stores one id.
-export const MS_SINGLE_KEYS = [
-  "share",
+// Single-select filter keys. Only "Share" is single-select; it stores one id.
+export const MS_SINGLE_KEYS = ["share"] as const;
+export type MsSingleKey = (typeof MS_SINGLE_KEYS)[number];
+
+// Multiselect filter keys, comma-joined in the URL. Year + Quarter live in the
+// top bar; the rest are the multi-select Filters side-panel dropdowns.
+export const MS_MULTI_KEYS = [
+  "fiscalYears",
+  "quarters",
   "zone",
   "port",
   "origin",
@@ -18,31 +24,29 @@ export const MS_SINGLE_KEYS = [
   "shipperName",
   "receiverName",
 ] as const;
-export type MsSingleKey = (typeof MS_SINGLE_KEYS)[number];
+export type MsMultiKey = (typeof MS_MULTI_KEYS)[number];
 
-// Display label + backing option list for each side-panel single-select filter.
-// Shared by the Filters drawer and the applied-filter tags so the two stay in
-// lock-step.
-export const MS_SINGLE_FIELDS: {
-  key: MsSingleKey;
+// Display metadata for each Filters side-panel dropdown, shared by the drawer
+// and the applied-filter tags so the two stay in lock-step. Share is single-
+// select; the rest are multi-select.
+export interface DrawerFieldMeta {
+  key: MsSingleKey | MsMultiKey;
   label: string;
   optionsKey: keyof MarketShareFilterOptions;
-}[] = [
-  { key: "share", label: "Share", optionsKey: "shares" },
-  { key: "zone", label: "Zone", optionsKey: "zones" },
-  { key: "port", label: "Port", optionsKey: "ports" },
-  { key: "origin", label: "Origin", optionsKey: "origins" },
-  { key: "segment", label: "Segment", optionsKey: "segments" },
-  { key: "addressable", label: "Addressable", optionsKey: "addressable" },
-  { key: "industry", label: "Industry", optionsKey: "industries" },
-  { key: "category", label: "Category", optionsKey: "categories" },
-  { key: "shipperName", label: "Shipper Name", optionsKey: "shipperNames" },
-  { key: "receiverName", label: "Receiver Name", optionsKey: "receiverNames" },
+  multi: boolean;
+}
+export const MS_DRAWER_FIELDS: DrawerFieldMeta[] = [
+  { key: "share", label: "Share", optionsKey: "shares", multi: false },
+  { key: "zone", label: "Zone", optionsKey: "zones", multi: true },
+  { key: "port", label: "Port", optionsKey: "ports", multi: true },
+  { key: "origin", label: "Origin", optionsKey: "origins", multi: true },
+  { key: "segment", label: "Segment", optionsKey: "segments", multi: true },
+  { key: "addressable", label: "Addressable", optionsKey: "addressable", multi: true },
+  { key: "industry", label: "Industry", optionsKey: "industries", multi: true },
+  { key: "category", label: "Category", optionsKey: "categories", multi: true },
+  { key: "shipperName", label: "Shipper Name", optionsKey: "shipperNames", multi: true },
+  { key: "receiverName", label: "Receiver Name", optionsKey: "receiverNames", multi: true },
 ];
-
-// Multiselect filter keys — Year + Quarter in the top bar, comma-joined in URL.
-export const MS_MULTI_KEYS = ["fiscalYears", "quarters"] as const;
-export type MsMultiKey = (typeof MS_MULTI_KEYS)[number];
 
 const DATE_KEYS = ["fromDate", "toDate"] as const;
 const ALL_KEYS: string[] = [...MS_MULTI_KEYS, ...MS_SINGLE_KEYS, ...DATE_KEYS];
@@ -57,9 +61,10 @@ export interface MarketShareFiltersState {
   /** Current date range, or null when unset. */
   dateRange: [Dayjs, Dayjs] | null;
   setSingle: (key: MsSingleKey, value: string | undefined) => void;
-  /** Commit every side-panel single-select value in one URL update. */
-  setSingleBatch: (next: Record<MsSingleKey, string | undefined>) => void;
   setMulti: (key: MsMultiKey, values: string[]) => void;
+  /** Commit many keys atomically in one URL update (arrays are comma-joined,
+   *  empty arrays/blank strings clear the key). Used by the Filters drawer. */
+  setMany: (entries: Record<string, string | string[] | undefined>) => void;
   setDateRange: (range: [Dayjs | null, Dayjs | null] | null) => void;
   clearKeys: (keys: string[]) => void;
   clearAll: () => void;
@@ -81,13 +86,11 @@ export const useMarketShareFilters = (): MarketShareFiltersState => {
     return out;
   }, [params]);
 
-  const multi = useMemo<Record<MsMultiKey, string[]>>(
-    () => ({
-      fiscalYears: splitCsv(params.get("fiscalYears")),
-      quarters: splitCsv(params.get("quarters")),
-    }),
-    [params],
-  );
+  const multi = useMemo(() => {
+    const out = {} as Record<MsMultiKey, string[]>;
+    for (const k of MS_MULTI_KEYS) out[k] = splitCsv(params.get(k));
+    return out;
+  }, [params]);
 
   const dateRange = useMemo<[Dayjs, Dayjs] | null>(() => {
     const f = params.get("fromDate");
@@ -127,19 +130,23 @@ export const useMarketShareFilters = (): MarketShareFiltersState => {
     [setKey],
   );
 
-  // Apply all single-select values atomically. A per-key loop of setSingle
-  // calls would NOT compose — React Router's functional updater closes over the
-  // render-time params, so the last call clobbers the rest. One updater keeps
-  // every change.
-  const setSingleBatch = useCallback(
-    (next: Record<MsSingleKey, string | undefined>) => {
+  const setMulti = useCallback(
+    (key: MsMultiKey, values: string[]) => setKey(key, values.length ? values.join(",") : undefined),
+    [setKey],
+  );
+
+  // Apply many keys atomically. A per-key loop of setSingle/setMulti would NOT
+  // compose — React Router's functional updater closes over the render-time
+  // params, so the last call clobbers the rest. One updater keeps every change.
+  const setMany = useCallback(
+    (entries: Record<string, string | string[] | undefined>) => {
       setParams(
         (prev) => {
           const out = new URLSearchParams(prev);
-          for (const k of MS_SINGLE_KEYS) {
-            const v = next[k];
-            if (!v) out.delete(k);
-            else out.set(k, v);
+          for (const [k, v] of Object.entries(entries)) {
+            const val = Array.isArray(v) ? (v.length ? v.join(",") : undefined) : v;
+            if (!val) out.delete(k);
+            else out.set(k, val);
           }
           return out;
         },
@@ -147,11 +154,6 @@ export const useMarketShareFilters = (): MarketShareFiltersState => {
       );
     },
     [setParams],
-  );
-
-  const setMulti = useCallback(
-    (key: MsMultiKey, values: string[]) => setKey(key, values.length ? values.join(",") : undefined),
-    [setKey],
   );
 
   const setDateRange = useCallback(
@@ -190,7 +192,10 @@ export const useMarketShareFilters = (): MarketShareFiltersState => {
 
   const clearAll = useCallback(() => clearKeys(ALL_KEYS), [clearKeys]);
 
-  const drawerActiveCount = MS_SINGLE_KEYS.filter((k) => single[k]).length;
+  // Active side-panel filters (Share single + the multi-select dropdowns).
+  const drawerActiveCount = MS_DRAWER_FIELDS.filter((f) =>
+    f.multi ? multi[f.key as MsMultiKey].length > 0 : Boolean(single[f.key as MsSingleKey]),
+  ).length;
 
   return {
     params: apiParams,
@@ -198,8 +203,8 @@ export const useMarketShareFilters = (): MarketShareFiltersState => {
     multi,
     dateRange,
     setSingle,
-    setSingleBatch,
     setMulti,
+    setMany,
     setDateRange,
     clearKeys,
     clearAll,

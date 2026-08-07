@@ -1,42 +1,60 @@
 import { useState } from "react";
 import { Button, Drawer, Select, Space } from "antd";
 import { FilterField } from "../filters/FilterField";
-import { MS_SINGLE_FIELDS, type MsSingleKey } from "../../utils/useMarketShareFilters";
-import type { MarketShareFilterOptions, FilterRef } from "../../types/marketing";
+import {
+  MS_DRAWER_FIELDS,
+  type MarketShareFiltersState,
+  type MsMultiKey,
+  type MsSingleKey,
+} from "../../utils/useMarketShareFilters";
+import type { MarketShareFilterOptions } from "../../types/marketing";
 
 const ALL = "__all__";
-
-type Draft = Record<MsSingleKey, string | undefined>;
 
 interface Props {
   open: boolean;
   onClose: () => void;
   options?: MarketShareFilterOptions;
-  /** Currently committed single-select values. */
-  values: Draft;
-  /** Commit the draft to the URL-backed filter state. */
-  onApply: (next: Draft) => void;
+  filters: MarketShareFiltersState;
 }
 
-// Slide-in Filters panel: ten single-select dropdowns fed by the filter-options
-// endpoint. Edits stay in a local draft and only commit on "Apply filters";
-// "Cancel" discards, and "Clear all" empties the draft.
-export const MarketShareFilterDrawer = ({ open, onClose, options, values, onApply }: Props) => {
-  const [draft, setDraft] = useState<Draft>(values);
+// Each field's draft is stored as an id array — single-select (Share) uses a
+// 0/1-length array so one commit path (setMany) handles both kinds.
+type Draft = Record<string, string[]>;
+
+// Slide-in Filters panel. "Share" is a single-select; every other dropdown is
+// multi-select. Edits stay in a local draft and only commit on "Apply filters";
+// "Cancel" discards and "Clear all" empties the draft.
+export const MarketShareFilterDrawer = ({ open, onClose, options, filters }: Props) => {
+  const buildDraft = (): Draft => {
+    const d: Draft = {};
+    for (const f of MS_DRAWER_FIELDS) {
+      if (f.multi) {
+        d[f.key] = filters.multi[f.key as MsMultiKey] ?? [];
+      } else {
+        const v = filters.single[f.key as MsSingleKey];
+        d[f.key] = v ? [v] : [];
+      }
+    }
+    return d;
+  };
+
+  const [draft, setDraft] = useState<Draft>(buildDraft);
 
   // Re-sync the draft to the committed values on each open transition. Done in
   // render (not an effect) so the panel always opens showing the live state.
   const [prevOpen, setPrevOpen] = useState(open);
   if (open !== prevOpen) {
     setPrevOpen(open);
-    if (open) setDraft(values);
+    if (open) setDraft(buildDraft());
   }
 
-  const setField = (key: MsSingleKey, v: string) =>
-    setDraft((d) => ({ ...d, [key]: v === ALL ? undefined : v }));
-
   const apply = () => {
-    onApply(draft);
+    const entries: Record<string, string | string[] | undefined> = {};
+    for (const f of MS_DRAWER_FIELDS) {
+      entries[f.key] = f.multi ? draft[f.key] ?? [] : draft[f.key]?.[0];
+    }
+    filters.setMany(entries);
     onClose();
   };
 
@@ -46,7 +64,7 @@ export const MarketShareFilterDrawer = ({ open, onClose, options, values, onAppl
       open={open}
       onClose={onClose}
       extra={
-        <a onClick={() => setDraft({} as Draft)} style={{ cursor: "pointer" }}>
+        <a onClick={() => setDraft({})} style={{ cursor: "pointer" }}>
           Clear all
         </a>
       }
@@ -60,19 +78,29 @@ export const MarketShareFilterDrawer = ({ open, onClose, options, values, onAppl
       }
     >
       <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-        {MS_SINGLE_FIELDS.map(({ key, label, optionsKey }) => {
-          const list: FilterRef[] = options?.[optionsKey] ?? [];
+        {MS_DRAWER_FIELDS.map((f) => {
+          const opts = (options?.[f.optionsKey] ?? []).map((o) => ({ value: o.id, label: o.name }));
           return (
-            <FilterField key={key} label={label}>
-              <Select
-                value={draft[key] ?? ALL}
-                onChange={(v) => setField(key, v)}
-                options={[
-                  { value: ALL, label: "All" },
-                  ...list.map((o) => ({ value: o.id, label: o.name })),
-                ]}
-                style={{ width: "100%" }}
-              />
+            <FilterField key={f.key} label={f.label}>
+              {f.multi ? (
+                <Select
+                  mode="multiple"
+                  allowClear
+                  value={draft[f.key] ?? []}
+                  onChange={(v) => setDraft((d) => ({ ...d, [f.key]: v }))}
+                  options={opts}
+                  placeholder="All"
+                  maxTagCount="responsive"
+                  style={{ width: "100%" }}
+                />
+              ) : (
+                <Select
+                  value={draft[f.key]?.[0] ?? ALL}
+                  onChange={(v) => setDraft((d) => ({ ...d, [f.key]: v === ALL ? [] : [v] }))}
+                  options={[{ value: ALL, label: "All" }, ...opts]}
+                  style={{ width: "100%" }}
+                />
+              )}
             </FilterField>
           );
         })}

@@ -53,6 +53,10 @@ export const brand = {
   breakdownValue: "#1F5BA8", // breakdown sub-card value
   headerSolid: "#5B5890", // gradient midpoint — solid fallback
 
+  // Applied-filter tag pill (Market Share) — lavender border on a faint fill.
+  filterTagBg: "#F6F4FC",
+  filterTagBorder: "#D6CFEC",
+
   // Header gradient — left blue → right crimson; the midpoint is the
   // purple seen in the screenshot.
   gradient: "linear-gradient(90deg, #0D73B3 0%, #AE3C6D 100%)",
@@ -83,6 +87,8 @@ export const brandDark = {
   panelBg: "rgba(255, 255, 255, 0.03)",
   forexTileBg: "rgba(126, 179, 255, 0.14)",
   loadingOverlay: "rgba(15, 15, 15, 0.45)",
+  filterTagBg: "rgba(255, 255, 255, 0.04)",
+  filterTagBorder: "rgba(150, 134, 214, 0.45)",
 } as const;
 
 // ---------------------------------------------------------------------------
