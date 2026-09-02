@@ -17,56 +17,140 @@ body,
   box-shadow: var(--ct-card-shadow, none);
 }
 
-/* The menu is transparent so the (white) Sider background shows through. */
-.ant-menu-light.ant-menu-root {
-  background: transparent;
-  border-inline-end: none;
+/* ---------------------------------------------------------------------------
+   Two-column sidebar (SideNav): an icon+label rail on the left and a sub-nav
+   list for the active section on the right, split by a thin divider. Colors
+   come from --ct-* vars (ThemeProvider); literals stay in tokens.ts.
+   --------------------------------------------------------------------------- */
+/* The Sider's inner wrapper is a flex column: the collapse toggle sits on top
+   and the SideNav fills the remaining height (so Settings can pin to bottom). */
+.ant-layout-sider-children {
+  display: flex;
+  flex-direction: column;
 }
 
-/* Selected / open submenu title → solid-blue bar with white text, icon and
-   arrow. Covers the expanded "Marketing" bar AND the collapsed blue-square
-   icon. antd has no tokens for this, so colors come from --ct-* vars
-   (ThemeProvider). */
-.ant-menu-light .ant-menu-submenu-selected > .ant-menu-submenu-title,
-.ant-menu-light .ant-menu-submenu-open > .ant-menu-submenu-title {
-  background: var(--ct-menu-active-bg) !important;
-  color: var(--ct-menu-active-color) !important;
-}
-.ant-menu-light .ant-menu-submenu-selected > .ant-menu-submenu-title .ant-menu-submenu-arrow,
-.ant-menu-light .ant-menu-submenu-selected > .ant-menu-submenu-title .ant-menu-item-icon,
-.ant-menu-light .ant-menu-submenu-open > .ant-menu-submenu-title .ant-menu-submenu-arrow,
-.ant-menu-light .ant-menu-submenu-open > .ant-menu-submenu-title .ant-menu-item-icon {
-  color: var(--ct-menu-active-color) !important;
+.ct-sidenav {
+  display: flex;
+  flex: 1;
+  min-height: 0;
 }
 
-/* Expanded open submenu = ONE rounded card: the blue title bar is flush with
-   the light-blue children panel (no gap). The submenu <li> is the card; the
-   title and the panel fill it edge-to-edge, the card's overflow rounds them. */
-.ant-menu-light.ant-menu-inline .ant-menu-submenu-open {
-  background: var(--ct-submenu-bg);
-  border-radius: 8px;
-  overflow: hidden;
-}
-.ant-menu-light.ant-menu-inline .ant-menu-submenu-open > .ant-menu-submenu-title {
-  margin: 0 !important;
+/* The icon rail — the only always-visible column. Each section is a stacked
+   icon-over-label button; a section with sub-pages reveals them in a hover
+   flyout (antd Dropdown), like a native vertical submenu. */
+.ct-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 4px 8px 16px;
+  flex: 1;
   width: 100%;
-  /* border-radius: 0 !important; */
+  overflow-y: auto;
 }
-.ant-menu-light.ant-menu-inline .ant-menu-submenu-open > .ant-menu-sub {
-  background: transparent;
+/* Settings is pinned to the bottom of the rail. */
+.ct-rail-spacer {
+  flex: 1 1 auto;
+}
+
+.ct-rail-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 12px 4px;
+  border-radius: 12px;
+  cursor: pointer;
+  color: var(--ct-rail-color);
+  text-align: center;
+  line-height: 1.2;
+  transition: background 0.15s ease, color 0.15s ease;
+  user-select: none;
+}
+.ct-rail-item .ct-rail-icon {
+  font-size: 20px;
+  display: flex;
+}
+.ct-rail-item .ct-rail-label {
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.ct-rail-item:hover {
+  background: var(--ct-rail-hover-bg);
+  color: var(--ct-rail-hover-color);
+}
+.ct-rail-item:focus-visible {
+  outline: 2px solid var(--ct-rail-hover-color);
+  outline-offset: 1px;
+}
+.ct-rail-item.muted {
+  color: var(--ct-rail-muted);
+}
+/* Active/selected wins over hover: solid blue pill, white icon + label. */
+.ct-rail-item.active,
+.ct-rail-item.active:hover {
+  background: var(--ct-rail-active-bg);
+  color: var(--ct-rail-active-color);
+}
+
+/* Hover flyout listing a section's sub-pages (antd Popover, portalled to the
+   body so it escapes the Sider's clipping and stays open while the pointer
+   travels into it). Tighten the Popover chrome so the list reads as a submenu
+   panel rather than a tooltip. */
+.ct-rail-flyout .ant-popover-inner {
+  padding: 6px;
+  border-radius: 10px;
+}
+.ct-rail-flyout .ant-popover-title {
   margin: 0;
-  border-radius: 0;
-  padding-block: 4px;
-}
-.ant-menu-light.ant-menu-inline .ant-menu-submenu-open > .ant-menu-sub > .ant-menu-item {
-  color: var(--ct-menu-child-color);
-}
-/* Active child → blue + bold, no pill (sits on the light-blue panel). */
-.ant-menu-light.ant-menu-inline
-  .ant-menu-submenu-open
-  > .ant-menu-sub
-  > .ant-menu-item-selected {
-  background: transparent !important;
-  color: var(--ct-menu-child-active) !important;
+  padding: 6px 10px 4px;
+  min-width: 168px;
+  font-size: 12px;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ct-rail-muted);
+}
+
+.ct-flyout {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 168px;
+}
+.ct-flyout-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--ct-subnav-color);
+  font-size: 13.5px;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.ct-flyout-item::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ct-subnav-dot);
+  transition: background 0.15s ease;
+}
+.ct-flyout-item:hover {
+  background: var(--ct-rail-hover-bg);
+}
+.ct-flyout-item:focus-visible {
+  outline: 2px solid var(--ct-subnav-active);
+  outline-offset: 1px;
+}
+.ct-flyout-item.active {
+  color: var(--ct-subnav-active);
+  font-weight: 600;
+}
+.ct-flyout-item.active::before {
+  background: var(--ct-subnav-active);
 }

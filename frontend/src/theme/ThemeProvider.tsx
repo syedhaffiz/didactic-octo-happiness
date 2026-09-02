@@ -17,14 +17,22 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     const shadow = mode === "dark" ? brandDark.cardShadow : brand.cardShadow;
     root.setProperty("--ct-card-shadow", shadow);
 
-    // Sidebar menu colors (the Sider is always light-themed). antd has no
-    // token for the open-submenu blue title bar / light-blue panel, so we
-    // express those colors here and apply them via CSS in index.css.
-    root.setProperty("--ct-menu-active-bg", brand.accent);
-    root.setProperty("--ct-menu-active-color", brand.white);
-    root.setProperty("--ct-submenu-bg", brand.accentSoft);
-    root.setProperty("--ct-menu-child-color", brand.black);
-    root.setProperty("--ct-menu-child-active", brand.accent);
+    // Icon-rail + hover-flyout colors. The Sider is always light-themed, so
+    // these are fixed light values (mode-independent) like the legacy menu
+    // vars. antd has no token for the rail pill / flyout list, so the colors
+    // live here and are applied via the .ct-rail* / .ct-flyout* classes in
+    // index.css. Color literals stay confined to tokens.ts.
+    // Active/selected → solid blue pill with white icon + label.
+    root.setProperty("--ct-rail-active-bg", brand.accent);
+    root.setProperty("--ct-rail-active-color", brand.white);
+    // Hover → light-blue pill with blue icon + label.
+    root.setProperty("--ct-rail-hover-bg", brand.accentHover);
+    root.setProperty("--ct-rail-hover-color", brand.accent);
+    root.setProperty("--ct-rail-color", brand.textSubtle);
+    root.setProperty("--ct-rail-muted", brand.textMuted);
+    root.setProperty("--ct-subnav-dot", brand.textMuted);
+    root.setProperty("--ct-subnav-color", brand.textSubtle);
+    root.setProperty("--ct-subnav-active", brand.accent);
   }, [mode]);
 
   const value = useMemo<ThemeCtx>(
