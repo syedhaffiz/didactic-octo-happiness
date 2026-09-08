@@ -1,6 +1,8 @@
 import { Router } from "express";
 import {
   getApprovedBudget,
+  getDebtors,
+  getDebtorsFilterOptions,
   getForex,
   getHandlingBatchDetail,
   getKpis,
@@ -35,5 +37,9 @@ router.get("/profitability/vessels/handling/:batchId", getHandlingBatchDetail);
 
 router.get("/sales", getSales);
 router.get("/approved-budget", getApprovedBudget);
+
+// Debtors — the outstanding-customers table + its Filters side-panel options.
+router.get("/debtors/filters", getDebtorsFilterOptions);
+router.get("/debtors", getDebtors);
 
 export default router;

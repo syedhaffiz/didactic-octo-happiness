@@ -4,6 +4,9 @@ import type {
   BatchDetailSearch,
   BreakdownResponse,
   Currency,
+  DebtorsFilterOptions,
+  DebtorsFilters,
+  DebtorsResponse,
   ForexRange,
   ForexResponse,
   HandlingBatchDetailResponse,
@@ -38,6 +41,7 @@ import {
 } from "../mocks/revenue.js";
 import { buildSales } from "../mocks/sales.js";
 import { buildApprovedBudget } from "../mocks/approvedBudget.js";
+import { buildDebtors, buildDebtorsFilterOptions } from "../mocks/debtors.js";
 
 export interface FinanceRepository {
   getKpis(from: Date, to: Date): Promise<KPI[]>;
@@ -84,6 +88,9 @@ export interface FinanceRepository {
   // --- Unchanged ---
   getSales(from: Date, to: Date): Promise<SalesResponse>;
   getApprovedBudget(filters: ApprovedBudgetFilters): Promise<ApprovedBudgetResponse>;
+  // --- Debtors ---
+  getDebtors(filters: DebtorsFilters): Promise<DebtorsResponse>;
+  getDebtorsFilterOptions(): Promise<DebtorsFilterOptions>;
 }
 
 class MockFinanceRepository implements FinanceRepository {
@@ -153,6 +160,12 @@ class MockFinanceRepository implements FinanceRepository {
   }
   async getApprovedBudget(filters: ApprovedBudgetFilters) {
     return buildApprovedBudget(filters);
+  }
+  async getDebtors(filters: DebtorsFilters) {
+    return buildDebtors(filters);
+  }
+  async getDebtorsFilterOptions() {
+    return buildDebtorsFilterOptions();
   }
 }
 

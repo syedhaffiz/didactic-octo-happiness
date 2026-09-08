@@ -3,6 +3,7 @@ import type {
   ApprovedBudgetFilters,
   BatchDetailSearch,
   Currency,
+  DebtorsFilters,
   ForexRange,
   HandlingCategory,
   VesselHandlingSearch,
@@ -46,4 +47,6 @@ export const financeService = {
   sales: (from: Date, to: Date) => financeRepository.getSales(from, to),
   approvedBudget: (filters: ApprovedBudgetFilters) =>
     financeRepository.getApprovedBudget(filters),
+  debtors: (filters: DebtorsFilters) => financeRepository.getDebtors(filters),
+  debtorsFilterOptions: () => financeRepository.getDebtorsFilterOptions(),
 };

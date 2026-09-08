@@ -297,6 +297,35 @@ export const openApiSpec = {
         responses: { "200": envelopeResponse("ApprovedBudgetResponse") },
       },
     },
+    "/finance/debtors": {
+      get: {
+        tags: ["Finance"],
+        summary: "Debtors — customer-wise outstanding book, with totals + banner figures",
+        parameters: [
+          {
+            name: "tillDate",
+            in: "query",
+            schema: { type: "string", format: "date", pattern: "^\\d{4}-\\d{2}-\\d{2}$" },
+            description: "As-of date for the balances, `YYYY-MM-DD`. Omit for till-date.",
+          },
+          { name: "currency", in: "query", schema: { type: "string", enum: ["INR", "USD"] } },
+          ...["zone", "port", "segment", "customer", "group", "aging", "type"].map((name) => ({
+            name,
+            in: "query",
+            schema: { type: "string" },
+            description: `Debtors Filters side-panel single-select: ${name}`,
+          })),
+        ],
+        responses: { "200": envelopeResponse("DebtorsResponse") },
+      },
+    },
+    "/finance/debtors/filters": {
+      get: {
+        tags: ["Finance"],
+        summary: "Debtors — Filters side-panel dropdown options",
+        responses: { "200": envelopeResponse("DebtorsFilterOptions") },
+      },
+    },
 
     // --- Inventory --------------------------------------------------------
     "/inventory/index": {
@@ -1034,6 +1063,66 @@ export const openApiSpec = {
           pbd: { type: "array", items: { $ref: "#/components/schemas/PbdRow" } },
           inventory: { $ref: "#/components/schemas/InventoryGauge" },
         },
+      },
+
+      // --- Debtors ----------------------------------------------------
+      DebtorRow: {
+        type: "object",
+        required: [
+          "customerNumber", "customer", "zone", "portName", "segmentName", "group",
+          "balanceOutstanding", "notedLc", "lc", "netReceivable", "aging", "type",
+        ],
+        properties: {
+          customerNumber: { type: "string", example: "110458" },
+          customer: { type: "string", example: "ACC LTD" },
+          zone: { type: "string", example: "Zone- 8" },
+          portName: { type: "string", example: "Gangavaram" },
+          segmentName: { type: "string", example: "SNS" },
+          group: { type: "string", example: "Sales" },
+          balanceOutstanding: { type: "number", description: "Base-currency amount (₹ / $)" },
+          notedLc: { type: "number" },
+          lc: { type: "number" },
+          netReceivable: { type: "number" },
+          aging: { type: "string", example: "31-60 days", description: "Filters-only; not a column" },
+          type: { type: "string", example: "Domestic", description: "Filters-only; not a column" },
+        },
+      },
+      DebtorTotals: {
+        type: "object",
+        required: ["balanceOutstanding", "notedLc", "lc", "netReceivable"],
+        properties: {
+          balanceOutstanding: { type: "number" },
+          notedLc: { type: "number" },
+          lc: { type: "number" },
+          netReceivable: { type: "number" },
+        },
+      },
+      DebtorsResponse: {
+        type: "object",
+        required: [
+          "currency", "periodLabel", "totalOutstanding", "customerCount", "totals", "items",
+        ],
+        properties: {
+          currency: { type: "string", enum: ["INR", "USD"] },
+          periodLabel: { type: "string", example: "Apr 25 : Feb 26" },
+          totalOutstanding: {
+            type: "number",
+            description: "|Σ Balance Outstanding| across the filtered customers (banner headline).",
+          },
+          customerCount: { type: "number" },
+          totals: { $ref: "#/components/schemas/DebtorTotals" },
+          items: { type: "array", items: { $ref: "#/components/schemas/DebtorRow" } },
+        },
+      },
+      DebtorsFilterOptions: {
+        type: "object",
+        required: ["zones", "ports", "segments", "customers", "groups", "agings", "types"],
+        properties: Object.fromEntries(
+          ["zones", "ports", "segments", "customers", "groups", "agings", "types"].map((k) => [
+            k,
+            { type: "array", items: { type: "string" } },
+          ]),
+        ),
       },
 
       // --- Inventory --------------------------------------------------

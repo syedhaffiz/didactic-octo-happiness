@@ -57,6 +57,18 @@ const approvedBudgetSchema = z.object({
   fy: z.string().optional(),
 });
 
+const debtorsSchema = z.object({
+  tillDate: z.string().optional(),
+  currency: z.enum(["INR", "USD"]).optional(),
+  zone: z.string().optional(),
+  port: z.string().optional(),
+  segment: z.string().optional(),
+  customer: z.string().optional(),
+  group: z.string().optional(),
+  aging: z.string().optional(),
+  type: z.string().optional(),
+});
+
 const parse = <T>(schema: z.ZodSchema<T>, query: unknown): T => {
   const result = schema.safeParse(query);
   if (!result.success) throw result.error;
@@ -227,6 +239,25 @@ export const getApprovedBudget: RequestHandler = async (req, res, next) => {
   try {
     const q = parse(approvedBudgetSchema, req.query);
     res.json(ok(await financeService.approvedBudget(q)));
+  } catch (e) {
+    next(e);
+  }
+};
+
+// --- Debtors -------------------------------------------------------------
+
+export const getDebtors: RequestHandler = async (req, res, next) => {
+  try {
+    const q = parse(debtorsSchema, req.query);
+    res.json(ok(await financeService.debtors(q)));
+  } catch (e) {
+    next(e);
+  }
+};
+
+export const getDebtorsFilterOptions: RequestHandler = async (_req, res, next) => {
+  try {
+    res.json(ok(await financeService.debtorsFilterOptions()));
   } catch (e) {
     next(e);
   }
