@@ -7,6 +7,9 @@ import type {
   BatchDetailSearch,
   BreakdownResponse,
   Currency,
+  DebtorsFilterOptions,
+  DebtorsParams,
+  DebtorsResponse,
   ForexRange,
   ForexResponse,
   HandlingBatchDetailResponse,
@@ -40,6 +43,7 @@ import {
   buildRevenueSegment,
 } from "../mocks/finance/revenue";
 import { buildSales } from "../mocks/finance/sales";
+import { buildDebtors, buildDebtorsFilterOptions } from "../mocks/finance/debtors";
 
 // HTTP path identical to the backend so flipping USE_MOCK_DATA is the only
 // change required to switch over to the real API.
@@ -135,6 +139,9 @@ const httpFinanceApi = {
   sales: (p: RangeParams = {}) => get<SalesResponse>("/finance/sales", p),
   approvedBudget: (p: ApprovedBudgetParams = {}) =>
     get<ApprovedBudgetResponse>("/finance/approved-budget", p),
+  debtors: (p: DebtorsParams = {}) => get<DebtorsResponse>("/finance/debtors", p),
+  debtorsFilterOptions: () =>
+    get<DebtorsFilterOptions>("/finance/debtors/filters"),
 };
 
 const mockFinanceApi = {
@@ -172,6 +179,8 @@ const mockFinanceApi = {
     mockDelay(buildHandlingBatchDetail(batchId, search)),
   sales: (p: RangeParams = {}) => mockDelay(buildSales(p.fromDate, p.toDate)),
   approvedBudget: (p: ApprovedBudgetParams = {}) => mockDelay(buildApprovedBudget(p)),
+  debtors: (p: DebtorsParams = {}) => mockDelay(buildDebtors(p)),
+  debtorsFilterOptions: () => mockDelay(buildDebtorsFilterOptions()),
 };
 
 export const financeApi = USE_MOCK_DATA ? mockFinanceApi : httpFinanceApi;

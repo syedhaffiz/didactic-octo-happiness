@@ -355,3 +355,72 @@ export interface ApprovedBudgetParams {
   origin?: string;
   fy?: string;
 }
+
+// --- Debtors --------------------------------------------------------------
+
+// One customer's outstanding position. Monetary fields are whole-number amounts
+// in the response currency's base unit (rupees for INR, dollars for USD). `aging`
+// and `type` are not shown as columns — they back the Filters side-panel only.
+export interface DebtorRow {
+  customerNumber: string;
+  customer: string;
+  zone: string;
+  portName: string;
+  segmentName: string;
+  group: string;
+  balanceOutstanding: number;
+  notedLc: number;
+  lc: number;
+  netReceivable: number;
+  aging: string;
+  type: string;
+}
+
+// The pinned "Total" row above the table — column-wise sums across the filtered
+// rows, in the response currency's base unit.
+export interface DebtorTotals {
+  balanceOutstanding: number;
+  notedLc: number;
+  lc: number;
+  netReceivable: number;
+}
+
+export interface DebtorsResponse {
+  currency: Currency;
+  /** Reporting-period pill shown next to the title, e.g. "Apr 25 : Feb 26". */
+  periodLabel: string;
+  /** Banner headline — total outstanding across the filtered customers, in the
+   *  response currency's base unit. */
+  totalOutstanding: number;
+  /** Number of customers in the filtered result (the banner's "Across N"). */
+  customerCount: number;
+  totals: DebtorTotals;
+  items: DebtorRow[];
+}
+
+// The Filters side-panel dropdown options. Every list holds plain display
+// strings (the value sent to the API is the string itself — each dropdown is a
+// single-select defaulting to "All").
+export interface DebtorsFilterOptions {
+  zones: string[];
+  ports: string[];
+  segments: string[];
+  customers: string[];
+  groups: string[];
+  agings: string[];
+  types: string[];
+}
+
+// Query params. `tillDate` is the as-of date for the balances; every filter is
+// a single value (an omitted field means "All"). Mirrors the mock filtering.
+export interface DebtorsParams {
+  tillDate?: string;
+  currency?: Currency;
+  zone?: string;
+  port?: string;
+  segment?: string;
+  customer?: string;
+  group?: string;
+  aging?: string;
+  type?: string;
+}

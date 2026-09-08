@@ -29,6 +29,9 @@ const VesselProfitability = lazy(() =>
 const BatchDetail = lazy(() =>
   import("./pages/finance/BatchDetail").then((m) => ({ default: m.BatchDetail })),
 );
+const Debtors = lazy(() =>
+  import("./pages/finance/Debtors").then((m) => ({ default: m.Debtors })),
+);
 const InventoryShell = lazy(() =>
   import("./pages/inventory/InventoryShell").then((m) => ({ default: m.InventoryShell })),
 );
@@ -81,7 +84,7 @@ export const createAppRouter = (basename: string = "/") =>
           { path: "finance/working-capital", element: <WorkingCapital /> },
           { path: "finance/approved-budget", element: <ApprovedBudget /> },
           { path: "finance/inventory-days", element: <Placeholder title="Inventory Days" /> },
-          { path: "finance/debtors", element: <Placeholder title="Debtors" /> },
+          { path: "finance/debtors", element: <Debtors /> },
           { path: "finance/insurance-status", element: <Placeholder title="Insurance Status" /> },
           { path: "finance/aging", element: <Placeholder title="Aging" /> },
           {
