@@ -1,6 +1,7 @@
 import { Badge, Button, DatePicker, Segmented, Space, Tooltip } from "antd";
 import { FilterOutlined, ReloadOutlined, UploadOutlined } from "@ant-design/icons";
 import type { Dayjs } from "dayjs";
+import type { ReactNode } from "react";
 import { FilterField } from "../filters/FilterField";
 import type { Currency } from "../../types/finance";
 
@@ -14,6 +15,8 @@ interface Props {
   /** Placeholder — the Excel export is not wired up yet. */
   onExport: () => void;
   onRefresh: () => void;
+  /** Extra control rendered at the end of the row (e.g. the column picker). */
+  columnPicker?: ReactNode;
 }
 
 // Debtors header control row: an as-of "Till date" picker, an INR↔USD currency
@@ -28,6 +31,7 @@ export const DebtorsFilters = ({
   onOpenFilters,
   onExport,
   onRefresh,
+  columnPicker,
 }: Props) => (
   <Space size="middle" align="end" wrap>
     <FilterField label="Date" width={200}>
@@ -58,5 +62,6 @@ export const DebtorsFilters = ({
     <Tooltip title="Refresh">
       <Button icon={<ReloadOutlined />} onClick={onRefresh} aria-label="Refresh" />
     </Tooltip>
+    {columnPicker}
   </Space>
 );

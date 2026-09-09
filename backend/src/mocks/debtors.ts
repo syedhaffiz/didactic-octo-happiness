@@ -5,12 +5,33 @@
 import type {
   Currency,
   DebtorRow,
-  DebtorTotals,
   DebtorsFilterOptions,
   DebtorsFilters,
   DebtorsResponse,
 } from "../types/finance.js";
-import { pick, range, seeded, seedFromString } from "./rand.js";
+import { intRange, pick, range, round, seeded, seedFromString } from "./rand.js";
+
+// Every numeric column, used to currency-scale each row generically (one list
+// instead of 16 hand-written lines). Aggregation lives on the client now — the
+// response carries the filtered rows and the UI derives the Total row from them.
+const NUMERIC_KEYS = [
+  "balanceOutstanding",
+  "notedLc",
+  "lc",
+  "netReceivable",
+  "contractuallyNotDue",
+  "tdsMaterial",
+  "notDue",
+  "dueAmount",
+  "age0_30",
+  "age31_60",
+  "age61_90",
+  "age91_120",
+  "age121_180",
+  "age181_365",
+  "age1_2yr",
+  "age2yr_plus",
+] as const;
 
 // Reference lists backing both the fixture rows and the Filters side-panel. Zone
 // labels carry the "Zone- N" spacing from the design.
@@ -86,10 +107,33 @@ const buildBook = (count: number): DebtorRow[] => {
     // Balances lean negative (debtor positions) with a positive minority. The
     // range is centred so the book's net magnitude lands near the design's
     // ~13 Cr total outstanding across the full 245-customer set.
-    const balanceOutstanding = Math.round(range(rng, -4_164_000, 2_736_000) * 100) / 100;
+    const balanceOutstanding = round(range(rng, -3_775_000, 3_125_000), 2);
     // Net Receivable reconciles the balance with any LC exposure. When there is
     // no LC (the common case) it equals the balance — as the design shows.
-    const netReceivable = Math.round((balanceOutstanding + notedLc + lc) * 100) / 100;
+    const netReceivable = round(balanceOutstanding + notedLc + lc, 2);
+
+    // Receivable-status columns — sparse, mostly zero (as the design shows).
+    const contractuallyNotDue = rng() < 0.12 ? round(range(rng, -500_000_000, 500_000_000), 0) : 0;
+    const tdsMaterial = rng() < 0.15 ? round(range(rng, 50_000, 800_000), 0) : 0;
+    const notDue = rng() < 0.4 ? round(range(rng, 1_000_000, 550_000_000), 0) : 0;
+    const dueAmount = round(range(rng, -4_000_000, 2_500_000), 2);
+
+    // Age the due amount into one or two buckets; the rest stay zero. Keeping
+    // Σ(buckets) === dueAmount makes the Due Amount column reconcile.
+    const ages: [number, number, number, number, number, number, number, number] = [
+      0, 0, 0, 0, 0, 0, 0, 0,
+    ];
+    if (dueAmount !== 0) {
+      const primary = intRange(rng, 0, 7);
+      if (rng() < 0.35 && primary < 7) {
+        const split = round(dueAmount * range(rng, 0.3, 0.7), 2);
+        ages[primary] = round(dueAmount - split, 2);
+        ages[primary + 1] = split;
+      } else {
+        ages[primary] = dueAmount;
+      }
+    }
+
     return {
       customerNumber: String(100_000 + Math.floor(range(rng, 0, 850_000))),
       customer,
@@ -101,6 +145,18 @@ const buildBook = (count: number): DebtorRow[] => {
       notedLc,
       lc,
       netReceivable,
+      contractuallyNotDue,
+      tdsMaterial,
+      notDue,
+      dueAmount,
+      age0_30: ages[0],
+      age31_60: ages[1],
+      age61_90: ages[2],
+      age91_120: ages[3],
+      age121_180: ages[4],
+      age181_365: ages[5],
+      age1_2yr: ages[6],
+      age2yr_plus: ages[7],
       aging: pick(rng, AGINGS),
       type: pick(rng, TYPES),
     };
@@ -128,14 +184,22 @@ const BOOK = buildBook(245);
 const scale = (value: number, currency: Currency): number =>
   currency === "USD" ? Math.round(value * USD_PER_INR * 100) / 100 : value;
 
+// Each filter is a comma-joined multi-select — a row passes when its value is
+// in the selected set (an empty/absent filter matches everything).
+const inCsv = (value: string, param: string | undefined): boolean => {
+  if (!param) return true;
+  const list = param.split(",").filter(Boolean);
+  return list.length === 0 || list.includes(value);
+};
+
 const matches = (row: DebtorRow, f: DebtorsFilters): boolean =>
-  (!f.zone || row.zone === f.zone) &&
-  (!f.port || row.portName === f.port) &&
-  (!f.segment || row.segmentName === f.segment) &&
-  (!f.customer || row.customer === f.customer) &&
-  (!f.group || row.group === f.group) &&
-  (!f.aging || row.aging === f.aging) &&
-  (!f.type || row.type === f.type);
+  inCsv(row.zone, f.zone) &&
+  inCsv(row.portName, f.port) &&
+  inCsv(row.segmentName, f.segment) &&
+  inCsv(row.customer, f.customer) &&
+  inCsv(row.group, f.group) &&
+  inCsv(row.aging, f.aging) &&
+  inCsv(row.type, f.type);
 
 export const buildDebtors = (f: DebtorsFilters = {}): DebtorsResponse => {
   const currency: Currency = f.currency === "USD" ? "USD" : "INR";
@@ -143,41 +207,17 @@ export const buildDebtors = (f: DebtorsFilters = {}): DebtorsResponse => {
   // `tillDate` is the as-of date for the balances. The mock returns the same
   // book regardless (the real source would re-age against it); it flows through
   // so the seam and the URL state stay honest.
-  const filtered = BOOK.filter((r) => matches(r, f)).map((r) => ({
-    ...r,
-    balanceOutstanding: scale(r.balanceOutstanding, currency),
-    notedLc: scale(r.notedLc, currency),
-    lc: scale(r.lc, currency),
-    netReceivable: scale(r.netReceivable, currency),
-  }));
-
-  const totals: DebtorTotals = filtered.reduce<DebtorTotals>(
-    (acc, r) => ({
-      balanceOutstanding: acc.balanceOutstanding + r.balanceOutstanding,
-      notedLc: acc.notedLc + r.notedLc,
-      lc: acc.lc + r.lc,
-      netReceivable: acc.netReceivable + r.netReceivable,
-    }),
-    { balanceOutstanding: 0, notedLc: 0, lc: 0, netReceivable: 0 },
-  );
-
-  // Round the accumulated totals so floating-point noise doesn't leak into the
-  // pinned row.
-  (Object.keys(totals) as (keyof DebtorTotals)[]).forEach((k) => {
-    totals[k] = Math.round(totals[k] * 100) / 100;
+  const filtered = BOOK.filter((r) => matches(r, f)).map((r) => {
+    const out = { ...r };
+    for (const k of NUMERIC_KEYS) out[k] = scale(r[k], currency);
+    return out;
   });
 
-  // The banner headline is the magnitude of the net balance position across the
-  // filtered customers — i.e. |Σ Balance Outstanding| (the design shows this as
-  // "13.16 Cr", matching its Total row's Balance Outstanding of ~-13.16 Cr).
-  const totalOutstanding = Math.abs(totals.balanceOutstanding);
-
+  // Aggregation (the Total row + the banner) is derived on the client from these
+  // rows, so it depends only on the current filter result — never on the page.
   return {
     currency,
     periodLabel: "Apr 25 : Feb 26",
-    totalOutstanding,
-    customerCount: filtered.length,
-    totals,
     items: filtered,
   };
 };

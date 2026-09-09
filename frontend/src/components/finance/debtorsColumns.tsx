@@ -14,25 +14,66 @@ const MoneyCell = ({ value, strong = false }: { value: number; strong?: boolean 
   if (!Number.isFinite(value)) return <>—</>;
   if (value === 0) return <span style={{ color: brand.textMuted }}>0</span>;
   return (
-    <Tooltip title={value.toLocaleString(undefined, { maximumFractionDigits: 2 })}>
+    <Tooltip title={fmt(value)}>
       <span style={strong ? { fontWeight: 600, color: brand.headline } : undefined}>{fmt(value)}</span>
     </Tooltip>
   );
 };
 
-const money = (
-  key: keyof DebtorRow,
-  title: string,
-  width: number,
-  strong = false,
-): ColumnsType<DebtorRow>[number] => ({
-  title,
-  dataIndex: key,
-  key: key as string,
+// The numeric columns, in display order. A single source of truth shared with
+// the page so its pinned Total row sums exactly these keys, in the same order.
+export type DebtorMoneyKey =
+  | "balanceOutstanding"
+  | "notedLc"
+  | "lc"
+  | "netReceivable"
+  | "contractuallyNotDue"
+  | "tdsMaterial"
+  | "notDue"
+  | "dueAmount"
+  | "age0_30"
+  | "age31_60"
+  | "age61_90"
+  | "age91_120"
+  | "age121_180"
+  | "age181_365"
+  | "age1_2yr"
+  | "age2yr_plus";
+
+export interface MoneyColumnDef {
+  key: DebtorMoneyKey;
+  title: string;
+  width: number;
+  strong?: boolean;
+}
+
+export const DEBTOR_MONEY_COLUMNS: MoneyColumnDef[] = [
+  { key: "balanceOutstanding", title: "Balance Outstanding", width: 170 },
+  { key: "notedLc", title: "Noted LC", width: 120 },
+  { key: "lc", title: "LC", width: 130 },
+  { key: "netReceivable", title: "Net Receivable", width: 150, strong: true },
+  { key: "contractuallyNotDue", title: "Contractually Not Due", width: 180 },
+  { key: "tdsMaterial", title: "TDS Material", width: 130 },
+  { key: "notDue", title: "Not Due", width: 130 },
+  { key: "dueAmount", title: "Due Amount", width: 140 },
+  { key: "age0_30", title: "0-30", width: 120 },
+  { key: "age31_60", title: "31-60", width: 120 },
+  { key: "age61_90", title: "61-90", width: 120 },
+  { key: "age91_120", title: "91-120", width: 120 },
+  { key: "age121_180", title: "121-180", width: 120 },
+  { key: "age181_365", title: "181-365", width: 120 },
+  { key: "age1_2yr", title: "1-2 Years", width: 120 },
+  { key: "age2yr_plus", title: "2 Years +", width: 120 },
+];
+
+const moneyColumn = (c: MoneyColumnDef): ColumnsType<DebtorRow>[number] => ({
+  title: c.title,
+  dataIndex: c.key,
+  key: c.key,
   align: "right",
-  width,
-  sorter: (a, b) => (a[key] as number) - (b[key] as number),
-  render: (v: number) => <MoneyCell value={v} strong={strong} />,
+  width: c.width,
+  sorter: (a, b) => (a[c.key] as number) - (b[c.key] as number),
+  render: (v: number) => <MoneyCell value={v} strong={c.strong} />,
 });
 
 export const buildDebtorsColumns = (): ColumnsType<DebtorRow> => [
@@ -81,8 +122,5 @@ export const buildDebtorsColumns = (): ColumnsType<DebtorRow> => [
     width: 130,
     sorter: (a, b) => a.group.localeCompare(b.group),
   },
-  money("balanceOutstanding", "Balance Outstanding", 170),
-  money("notedLc", "Noted LC", 120),
-  money("lc", "LC", 140),
-  money("netReceivable", "Net Receivable", 160, true),
+  ...DEBTOR_MONEY_COLUMNS.map(moneyColumn),
 ];

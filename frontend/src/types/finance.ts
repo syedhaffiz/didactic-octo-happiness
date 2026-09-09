@@ -372,29 +372,32 @@ export interface DebtorRow {
   notedLc: number;
   lc: number;
   netReceivable: number;
+  // Receivable breakdown + aging buckets. The eight age* buckets sum to
+  // `dueAmount`. All amounts are in the response currency's base unit.
+  contractuallyNotDue: number;
+  tdsMaterial: number;
+  notDue: number;
+  dueAmount: number;
+  age0_30: number;
+  age31_60: number;
+  age61_90: number;
+  age91_120: number;
+  age121_180: number;
+  age181_365: number;
+  age1_2yr: number;
+  age2yr_plus: number;
   aging: string;
   type: string;
 }
 
-// The pinned "Total" row above the table — column-wise sums across the filtered
-// rows, in the response currency's base unit.
-export interface DebtorTotals {
-  balanceOutstanding: number;
-  notedLc: number;
-  lc: number;
-  netReceivable: number;
-}
-
+// The response carries the full filtered result set; pagination and the Total
+// row are handled on the client (see the Debtors page). Aggregates (the Total
+// row and the banner) are derived from `items`, so they reflect the active
+// filters but never the current page.
 export interface DebtorsResponse {
   currency: Currency;
   /** Reporting-period pill shown next to the title, e.g. "Apr 25 : Feb 26". */
   periodLabel: string;
-  /** Banner headline — total outstanding across the filtered customers, in the
-   *  response currency's base unit. */
-  totalOutstanding: number;
-  /** Number of customers in the filtered result (the banner's "Across N"). */
-  customerCount: number;
-  totals: DebtorTotals;
   items: DebtorRow[];
 }
 

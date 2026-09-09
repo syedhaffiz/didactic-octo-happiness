@@ -3,12 +3,9 @@ import { Button, Drawer, Select, Space } from "antd";
 import { FilterField } from "../filters/FilterField";
 import {
   DEBTORS_DRAWER_FIELDS,
-  type DebtorsDrawerKey,
   type DebtorsFiltersState,
 } from "../../utils/useDebtorsFilters";
 import type { DebtorsFilterOptions } from "../../types/finance";
-
-const ALL = "__all__";
 
 interface Props {
   open: boolean;
@@ -17,16 +14,17 @@ interface Props {
   filters: DebtorsFiltersState;
 }
 
-// Draft value per field — undefined means "All". Edits stay local until "Apply
-// filters" commits them; "Cancel" discards and "Clear all" empties the draft.
-type Draft = Record<string, string | undefined>;
+// Draft value per field — a value array (empty means "All"). Edits stay local
+// until "Apply filters" commits them; "Cancel" discards and "Clear all" empties
+// the draft.
+type Draft = Record<string, string[]>;
 
-// Slide-in Filters panel for Debtors. Every dropdown is a single-select
-// defaulting to "All", per the design.
+// Slide-in Filters panel for Debtors. Every dropdown is a multi-select defaulting
+// to "All" (nothing selected).
 export const DebtorsFilterDrawer = ({ open, onClose, options, filters }: Props) => {
   const buildDraft = (): Draft => {
     const d: Draft = {};
-    for (const f of DEBTORS_DRAWER_FIELDS) d[f.key] = filters.values[f.key];
+    for (const f of DEBTORS_DRAWER_FIELDS) d[f.key] = filters.values[f.key] ?? [];
     return d;
   };
 
@@ -41,8 +39,8 @@ export const DebtorsFilterDrawer = ({ open, onClose, options, filters }: Props) 
   }
 
   const apply = () => {
-    const entries: Record<string, string | undefined> = {};
-    for (const f of DEBTORS_DRAWER_FIELDS) entries[f.key] = draft[f.key];
+    const entries: Record<string, string[]> = {};
+    for (const f of DEBTORS_DRAWER_FIELDS) entries[f.key] = draft[f.key] ?? [];
     filters.setMany(entries);
     onClose();
   };
@@ -71,14 +69,16 @@ export const DebtorsFilterDrawer = ({ open, onClose, options, filters }: Props) 
           const opts = (options?.[f.optionsKey] ?? []).map((o) => ({ value: o, label: o }));
           return (
             <FilterField key={f.key} label={f.label}>
-              <Select<string>
+              <Select<string[]>
+                mode="multiple"
+                allowClear
                 showSearch
-                value={draft[f.key] ?? ALL}
-                onChange={(v: string) =>
-                  setDraft((d) => ({ ...d, [f.key as DebtorsDrawerKey]: v === ALL ? undefined : v }))
-                }
-                options={[{ value: ALL, label: "All" }, ...opts]}
+                value={draft[f.key] ?? []}
+                onChange={(v) => setDraft((d) => ({ ...d, [f.key]: v }))}
+                options={opts}
+                placeholder="All"
                 optionFilterProp="label"
+                maxTagCount="responsive"
                 style={{ width: "100%" }}
               />
             </FilterField>

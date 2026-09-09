@@ -5,9 +5,10 @@ import type { Currency, DebtorsFilterOptions, DebtorsParams } from "../types/fin
 
 const FMT = "YYYY-MM-DD";
 
-// The Filters side-panel dropdowns. Each is a single-select defaulting to "All"
-// (an absent URL param). `optionsKey` ties a field to its option list in the
-// /filters payload so the drawer and the applied-filter chips stay in lock-step.
+// The Filters side-panel dropdowns. Each is a multi-select; the chosen values are
+// comma-joined in the URL (empty ⇒ "All"). `optionsKey` ties a field to its
+// option list in the /filters payload so the drawer and the applied-filter chips
+// stay in lock-step.
 export interface DebtorsFieldMeta {
   key: DebtorsDrawerKey;
   label: string;
@@ -40,17 +41,21 @@ export const DEBTORS_DRAWER_FIELDS: DebtorsFieldMeta[] = [
 const TOP_KEYS = ["currency", "tillDate"] as const;
 const ALL_KEYS: string[] = [...DEBTORS_DRAWER_KEYS, ...TOP_KEYS];
 
+const splitCsv = (v: string | null): string[] => (v ? v.split(",").filter(Boolean) : []);
+
 export interface DebtorsFiltersState {
-  /** Cleaned query object for the API + a stable useApi query-key member. */
+  /** Cleaned query object for the API + a stable useApi query-key member.
+   *  Multi-select values are comma-joined strings. */
   params: DebtorsParams;
-  /** Current single-select values keyed by drawer field. */
-  values: Record<DebtorsDrawerKey, string | undefined>;
+  /** Current multi-select values keyed by drawer field (parsed from the URL). */
+  values: Record<DebtorsDrawerKey, string[]>;
   currency: Currency;
   /** As-of date, or null when unset (defaults to "till date" on the server). */
   tillDate: Dayjs | null;
-  setValue: (key: DebtorsDrawerKey, value: string | undefined) => void;
-  /** Commit many keys atomically in one URL update — used by the drawer. */
-  setMany: (entries: Record<string, string | undefined>) => void;
+  setValue: (key: DebtorsDrawerKey, values: string[]) => void;
+  /** Commit many keys atomically in one URL update — used by the drawer. Arrays
+   *  are comma-joined; empty arrays clear the key. */
+  setMany: (entries: Record<string, string[] | undefined>) => void;
   setCurrency: (currency: Currency) => void;
   setTillDate: (date: Dayjs | null) => void;
   clearKeys: (keys: string[]) => void;
@@ -63,8 +68,8 @@ export const useDebtorsFilters = (): DebtorsFiltersState => {
   const [params, setParams] = useSearchParams();
 
   const values = useMemo(() => {
-    const out = {} as Record<DebtorsDrawerKey, string | undefined>;
-    for (const k of DEBTORS_DRAWER_KEYS) out[k] = params.get(k) ?? undefined;
+    const out = {} as Record<DebtorsDrawerKey, string[]>;
+    for (const k of DEBTORS_DRAWER_KEYS) out[k] = splitCsv(params.get(k));
     return out;
   }, [params]);
 
@@ -102,20 +107,20 @@ export const useDebtorsFilters = (): DebtorsFiltersState => {
   );
 
   const setValue = useCallback(
-    (key: DebtorsDrawerKey, value: string | undefined) => setKey(key, value),
+    (key: DebtorsDrawerKey, next: string[]) => setKey(key, next.length ? next.join(",") : undefined),
     [setKey],
   );
 
   // One updater applies every entry — a per-key loop would not compose, since
   // React Router's functional updater closes over the render-time params.
   const setMany = useCallback(
-    (entries: Record<string, string | undefined>) => {
+    (entries: Record<string, string[] | undefined>) => {
       setParams(
         (prev) => {
           const out = new URLSearchParams(prev);
           for (const [k, v] of Object.entries(entries)) {
-            if (!v) out.delete(k);
-            else out.set(k, v);
+            if (!v || v.length === 0) out.delete(k);
+            else out.set(k, v.join(","));
           }
           return out;
         },
@@ -152,7 +157,7 @@ export const useDebtorsFilters = (): DebtorsFiltersState => {
 
   const clearAll = useCallback(() => clearKeys(ALL_KEYS), [clearKeys]);
 
-  const drawerActiveCount = DEBTORS_DRAWER_KEYS.filter((k) => Boolean(values[k])).length;
+  const drawerActiveCount = DEBTORS_DRAWER_KEYS.filter((k) => values[k].length > 0).length;
 
   return {
     params: apiParams,
