@@ -39,6 +39,26 @@ npm run dev          # http://localhost:5173
 
 The UI proxies API calls to `VITE_API_BASE_URL` (defaults to `http://localhost:4000/api`).
 
+## Working on this repo from another machine
+
+Git history and project conventions travel with the repo; Claude Code's per-machine state
+does not. To continue seamlessly elsewhere:
+
+1. **Clone the repo.** All commits and branches come with it. Cloning to the **same path**
+   (`E:\didactic-octo-happiness`) keeps Claude's project key identical, which makes step 3 a
+   plain copy.
+2. **Project conventions load automatically.** `CLAUDE.md` at the repo root is read by Claude
+   Code on any machine — it carries the architecture notes and the hard conventions
+   (no brand name in code, colours only from `theme/tokens.ts`, strict stack).
+3. **Personal Claude memory (optional).** The `memory/*.md` notes live outside the repo, under
+   `<home>/.claude/projects/<project-key>/memory/`, where `<project-key>` is the clone's
+   absolute path with separators replaced by `-` (e.g. `E:\didactic-octo-happiness` →
+   `E--didactic-octo-happiness`). Copy that `memory/` folder across by hand (USB / private
+   cloud — **never commit it**, it holds brand-name specifics). Past conversation transcripts
+   (`.jsonl` in the same folder) are large and machine-oriented; skip them.
+
+Prerequisite: the machine must be able to reach this GitHub repo.
+
 ## Scripts
 
 ### backend
