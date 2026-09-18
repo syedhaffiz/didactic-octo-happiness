@@ -48,5 +48,6 @@ export const financeService = {
   approvedBudget: (filters: ApprovedBudgetFilters) =>
     financeRepository.getApprovedBudget(filters),
   debtors: (filters: DebtorsFilters) => financeRepository.getDebtors(filters),
+  debtorsOverview: (filters: DebtorsFilters) => financeRepository.getDebtorsOverview(filters),
   debtorsFilterOptions: () => financeRepository.getDebtorsFilterOptions(),
 };

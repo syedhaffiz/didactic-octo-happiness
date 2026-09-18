@@ -319,6 +319,28 @@ export const openApiSpec = {
         responses: { "200": envelopeResponse("DebtorsResponse") },
       },
     },
+    "/finance/debtors/overview": {
+      get: {
+        tags: ["Finance"],
+        summary: "Debtors overview — aging tiles + segment/group receivable breakdowns",
+        parameters: [
+          {
+            name: "tillDate",
+            in: "query",
+            schema: { type: "string", format: "date", pattern: "^\\d{4}-\\d{2}-\\d{2}$" },
+            description: "As-of date for the balances, `YYYY-MM-DD`. Omit for till-date.",
+          },
+          { name: "currency", in: "query", schema: { type: "string", enum: ["INR", "USD"] } },
+          ...["zone", "port", "segment", "customer", "group", "aging", "type"].map((name) => ({
+            name,
+            in: "query",
+            schema: { type: "string" },
+            description: `Debtors Filters side-panel multi-select: ${name} (comma-joined values; omit for All)`,
+          })),
+        ],
+        responses: { "200": envelopeResponse("DebtorsOverviewResponse") },
+      },
+    },
     "/finance/debtors/filters": {
       get: {
         tags: ["Finance"],
@@ -1072,8 +1094,8 @@ export const openApiSpec = {
           "customerNumber", "customer", "zone", "portName", "segmentName", "group",
           "balanceOutstanding", "notedLc", "lc", "netReceivable",
           "contractuallyNotDue", "tdsMaterial", "notDue", "dueAmount",
-          "age0_30", "age31_60", "age61_90", "age91_120",
-          "age121_180", "age181_365", "age1_2yr", "age2yr_plus",
+          "age0_30", "age31_60", "age61_90", "age91_180",
+          "age181_365", "age1_2yr", "age2yr_plus",
           "aging", "type",
         ],
         properties: {
@@ -1090,16 +1112,15 @@ export const openApiSpec = {
           contractuallyNotDue: { type: "number" },
           tdsMaterial: { type: "number" },
           notDue: { type: "number" },
-          dueAmount: { type: "number", description: "Σ of the eight age* buckets" },
+          dueAmount: { type: "number", description: "Sits entirely in the age* bucket named by `aging`" },
           age0_30: { type: "number" },
           age31_60: { type: "number" },
           age61_90: { type: "number" },
-          age91_120: { type: "number" },
-          age121_180: { type: "number" },
+          age91_180: { type: "number" },
           age181_365: { type: "number" },
           age1_2yr: { type: "number" },
           age2yr_plus: { type: "number" },
-          aging: { type: "string", example: "31-60 days", description: "Filters-only; not a column" },
+          aging: { type: "string", example: "31-60 days", description: "Dominant aging bucket; backs the filter" },
           type: { type: "string", example: "Domestic", description: "Filters-only; not a column" },
         },
       },
@@ -1126,6 +1147,41 @@ export const openApiSpec = {
             { type: "array", items: { type: "string" } },
           ]),
         ),
+      },
+      DebtorsAgingBucket: {
+        type: "object",
+        required: ["bucket", "value"],
+        properties: {
+          bucket: { type: "string", example: "91-180 days" },
+          value: { type: "number" },
+        },
+      },
+      DebtorsBreakdownItem: {
+        type: "object",
+        required: ["name", "value", "due", "notDue"],
+        properties: {
+          name: { type: "string", example: "SNS" },
+          value: { type: "number", description: "due + notDue, in the response currency's base unit" },
+          due: { type: "number" },
+          notDue: { type: "number" },
+        },
+      },
+      DebtorsOverviewResponse: {
+        type: "object",
+        required: [
+          "currency", "periodLabel", "netReceivable", "totalDue", "totalNotDue",
+          "aging", "segments", "groups",
+        ],
+        properties: {
+          currency: { type: "string", enum: ["INR", "USD"] },
+          periodLabel: { type: "string", example: "Apr 25 : Feb 26" },
+          netReceivable: { type: "number", description: "Donut centre — totalDue + totalNotDue" },
+          totalDue: { type: "number" },
+          totalNotDue: { type: "number" },
+          aging: { type: "array", items: { $ref: "#/components/schemas/DebtorsAgingBucket" } },
+          segments: { type: "array", items: { $ref: "#/components/schemas/DebtorsBreakdownItem" } },
+          groups: { type: "array", items: { $ref: "#/components/schemas/DebtorsBreakdownItem" } },
+        },
       },
 
       // --- Inventory --------------------------------------------------

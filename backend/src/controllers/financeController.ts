@@ -255,6 +255,15 @@ export const getDebtors: RequestHandler = async (req, res, next) => {
   }
 };
 
+export const getDebtorsOverview: RequestHandler = async (req, res, next) => {
+  try {
+    const q = parse(debtorsSchema, req.query);
+    res.json(ok(await financeService.debtorsOverview(q)));
+  } catch (e) {
+    next(e);
+  }
+};
+
 export const getDebtorsFilterOptions: RequestHandler = async (_req, res, next) => {
   try {
     res.json(ok(await financeService.debtorsFilterOptions()));
