@@ -33,6 +33,10 @@ export const brand = {
   textSubtle: "#5A6172", // menu item text
   textTableHead: "#4A5168", // table header text
 
+  // Debtors receivable-tile value colors — navy for positive, red for negative.
+  receivablePos: "#132559",
+  receivableNeg: "#BE3009",
+
   // Secondary
   green: "#1BA05A",
   blue: "#0D66CA",
@@ -201,6 +205,24 @@ export const logisticsColors = {
   // DP Handling Agents — Outstanding Payments columns (purple / blue per agent).
   outstandingSeries: ["#7A2BBE", "#3E64D6"],
 } as const;
+
+// ---------------------------------------------------------------------------
+// Finance → Debtors overview — donut slice palette for the Segment-wise and
+// Group-wise receivable charts. Enough distinct hues to cover the largest
+// grouping (nine groups); assigned by slice position, cycling if exceeded.
+// ---------------------------------------------------------------------------
+export const debtorsColors = [
+  "#36B45C", // green
+  "#4A6CD4", // blue
+  "#9B5BD0", // purple
+  "#F2992E", // amber
+  "#07DBFB", // cyan
+  "#C2477E", // magenta
+  "#5FA0E6", // light blue
+  "#F7836E", // coral
+  "#37A089", // teal
+  "#A678D6", // light purple
+] as const;
 
 // Market Share series display labels. The client's brand name is intentionally
 // confined to this single constant — the user authorized it as on-screen copy

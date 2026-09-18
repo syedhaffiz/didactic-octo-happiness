@@ -2,8 +2,8 @@ import { Badge, Button, DatePicker, Segmented, Space, Tooltip } from "antd";
 import { FilterOutlined, ReloadOutlined, UploadOutlined } from "@ant-design/icons";
 import type { Dayjs } from "dayjs";
 import type { ReactNode } from "react";
-import { FilterField } from "../filters/FilterField";
-import type { Currency } from "../../types/finance";
+import { FilterField } from "../../filters/FilterField";
+import type { Currency } from "../../../types/finance";
 
 interface Props {
   tillDate: Dayjs | null;
@@ -22,6 +22,7 @@ interface Props {
 // Debtors header control row: an as-of "Till date" picker, an INR↔USD currency
 // toggle, the badged button that opens the Filters side-panel, and (placeholder)
 // export + refresh actions. Presentational — all state is owned by the page.
+// Shared by the Debtors overview and the Debtors table.
 export const DebtorsFilters = ({
   tillDate,
   currency,

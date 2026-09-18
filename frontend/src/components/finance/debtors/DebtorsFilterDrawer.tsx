@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Button, Drawer, Select, Space } from "antd";
-import { FilterField } from "../filters/FilterField";
+import { FilterField } from "../../filters/FilterField";
 import {
   DEBTORS_DRAWER_FIELDS,
   type DebtorsFiltersState,
-} from "../../utils/useDebtorsFilters";
-import type { DebtorsFilterOptions } from "../../types/finance";
+} from "../../../utils/useDebtorsFilters";
+import type { DebtorsFilterOptions } from "../../../types/finance";
 
 interface Props {
   open: boolean;
@@ -20,7 +20,7 @@ interface Props {
 type Draft = Record<string, string[]>;
 
 // Slide-in Filters panel for Debtors. Every dropdown is a multi-select defaulting
-// to "All" (nothing selected).
+// to "All" (nothing selected). Shared by the overview and the table.
 export const DebtorsFilterDrawer = ({ open, onClose, options, filters }: Props) => {
   const buildDraft = (): Draft => {
     const d: Draft = {};

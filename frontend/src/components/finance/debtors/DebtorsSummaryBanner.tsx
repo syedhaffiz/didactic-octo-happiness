@@ -1,8 +1,8 @@
 import { Card, Skeleton } from "antd";
-import { useBrandTokens } from "../../theme/useBrandTokens";
-import { brand } from "../../theme/tokens";
-import { toMoneyParts } from "../../utils/format";
-import type { Currency } from "../../types/finance";
+import { useBrandTokens } from "../../../theme/useBrandTokens";
+import { brand } from "../../../theme/tokens";
+import { toMoneyParts } from "../../../utils/format";
+import type { Currency } from "../../../types/finance";
 
 interface Props {
   totalOutstanding: number;

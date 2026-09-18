@@ -1,7 +1,7 @@
 import { Tooltip } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { brand } from "../../theme/tokens";
-import type { DebtorRow } from "../../types/finance";
+import { brand } from "../../../theme/tokens";
+import type { DebtorRow } from "../../../types/finance";
 
 // Plain grouped number with up to two decimals — the amounts are already in the
 // selected currency's base unit, and the design shows them without a symbol.
@@ -22,6 +22,7 @@ const MoneyCell = ({ value, strong = false }: { value: number; strong?: boolean 
 
 // The numeric columns, in display order. A single source of truth shared with
 // the page so its pinned Total row sums exactly these keys, in the same order.
+// The seven age* buckets align with the AGINGS labels used across the screen.
 export type DebtorMoneyKey =
   | "balanceOutstanding"
   | "notedLc"
@@ -34,8 +35,7 @@ export type DebtorMoneyKey =
   | "age0_30"
   | "age31_60"
   | "age61_90"
-  | "age91_120"
-  | "age121_180"
+  | "age91_180"
   | "age181_365"
   | "age1_2yr"
   | "age2yr_plus";
@@ -59,8 +59,7 @@ export const DEBTOR_MONEY_COLUMNS: MoneyColumnDef[] = [
   { key: "age0_30", title: "0-30", width: 120 },
   { key: "age31_60", title: "31-60", width: 120 },
   { key: "age61_90", title: "61-90", width: 120 },
-  { key: "age91_120", title: "91-120", width: 120 },
-  { key: "age121_180", title: "121-180", width: 120 },
+  { key: "age91_180", title: "91-180", width: 120 },
   { key: "age181_365", title: "181-365", width: 120 },
   { key: "age1_2yr", title: "1-2 Years", width: 120 },
   { key: "age2yr_plus", title: "2 Years +", width: 120 },

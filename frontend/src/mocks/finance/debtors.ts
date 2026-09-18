@@ -1,20 +1,22 @@
-// Mock generator for the Finance → Debtors screen. Produces a deterministic
-// customer-outstanding book that the mock API filters, sums and returns. Mirrors
-// what the real /finance/debtors endpoints will serve so flipping USE_MOCK_DATA
-// is the only change needed to switch over.
+// Mock generator for the Finance → Debtors screens (table + overview). Produces
+// a deterministic customer-outstanding book that the mock API filters and
+// aggregates. Mirrors what the real /finance/debtors endpoints will serve so
+// flipping USE_MOCK_DATA is the only change needed to switch over.
 
 import type {
   Currency,
   DebtorRow,
+  DebtorsBreakdownItem,
   DebtorsFilterOptions,
+  DebtorsOverviewResponse,
   DebtorsParams,
   DebtorsResponse,
 } from "../../types/finance";
 import { intRange, pick, range, round, seeded, seedFromString } from "../rand";
 
 // Every numeric column, used to currency-scale each row generically (one list
-// instead of 16 hand-written lines). Aggregation lives on the client now — the
-// response carries the filtered rows and the UI derives the Total row from them.
+// instead of hand-written lines). Aggregation lives elsewhere (the table derives
+// its Total row on the client; the overview endpoint aggregates below).
 const NUMERIC_KEYS = [
   "balanceOutstanding",
   "notedLc",
@@ -27,8 +29,7 @@ const NUMERIC_KEYS = [
   "age0_30",
   "age31_60",
   "age61_90",
-  "age91_120",
-  "age121_180",
+  "age91_180",
   "age181_365",
   "age1_2yr",
   "age2yr_plus",
@@ -39,9 +40,34 @@ const NUMERIC_KEYS = [
 const ZONES = ["Zone- 1", "Zone- 2", "Zone- 3", "Zone- 4", "Zone- 5", "Zone- 6", "Zone- 7", "Zone- 8"];
 const PORTS = ["Gangavaram", "Paradip", "Hazira", "Dhamra", "Bedi", "TUNA", "Krishnapatnam", "Other"];
 const SEGMENTS = ["SNS", "SEB", "TPH", "SAGARMALA", "OTHER"];
-const GROUPS = ["Sales", "Handling", "ADI Group", "Legal", "Static", "Others"];
-const AGINGS = ["0-30 days", "31-60 days", "61-90 days", "91-180 days", ">180 days"];
+const GROUPS = [
+  "ADI Group",
+  "Group Co",
+  "Others",
+  "Handling",
+  "JP Group",
+  "Sales / Handling",
+  "Legal",
+  "Sales",
+  "Static",
+];
 const TYPES = ["Domestic", "Export"];
+
+// The canonical aging buckets, used across the whole Debtors screen (the filter,
+// the overview aging tiles, and — index-aligned — the age* row columns).
+export const AGINGS = [
+  "0-30 days",
+  "31-60 days",
+  "61-90 days",
+  "91-180 days",
+  "181-365 days",
+  "1-2 years",
+  "2+ years",
+];
+
+// The age* row columns are index-aligned with AGINGS: age0_30 ↔ AGINGS[0] …
+// age2yr_plus ↔ AGINGS[6]. A row's dueAmount lands in the column at its aging
+// index (see makeRow).
 
 // Indicative INR→USD rate for the currency toggle — the real API applies the
 // booked rate; the mock just divides so USD figures land in a plausible range.
@@ -116,24 +142,17 @@ const buildBook = (count: number): DebtorRow[] => {
     // Receivable-status columns — sparse, mostly zero (as the design shows).
     const contractuallyNotDue = rng() < 0.12 ? round(range(rng, -500_000_000, 500_000_000), 0) : 0;
     const tdsMaterial = rng() < 0.15 ? round(range(rng, 50_000, 800_000), 0) : 0;
-    const notDue = rng() < 0.4 ? round(range(rng, 1_000_000, 550_000_000), 0) : 0;
-    const dueAmount = round(range(rng, -4_000_000, 2_500_000), 2);
+    const notDue = rng() < 0.4 ? round(range(rng, 300_000, 5_000_000), 0) : 0;
+    // Overdue amount — a wide spread around a small positive mean, so the segment
+    // and group receivable tiles land a realistic mix of positive and negative
+    // (credits/advances), which the tiles colour differently.
+    const dueAmount = round(range(rng, -20_000_000, 22_000_000), 2);
 
-    // Age the due amount into one or two buckets; the rest stay zero. Keeping
-    // Σ(buckets) === dueAmount makes the Due Amount column reconcile.
-    const ages: [number, number, number, number, number, number, number, number] = [
-      0, 0, 0, 0, 0, 0, 0, 0,
-    ];
-    if (dueAmount !== 0) {
-      const primary = intRange(rng, 0, 7);
-      if (rng() < 0.35 && primary < 7) {
-        const split = round(dueAmount * range(rng, 0.3, 0.7), 2);
-        ages[primary] = round(dueAmount - split, 2);
-        ages[primary + 1] = split;
-      } else {
-        ages[primary] = dueAmount;
-      }
-    }
+    // The row's dominant aging bucket. The whole due amount sits in that one
+    // bucket (others stay 0), so the aging filter, the overview aging tiles, and
+    // these columns all agree. `agingIdx` is in range by construction.
+    const agingIdx = intRange(rng, 0, AGINGS.length - 1);
+    const aging = AGINGS[agingIdx] as string;
 
     return {
       customerNumber: String(100_000 + Math.floor(range(rng, 0, 850_000))),
@@ -150,15 +169,14 @@ const buildBook = (count: number): DebtorRow[] => {
       tdsMaterial,
       notDue,
       dueAmount,
-      age0_30: ages[0],
-      age31_60: ages[1],
-      age61_90: ages[2],
-      age91_120: ages[3],
-      age121_180: ages[4],
-      age181_365: ages[5],
-      age1_2yr: ages[6],
-      age2yr_plus: ages[7],
-      aging: pick(rng, AGINGS),
+      age0_30: agingIdx === 0 ? dueAmount : 0,
+      age31_60: agingIdx === 1 ? dueAmount : 0,
+      age61_90: agingIdx === 2 ? dueAmount : 0,
+      age91_180: agingIdx === 3 ? dueAmount : 0,
+      age181_365: agingIdx === 4 ? dueAmount : 0,
+      age1_2yr: agingIdx === 5 ? dueAmount : 0,
+      age2yr_plus: agingIdx === 6 ? dueAmount : 0,
+      aging,
       type: pick(rng, TYPES),
     };
   };
@@ -178,8 +196,8 @@ const buildBook = (count: number): DebtorRow[] => {
   return rows;
 };
 
-// The book is built once and reused across requests — filtering/summing happens
-// per call on this stable dataset.
+// The book is built once and reused across requests — filtering/aggregation
+// happens per call on this stable dataset.
 const BOOK = buildBook(245);
 
 const scale = (value: number, currency: Currency): number =>
@@ -220,6 +238,60 @@ export const buildDebtors = (p: DebtorsParams = {}): DebtorsResponse => {
     currency,
     periodLabel: "Apr 25 : Feb 26",
     items: filtered,
+  };
+};
+
+// The overview landing screen. Aggregates the same book (post-filter) three
+// ways: by aging bucket, by segment, and by group. `netReceivable` = due +
+// notDue and is the donut centre; each grouping partitions all rows, so the
+// segment and group slices both sum to it.
+export const buildDebtorsOverview = (p: DebtorsParams = {}): DebtorsOverviewResponse => {
+  const currency: Currency = p.currency === "USD" ? "USD" : "INR";
+  const rows = BOOK.filter((r) => matches(r, p));
+  const sc = (v: number) => round(scale(v, currency), 2);
+
+  // Aging tiles — Σ dueAmount for the customers whose dominant aging is each
+  // bucket (always all seven, zero when a bucket is empty).
+  const agingDue = new Map<string, number>(AGINGS.map((a) => [a, 0]));
+  for (const r of rows) agingDue.set(r.aging, (agingDue.get(r.aging) ?? 0) + r.dueAmount);
+  const aging = AGINGS.map((bucket) => ({ bucket, value: sc(agingDue.get(bucket) ?? 0) }));
+
+  // Segment-/group-wise breakdown: value = due + notDue, dropping rows a name
+  // never received (keeps empty slices out of the donut).
+  const breakdown = (keyOf: (r: DebtorRow) => string, names: string[]): DebtorsBreakdownItem[] => {
+    const due = new Map<string, number>(names.map((n) => [n, 0]));
+    const notDue = new Map<string, number>(names.map((n) => [n, 0]));
+    for (const r of rows) {
+      const k = keyOf(r);
+      if (!due.has(k)) continue;
+      due.set(k, (due.get(k) ?? 0) + r.dueAmount);
+      notDue.set(k, (notDue.get(k) ?? 0) + r.notDue);
+    }
+    return names
+      .map((name) => {
+        const d = sc(due.get(name) ?? 0);
+        const nd = sc(notDue.get(name) ?? 0);
+        return { name, due: d, notDue: nd, value: round(d + nd, 2) };
+      })
+      .filter((item) => item.value !== 0 || item.due !== 0 || item.notDue !== 0);
+  };
+
+  const segments = breakdown((r) => r.segmentName, SEGMENTS);
+  const groups = breakdown((r) => r.group, GROUPS);
+
+  const netReceivable = round(segments.reduce((s, i) => s + i.value, 0), 2);
+  const totalDue = round(segments.reduce((s, i) => s + i.due, 0), 2);
+  const totalNotDue = round(segments.reduce((s, i) => s + i.notDue, 0), 2);
+
+  return {
+    currency,
+    periodLabel: "Apr 25 : Feb 26",
+    netReceivable,
+    totalDue,
+    totalNotDue,
+    aging,
+    segments,
+    groups,
   };
 };
 

@@ -44,6 +44,10 @@ export const useBrandTokens = () => {
     deltaUp: isDark ? brandDark.deltaUp : brand.green,
     deltaDown: isDark ? brandDark.deltaDown : brand.danger,
 
+    // Debtors receivable-tile value colors (navy positive / red negative).
+    receivablePositive: isDark ? brandDark.value : brand.receivablePos,
+    receivableNegative: isDark ? brandDark.deltaDown : brand.receivableNeg,
+
     // Backdrop behind the chart-loading Spin overlay.
     loadingOverlay: isDark ? brandDark.loadingOverlay : brand.loadingOverlay,
 

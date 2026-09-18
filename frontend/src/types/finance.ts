@@ -372,8 +372,10 @@ export interface DebtorRow {
   notedLc: number;
   lc: number;
   netReceivable: number;
-  // Receivable breakdown + aging buckets. The eight age* buckets sum to
-  // `dueAmount`. All amounts are in the response currency's base unit.
+  // Receivable breakdown + aging buckets. Each row's `dueAmount` sits in the one
+  // age* bucket named by its `aging` field (the others are 0), so the aging
+  // filter, the overview aging tiles, and these columns all stay coherent. All
+  // amounts are in the response currency's base unit.
   contractuallyNotDue: number;
   tdsMaterial: number;
   notDue: number;
@@ -381,11 +383,11 @@ export interface DebtorRow {
   age0_30: number;
   age31_60: number;
   age61_90: number;
-  age91_120: number;
-  age121_180: number;
+  age91_180: number;
   age181_365: number;
   age1_2yr: number;
   age2yr_plus: number;
+  /** Dominant aging bucket — one of the seven AGINGS labels. Backs the filter. */
   aging: string;
   type: string;
 }
@@ -414,8 +416,9 @@ export interface DebtorsFilterOptions {
   types: string[];
 }
 
-// Query params. `tillDate` is the as-of date for the balances; every filter is
-// a single value (an omitted field means "All"). Mirrors the mock filtering.
+// Query params. `tillDate` is the as-of date for the balances; each filter is a
+// comma-joined multi-select (an omitted field means "All"). Mirrors the mock
+// filtering. Shared by the Debtors table and the Debtors overview.
 export interface DebtorsParams {
   tillDate?: string;
   currency?: Currency;
@@ -426,4 +429,38 @@ export interface DebtorsParams {
   group?: string;
   aging?: string;
   type?: string;
+}
+
+// --- Debtors overview (the landing screen) --------------------------------
+
+// One aging bucket tile — the total receivable for customers whose dominant
+// aging falls in `bucket` (one of the seven AGINGS labels).
+export interface DebtorsAgingBucket {
+  bucket: string;
+  value: number;
+}
+
+// One segment-/group-wise breakdown entry — drives both a tile card and a donut
+// slice. `value` = `due` + `notDue`, all in the response currency's base unit.
+export interface DebtorsBreakdownItem {
+  name: string;
+  value: number;
+  due: number;
+  notDue: number;
+}
+
+export interface DebtorsOverviewResponse {
+  currency: Currency;
+  /** Reporting-period pill shown next to the title, e.g. "Apr 25 : Feb 26". */
+  periodLabel: string;
+  /** Net receivables across the filtered customers — the donut centre figure. */
+  netReceivable: number;
+  /** Total overdue amount across the filtered customers (donut centre "Due"). */
+  totalDue: number;
+  /** Total not-yet-due amount (donut centre "Not due"). */
+  totalNotDue: number;
+  /** Aging tiles, one per AGINGS bucket (always all seven, zero when empty). */
+  aging: DebtorsAgingBucket[];
+  segments: DebtorsBreakdownItem[];
+  groups: DebtorsBreakdownItem[];
 }

@@ -8,6 +8,7 @@ import type {
   BreakdownResponse,
   Currency,
   DebtorsFilterOptions,
+  DebtorsOverviewResponse,
   DebtorsParams,
   DebtorsResponse,
   ForexRange,
@@ -43,7 +44,11 @@ import {
   buildRevenueSegment,
 } from "../mocks/finance/revenue";
 import { buildSales } from "../mocks/finance/sales";
-import { buildDebtors, buildDebtorsFilterOptions } from "../mocks/finance/debtors";
+import {
+  buildDebtors,
+  buildDebtorsFilterOptions,
+  buildDebtorsOverview,
+} from "../mocks/finance/debtors";
 
 // HTTP path identical to the backend so flipping USE_MOCK_DATA is the only
 // change required to switch over to the real API.
@@ -140,6 +145,8 @@ const httpFinanceApi = {
   approvedBudget: (p: ApprovedBudgetParams = {}) =>
     get<ApprovedBudgetResponse>("/finance/approved-budget", p),
   debtors: (p: DebtorsParams = {}) => get<DebtorsResponse>("/finance/debtors", p),
+  debtorsOverview: (p: DebtorsParams = {}) =>
+    get<DebtorsOverviewResponse>("/finance/debtors/overview", p),
   debtorsFilterOptions: () =>
     get<DebtorsFilterOptions>("/finance/debtors/filters"),
 };
@@ -180,6 +187,7 @@ const mockFinanceApi = {
   sales: (p: RangeParams = {}) => mockDelay(buildSales(p.fromDate, p.toDate)),
   approvedBudget: (p: ApprovedBudgetParams = {}) => mockDelay(buildApprovedBudget(p)),
   debtors: (p: DebtorsParams = {}) => mockDelay(buildDebtors(p)),
+  debtorsOverview: (p: DebtorsParams = {}) => mockDelay(buildDebtorsOverview(p)),
   debtorsFilterOptions: () => mockDelay(buildDebtorsFilterOptions()),
 };
 

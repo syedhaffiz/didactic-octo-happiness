@@ -100,6 +100,14 @@ export const toMoneyParts = (
 ): { num: string; unit: string } =>
   currency === "USD" ? splitCompact(usdCompactFormat, value) : toCrLakh(value);
 
+// Currency-aware compact single string, e.g. "86.6 Cr" / "$1.2M". `value` is in
+// the target currency's base unit. Pairs with `toMoneyParts` (num + unit) when
+// the two need styling separately.
+export const formatMoneyCompact = (value: number, currency: Currency): string => {
+  const { num, unit } = toMoneyParts(value, currency);
+  return unit ? `${num} ${unit}` : num;
+};
+
 // Full-precision currency string for tooltips. `value` is in the target
 // currency's base unit.
 export const formatMoney = (value: number, currency: Currency): string =>

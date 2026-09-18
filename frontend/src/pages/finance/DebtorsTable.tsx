@@ -4,15 +4,15 @@ import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { ErrorRetry } from "../../components/ErrorRetry";
 import { PageHeader } from "../../components/PageHeader";
 import { FilterChips, type FilterChip } from "../../components/FilterChips";
-import { DebtorsFilters } from "../../components/finance/DebtorsFilters";
-import { DebtorsFilterDrawer } from "../../components/finance/DebtorsFilterDrawer";
-import { DebtorsSummaryBanner } from "../../components/finance/DebtorsSummaryBanner";
-import { DebtorsColumnPicker } from "../../components/finance/DebtorsColumnPicker";
+import { DebtorsFilters } from "../../components/finance/debtors/DebtorsFilters";
+import { DebtorsFilterDrawer } from "../../components/finance/debtors/DebtorsFilterDrawer";
+import { DebtorsSummaryBanner } from "../../components/finance/debtors/DebtorsSummaryBanner";
+import { DebtorsColumnPicker } from "../../components/finance/debtors/DebtorsColumnPicker";
 import {
   buildDebtorsColumns,
   DEBTOR_MONEY_COLUMNS,
   type DebtorMoneyKey,
-} from "../../components/finance/debtorsColumns";
+} from "../../components/finance/debtors/debtorsColumns";
 import { financeApi } from "../../api/finance";
 import { useApi } from "../../api/useApi";
 import { useBrandTokens } from "../../theme/useBrandTokens";
@@ -23,6 +23,13 @@ import {
 import type { DebtorRow } from "../../types/finance";
 
 const PAGE_SIZE = 20;
+
+// Breadcrumb back to the overview — the table sits under /finance/debtors/table,
+// whose segments don't map cleanly to routes, so it's given explicitly.
+const BREADCRUMB = [
+  { label: "Finance", to: "/finance/overview" },
+  { label: "Debtors", to: "/finance/debtors" },
+];
 
 // Column keys that can never be hidden — the row-identity column stays put so the
 // pinned "Total" label and the fixed-left anchor always have a home.
@@ -64,7 +71,7 @@ const STRONG_KEYS = new Set<string>(
   DEBTOR_MONEY_COLUMNS.filter((c) => c.strong).map((c) => c.key),
 );
 
-export const Debtors = () => {
+export const DebtorsTable = () => {
   const t = useBrandTokens();
   const filters = useDebtorsFilters();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -212,6 +219,7 @@ export const Debtors = () => {
       >
         <PageHeader
           title="Debtors"
+          breadcrumb={BREADCRUMB}
           datePill={data?.periodLabel}
           filters={
             <DebtorsFilters
