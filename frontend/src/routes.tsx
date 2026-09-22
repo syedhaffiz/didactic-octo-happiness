@@ -32,6 +32,9 @@ const BatchDetail = lazy(() =>
 const DebtorsOverview = lazy(() =>
   import("./pages/finance/DebtorsOverview").then((m) => ({ default: m.DebtorsOverview })),
 );
+const InventoryDays = lazy(() =>
+  import("./pages/finance/InventoryDays").then((m) => ({ default: m.InventoryDays })),
+);
 const DebtorsTable = lazy(() =>
   import("./pages/finance/DebtorsTable").then((m) => ({ default: m.DebtorsTable })),
 );
@@ -86,7 +89,7 @@ export const createAppRouter = (basename: string = "/") =>
           { path: "finance/overview/revenue", element: <Revenue /> },
           { path: "finance/working-capital", element: <WorkingCapital /> },
           { path: "finance/approved-budget", element: <ApprovedBudget /> },
-          { path: "finance/inventory-days", element: <Placeholder title="Inventory Days" /> },
+          { path: "finance/inventory-days", element: <InventoryDays /> },
           { path: "finance/debtors", element: <DebtorsOverview /> },
           { path: "finance/debtors/table", element: <DebtorsTable /> },
           { path: "finance/insurance-status", element: <Placeholder title="Insurance Status" /> },

@@ -1,0 +1,130 @@
+import { useMemo } from "react";
+import { Card, Col, Row, Skeleton } from "antd";
+import { BarChartOutlined, PieChartOutlined } from "@ant-design/icons";
+import { ErrorBoundary } from "../../components/ErrorBoundary";
+import { ErrorRetry } from "../../components/ErrorRetry";
+import { PageHeader } from "../../components/PageHeader";
+import { CardTitle } from "../../components/CardTitle";
+import { RevenueDonut } from "../../components/finance/RevenueDonut";
+import { DeltaStat } from "../../components/finance/DeltaStat";
+import { InventoryDaysSegmentCard } from "../../components/finance/InventoryDaysSegmentCard";
+import { InventoryDaysPortChart } from "../../components/finance/InventoryDaysPortChart";
+import { InventoryDaysFilters } from "../../components/finance/InventoryDaysFilters";
+import { financeApi } from "../../api/finance";
+import { useApi } from "../../api/useApi";
+import { donutColors } from "../../theme/tokens";
+import { useUrlParams } from "../../utils/useUrlParam";
+import { useDateRangeWithDefault } from "../../utils/useDateRangeWithDefault";
+
+const FILTER_KEYS = ["zone", "port", "origin", "segment"] as const;
+
+export const InventoryDays = () => {
+  const { values, set } = useUrlParams(FILTER_KEYS);
+  const { zone, port, origin, segment } = values;
+
+  // Default window is one month back to today; scales the donut holding value.
+  const { value, fromDate, toDate, setRange } = useDateRangeWithDefault(1);
+
+  const { data, isLoading, isError, error, refetch } = useApi(
+    ["inventory-days", fromDate, toDate, zone, port, origin, segment],
+    () => financeApi.inventoryDays({ fromDate, toDate, zone, port, origin, segment }),
+  );
+
+  const loading = isLoading || !data;
+
+  // Slice/card colors are owned by the UI, not the API: assign from the shared
+  // pool by the segment's position in the response (cycling if it ever exceeds
+  // the pool) so cards and donut slices stay in lockstep.
+  const colorBySegment = useMemo(() => {
+    const out: Record<string, string> = {};
+    (data?.segments ?? []).forEach((it, i) => {
+      out[it.segment] = donutColors[i % donutColors.length];
+    });
+    return out;
+  }, [data]);
+
+  // Export to Excel — placeholder only; not wired up yet.
+  const handleExport = () => {};
+
+  return (
+    <>
+      <PageHeader
+        title="Inventory Days"
+        datePill={data?.periodLabel}
+        filters={
+          <InventoryDaysFilters
+            zone={zone}
+            port={port}
+            origin={origin}
+            segment={segment}
+            dateValue={value}
+            onZoneChange={(v) => set("zone", v)}
+            onPortChange={(v) => set("port", v)}
+            onOriginChange={(v) => set("origin", v)}
+            onSegmentChange={(v) => set("segment", v)}
+            onDateChange={setRange}
+            onExport={handleExport}
+            onRefresh={refetch}
+          />
+        }
+      />
+
+      {isError ? (
+        <ErrorRetry title="Could not load inventory days" error={error} onRetry={refetch} />
+      ) : (
+        <>
+          <Card
+            title={<CardTitle icon={<PieChartOutlined />}>Segment Wise</CardTitle>}
+            style={{ marginBottom: 16 }}
+          >
+            <ErrorBoundary level="section" label="inventory days segment wise">
+              {loading ? (
+                <Skeleton active paragraph={{ rows: 6 }} />
+              ) : (
+                <Row gutter={[20, 20]} align="middle">
+                  <Col xs={24} md={14}>
+                    <Row gutter={[16, 16]}>
+                      {data.segments.map((it) => (
+                        <Col xs={12} key={it.segment}>
+                          <InventoryDaysSegmentCard
+                            segment={it.segment}
+                            days={it.days}
+                            deltaVsBudget={it.deltaVsBudget}
+                            deltaVsLastYear={it.deltaVsLastYear}
+                            hoverColor={colorBySegment[it.segment]}
+                          />
+                        </Col>
+                      ))}
+                    </Row>
+                  </Col>
+                  <Col xs={24} md={10}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <RevenueDonut
+                          items={data.segments}
+                          colorBySegment={colorBySegment}
+                          total={data.totalValue}
+                          currency="INR"
+                        />
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        <DeltaStat value={data.totalDeltaVsBudget} label="vs Budget" />
+                        <DeltaStat value={data.totalDeltaVsLastYear} label="vs last year" />
+                      </div>
+                    </div>
+                  </Col>
+                </Row>
+              )}
+            </ErrorBoundary>
+          </Card>
+
+          <Card title={<CardTitle icon={<BarChartOutlined />}>Port Wise</CardTitle>}>
+            <ErrorBoundary level="section" label="inventory days port wise" resetKeys={[port, zone]}>
+              <InventoryDaysPortChart rows={data?.portwise} loading={loading} />
+            </ErrorBoundary>
+          </Card>
+        </>
+      )}
+    </>
+  );
+};

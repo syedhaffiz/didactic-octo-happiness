@@ -6,6 +6,7 @@ import type {
   DebtorsFilters,
   ForexRange,
   HandlingCategory,
+  InventoryDaysFilters,
   VesselHandlingSearch,
   VesselSalesSearch,
 } from "../types/finance.js";
@@ -50,4 +51,6 @@ export const financeService = {
   debtors: (filters: DebtorsFilters) => financeRepository.getDebtors(filters),
   debtorsOverview: (filters: DebtorsFilters) => financeRepository.getDebtorsOverview(filters),
   debtorsFilterOptions: () => financeRepository.getDebtorsFilterOptions(),
+  inventoryDays: (from: Date, to: Date, filters: InventoryDaysFilters) =>
+    financeRepository.getInventoryDays(from, to, filters),
 };

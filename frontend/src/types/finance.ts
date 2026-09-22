@@ -464,3 +464,45 @@ export interface DebtorsOverviewResponse {
   segments: DebtorsBreakdownItem[];
   groups: DebtorsBreakdownItem[];
 }
+
+// --- Inventory Days (Finance landing screen) ------------------------------
+// Mirror of backend/src/types/finance.ts. Kept in sync.
+export interface InventoryDaysFilters {
+  fromDate?: string;
+  toDate?: string;
+  zone?: string;
+  port?: string;
+  origin?: string;
+  segment?: string;
+}
+
+// One Segment Wise entry — drives both a KPI tile and a donut slice. `days` is
+// the inventory-days figure shown on the tile; `value` is the inventory holding
+// value (base rupees) that sizes the donut slice. Slice/tile colors are owned
+// by the UI, assigned by response order.
+export interface InventoryDaysSegmentItem {
+  segment: string;
+  days: number;
+  value: number;
+  pct: number;
+  deltaVsBudget: number;
+  deltaVsLastYear: number;
+}
+
+// One Port Wise bar — inventory days for a single port.
+export interface InventoryDaysPortItem {
+  port: string;
+  days: number;
+}
+
+export interface InventoryDaysResponse {
+  /** Reporting-period pill shown next to the title, e.g. "Apr 25 : Feb 26". */
+  periodLabel: string;
+  /** Donut centre total — inventory holding value across segments (base rupees). */
+  totalValue: number;
+  /** Signed % deltas shown beside the donut. */
+  totalDeltaVsBudget: number;
+  totalDeltaVsLastYear: number;
+  segments: InventoryDaysSegmentItem[];
+  portwise: InventoryDaysPortItem[];
+}

@@ -10,6 +10,8 @@ import type {
   DebtorsResponse,
   ForexRange,
   ForexResponse,
+  InventoryDaysFilters,
+  InventoryDaysResponse,
   HandlingBatchDetailResponse,
   HandlingCategory,
   VesselHandlingSearch,
@@ -47,6 +49,7 @@ import {
   buildDebtorsFilterOptions,
   buildDebtorsOverview,
 } from "../mocks/debtors.js";
+import { buildInventoryDays } from "../mocks/inventoryDays.js";
 
 export interface FinanceRepository {
   getKpis(from: Date, to: Date): Promise<KPI[]>;
@@ -97,6 +100,12 @@ export interface FinanceRepository {
   getDebtors(filters: DebtorsFilters): Promise<DebtorsResponse>;
   getDebtorsOverview(filters: DebtorsFilters): Promise<DebtorsOverviewResponse>;
   getDebtorsFilterOptions(): Promise<DebtorsFilterOptions>;
+  // --- Inventory Days ---
+  getInventoryDays(
+    from: Date,
+    to: Date,
+    filters: InventoryDaysFilters,
+  ): Promise<InventoryDaysResponse>;
 }
 
 class MockFinanceRepository implements FinanceRepository {
@@ -175,6 +184,16 @@ class MockFinanceRepository implements FinanceRepository {
   }
   async getDebtorsFilterOptions() {
     return buildDebtorsFilterOptions();
+  }
+  async getInventoryDays(from: Date, to: Date, filters: InventoryDaysFilters) {
+    return buildInventoryDays(
+      from,
+      to,
+      filters.zone,
+      filters.port,
+      filters.origin,
+      filters.segment,
+    );
   }
 }
 

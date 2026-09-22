@@ -6,6 +6,7 @@ import {
   getDebtorsOverview,
   getForex,
   getHandlingBatchDetail,
+  getInventoryDays,
   getKpis,
   getNetMarginProfitability,
   getOverview,
@@ -38,6 +39,7 @@ router.get("/profitability/vessels/handling/:batchId", getHandlingBatchDetail);
 
 router.get("/sales", getSales);
 router.get("/approved-budget", getApprovedBudget);
+router.get("/inventory-days", getInventoryDays);
 
 // Debtors — the overview landing screen, the outstanding-customers table, and
 // the shared Filters side-panel options.

@@ -69,6 +69,13 @@ const debtorsSchema = z.object({
   type: z.string().optional(),
 });
 
+const inventoryDaysSchema = dateRangeSchema.extend({
+  zone: z.string().optional(),
+  port: z.string().optional(),
+  origin: z.string().optional(),
+  segment: z.string().optional(),
+});
+
 const parse = <T>(schema: z.ZodSchema<T>, query: unknown): T => {
   const result = schema.safeParse(query);
   if (!result.success) throw result.error;
@@ -267,6 +274,27 @@ export const getDebtorsOverview: RequestHandler = async (req, res, next) => {
 export const getDebtorsFilterOptions: RequestHandler = async (_req, res, next) => {
   try {
     res.json(ok(await financeService.debtorsFilterOptions()));
+  } catch (e) {
+    next(e);
+  }
+};
+
+// --- Inventory Days ------------------------------------------------------
+
+export const getInventoryDays: RequestHandler = async (req, res, next) => {
+  try {
+    const q = parse(inventoryDaysSchema, req.query);
+    const { from, to } = parseDateRange(q.fromDate, q.toDate);
+    res.json(
+      ok(
+        await financeService.inventoryDays(from, to, {
+          zone: q.zone,
+          port: q.port,
+          origin: q.origin,
+          segment: q.segment,
+        }),
+      ),
+    );
   } catch (e) {
     next(e);
   }
