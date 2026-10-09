@@ -14,6 +14,10 @@ import type {
   OceanFreightParams,
   TargetResponse,
   TargetParams,
+  IiaBillingFilterOptions,
+  IiaBillingParams,
+  IiaBillingResponse,
+  IiaPortType,
 } from "../types/marketing";
 import {
   buildIndexMovement,
@@ -28,6 +32,8 @@ import {
   buildMarketShareFilterOptions,
   buildOceanFreight,
   buildTarget,
+  buildIiaBilling,
+  buildIiaBillingFilterOptions,
 } from "../mocks/marketing";
 
 // HTTP path identical to the backend so flipping `USE_MOCK_DATA` is the only
@@ -72,6 +78,11 @@ const httpMarketingApi = {
   oceanFreight: (p: OceanFreightParams = {}) =>
     get<OceanFreightResponse>("/marketing/ocean-freight", p),
   target: (p: TargetParams = {}) => get<TargetResponse>("/marketing/target", p),
+  // IIA Billing — one table per tab (load / discharge port), shared filters.
+  iiaBilling: (portType: IiaPortType, p: IiaBillingParams = {}) =>
+    get<IiaBillingResponse>("/marketing/iia-billing", { portType, ...p }),
+  iiaBillingFilterOptions: () =>
+    get<IiaBillingFilterOptions>("/marketing/iia-billing/filters"),
 };
 
 const mockMarketingApi = {
@@ -93,6 +104,9 @@ const mockMarketingApi = {
   marketShareFilterOptions: () => mockDelay(buildMarketShareFilterOptions()),
   oceanFreight: (p: OceanFreightParams = {}) => mockDelay(buildOceanFreight(p)),
   target: (p: TargetParams = {}) => mockDelay(buildTarget(p)),
+  iiaBilling: (portType: IiaPortType, p: IiaBillingParams = {}) =>
+    mockDelay(buildIiaBilling(portType, p)),
+  iiaBillingFilterOptions: () => mockDelay(buildIiaBillingFilterOptions()),
 };
 
 export const marketingApi = USE_MOCK_DATA ? mockMarketingApi : httpMarketingApi;

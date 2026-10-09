@@ -286,3 +286,46 @@ export const INVENTORY_VESSELS = [
   "MV CORAL DAWN",
   "MV DELTA RIVER",
 ] as const;
+
+// === IIA Billing catalogues ================================================
+// Reference lists for the Marketing → IIA Billing screen. Ports / Zones /
+// Segments reuse the lists above.
+
+// Buying customers whose cargo the inspection agencies bill against.
+export const IIA_CUSTOMER_LIST: IdName[] = [
+  { id: "ultratech-cement", name: "Ultratech Cement" },
+  { id: "jsw-steel", name: "JSW Steel" },
+  { id: "jindal-power", name: "Jindal Power" },
+  { id: "chettinad-cement", name: "Chettinad Cement" },
+  { id: "wonder-cement", name: "Wonder Cement" },
+  { id: "hindalco", name: "Hindalco" },
+  { id: "shree-cement", name: "Shree Cement" },
+  { id: "nlc-tamilnadu", name: "NLC Tamilnadu" },
+];
+
+// Inspection agencies (the billing vendors). Load-port agencies sample at the
+// origin; discharge-port agencies sample on arrival in India.
+export const IIA_LOAD_VENDOR_LIST: IdName[] = [
+  { id: "pt-surveyor-carbon", name: "PT SURVEYOR CARBON CONSULTING INDONESIA" },
+  { id: "pt-leon-testing", name: "PT LEON TESTING AND CONSULTANCY" },
+  { id: "pt-anindya-wiraputra", name: "PT ANINDYA WIRAPUTRA KONSULT" },
+  { id: "pt-carsurin", name: "PT CARSURIN" },
+];
+export const IIA_DISCHARGE_VENDOR_LIST: IdName[] = [
+  { id: "mitra-sk", name: "MITRA S K PVT LTD" },
+  { id: "leon-inspection", name: "LEON INSPECTION AND TESTING SERVICES" },
+  { id: "geo-chem", name: "GEO-CHEM LABORATORIES PVT LTD" },
+];
+
+export const IIA_VESSELS = [
+  "MV BESIKTAS KAZAKHSTAN",
+  "MV TOMINI LIBERTY",
+  "MV MILOS",
+  "MV GREAT PERSEUS",
+  "MV GH LEVECHE",
+  "MV MARCO",
+  "MV ATLANTIC PRESTIGE",
+  "MV STAR QUEST",
+  "MV PACIFIC DAWN",
+  "MV SILVER WAVE",
+] as const;

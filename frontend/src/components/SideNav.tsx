@@ -80,6 +80,7 @@ export const navSections: NavSection[] = [
       { label: "Market Share", path: "/marketing/market-share" },
       { label: "Ocean Freight", path: "/marketing/ocean-freight" },
       { label: "Target above 2%", path: "/marketing/target" },
+      { label: "IIA Billing", path: "/marketing/iia-billing" },
     ],
   },
   {

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Card, Skeleton, Tooltip } from "antd";
+import { InfoCircleOutlined } from "@ant-design/icons";
 import { useBrandTokens } from "../theme/useBrandTokens";
 import { brand } from "../theme/tokens";
 
@@ -10,12 +11,16 @@ interface Props {
   /** Full-precision figure shown on hover. Omit for counts that need no expansion. */
   tooltip?: string;
   loading?: boolean;
+  /** Small secondary line under the value, e.g. "Dated: 31-Aug-26". */
+  caption?: ReactNode;
+  /** Explanation shown from an info icon in the top-right corner. */
+  info?: ReactNode;
 }
 
 // Compact metric tile: a gradient rule down the left edge, an uppercase label,
 // and one large value. Used for the stat rows above the vessel and batch-detail
 // tables.
-export const StatTile = ({ label, value, tooltip, loading = false }: Props) => {
+export const StatTile = ({ label, value, tooltip, loading = false, caption, info }: Props) => {
   const t = useBrandTokens();
 
   const figure = (
@@ -61,6 +66,13 @@ export const StatTile = ({ label, value, tooltip, loading = false }: Props) => {
       >
         {label}
       </div>
+      {info ? (
+        <Tooltip title={info}>
+          <InfoCircleOutlined
+            style={{ position: "absolute", top: 14, right: 14, color: t.textMuted }}
+          />
+        </Tooltip>
+      ) : null}
       {loading ? (
         <Skeleton.Input active style={{ width: 120, height: 30 }} />
       ) : tooltip ? (
@@ -68,6 +80,9 @@ export const StatTile = ({ label, value, tooltip, loading = false }: Props) => {
       ) : (
         figure
       )}
+      {caption && !loading ? (
+        <div style={{ fontSize: 12, color: t.textSecondary, marginTop: 4 }}>{caption}</div>
+      ) : null}
     </Card>
   );
 };

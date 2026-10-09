@@ -2,16 +2,10 @@ import { Badge, Button, Space } from "antd";
 import { FilterOutlined } from "@ant-design/icons";
 import { DateRangeFilter } from "../DateRangeFilter";
 import { MultiSelectFilter } from "../filters/MultiSelectFilter";
+import { QUARTER_OPTIONS } from "../filters/quarterOptions";
 import type { MarketShareFiltersState } from "../../utils/useMarketShareFilters";
 import type { FilterRef } from "../../types/marketing";
 
-// Quarter is a fixed list (not API-driven).
-const QUARTER_OPTIONS = [
-  { value: "q1", label: "Q1" },
-  { value: "q2", label: "Q2" },
-  { value: "q3", label: "Q3" },
-  { value: "q4", label: "Q4" },
-];
 
 interface Props {
   filters: MarketShareFiltersState;

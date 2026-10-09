@@ -59,6 +59,9 @@ const MarketingOceanFreight = lazy(() =>
 const MarketingTarget = lazy(() =>
   import("./pages/marketing/TargetAbove2Page").then((m) => ({ default: m.TargetAbove2Page })),
 );
+const MarketingIiaBilling = lazy(() =>
+  import("./pages/marketing/IiaBillingPage").then((m) => ({ default: m.IiaBillingPage })),
+);
 const LegalPage = lazy(() =>
   import("./pages/legal/LegalPage").then((m) => ({ default: m.LegalPage })),
 );
@@ -109,6 +112,7 @@ export const createAppRouter = (basename: string = "/") =>
           { path: "marketing/market-share", element: <MarketingMarketShare /> },
           { path: "marketing/ocean-freight", element: <MarketingOceanFreight /> },
           { path: "marketing/target", element: <MarketingTarget /> },
+          { path: "marketing/iia-billing", element: <MarketingIiaBilling /> },
           { path: "legal", element: <LegalPage /> },
           { path: "planning", element: <Placeholder title="Planning" /> },
           { path: "sourcing", element: <Placeholder title="Sourcing" /> },

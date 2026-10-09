@@ -150,3 +150,61 @@ export interface TargetParams {
   fromDate?: string;
   toDate?: string;
 }
+
+// --- IIA Billing -----------------------------------------------------------
+// Inspection-agency billing lines, one table per side of the voyage. The two
+// tabs share the filter query and differ only by `portType`.
+
+export type IiaPortType = "load" | "discharge";
+
+export interface IiaBillingRow {
+  id: string;
+  date: string; // YYYY-MM-DD
+  customer: string;
+  vessel: string;
+  port: string;
+  segment: string;
+  vendor: string;
+  amount: number; // INR; negative for credit notes
+  qty: number; // MMT
+  plannedQuality: number; // GCV, kcal/kg
+  // Measured quality at the load (LP) or discharge (DP) port — a GCV figure,
+  // a grade label, or "0" while the result is pending.
+  portQuality: string;
+  tcNumber: string;
+}
+
+export interface IiaBillingResponse {
+  portType: IiaPortType;
+  // Billing on the latest billing date in the selection, and that date.
+  yesterdayBilling: number; // INR
+  yesterdayDate: string | null; // YYYY-MM-DD
+  totalBilling: number; // INR
+  lastUpdated: string | null; // YYYY-MM-DD
+  items: IiaBillingRow[];
+}
+
+// Dropdown option lists for the top bar (Fiscal Year) and the Filters
+// side-panel. Quarter is a fixed frontend list.
+export interface IiaBillingFilterOptions {
+  fiscalYears: FilterRef[];
+  zones: FilterRef[];
+  ports: FilterRef[];
+  segments: FilterRef[];
+  customers: FilterRef[];
+  vendors: FilterRef[];
+}
+
+// Every filter is multiselect, sent comma-joined. Year/Quarter and the date
+// range are mutually exclusive.
+export interface IiaBillingParams {
+  fiscalYears?: string;
+  quarters?: string;
+  fromDate?: string;
+  toDate?: string;
+  zone?: string;
+  port?: string;
+  segment?: string;
+  customer?: string;
+  vendor?: string;
+}
