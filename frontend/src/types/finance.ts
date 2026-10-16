@@ -506,3 +506,55 @@ export interface InventoryDaysResponse {
   segments: InventoryDaysSegmentItem[];
   portwise: InventoryDaysPortItem[];
 }
+
+// ---------------------------------------------------------------------------
+// Finance → Insurance Status
+// ---------------------------------------------------------------------------
+
+export type InsuranceStatus = "Active" | "Expiring Soon";
+
+// One insured risk: a policy of `policyType` held by `segment`, covering a
+// single insured `location`. The Sankey (segment → policy type → location) and
+// its hover cards are aggregated from these rows in the UI.
+export interface InsurancePolicyRow {
+  id: string;
+  segment: string;
+  policyType: string;
+  location: string;
+  /** Sum insured, base rupees. */
+  sumInsured: number;
+  /** Insured stock value, base rupees. */
+  stockValue: number;
+  /** Policy period, "YYYY-MM-DD". */
+  periodStart: string;
+  periodEnd: string;
+  status: InsuranceStatus;
+}
+
+// One KPI tile — a segment's totals across its matching policies. `atRisk` is
+// true when any of those policies is expiring soon (value renders in red).
+export interface InsuranceSegmentSummary {
+  segment: string;
+  sumInsured: number;
+  stockValue: number;
+  atRisk: boolean;
+}
+
+export interface InsuranceStatusResponse {
+  totalSumInsured: number;
+  totalStockValue: number;
+  segments: InsuranceSegmentSummary[];
+  policies: InsurancePolicyRow[];
+}
+
+export interface InsuranceStatusParams {
+  fromDate?: string;
+  toDate?: string;
+  zone?: string;
+  port?: string;
+  policyType?: string;
+}
+
+export interface InsuranceFilterOptions {
+  policyTypes: string[];
+}

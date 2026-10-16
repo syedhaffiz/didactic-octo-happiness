@@ -35,6 +35,9 @@ const DebtorsOverview = lazy(() =>
 const InventoryDays = lazy(() =>
   import("./pages/finance/InventoryDays").then((m) => ({ default: m.InventoryDays })),
 );
+const InsuranceStatus = lazy(() =>
+  import("./pages/finance/InsuranceStatus").then((m) => ({ default: m.InsuranceStatus })),
+);
 const DebtorsTable = lazy(() =>
   import("./pages/finance/DebtorsTable").then((m) => ({ default: m.DebtorsTable })),
 );
@@ -95,7 +98,7 @@ export const createAppRouter = (basename: string = "/") =>
           { path: "finance/inventory-days", element: <InventoryDays /> },
           { path: "finance/debtors", element: <DebtorsOverview /> },
           { path: "finance/debtors/table", element: <DebtorsTable /> },
-          { path: "finance/insurance-status", element: <Placeholder title="Insurance Status" /> },
+          { path: "finance/insurance-status", element: <InsuranceStatus /> },
           { path: "finance/aging", element: <Placeholder title="Aging" /> },
           {
             path: "inventory",

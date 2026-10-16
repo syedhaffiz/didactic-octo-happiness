@@ -3,9 +3,11 @@ import Highcharts from "highcharts";
 // first (above) or the modules throw "Cannot read … 'Templating'".
 //   - highcharts-more / solid-gauge: Inventory Days gauge (Approved Budget)
 //   - drilldown: Market Share pie drilldown
+//   - sankey: Insurance Status flow chart
 import "highcharts/highcharts-more";
 import "highcharts/modules/solid-gauge";
 import "highcharts/modules/drilldown";
+import "highcharts/modules/sankey";
 import { useEffect, useMemo, useRef } from "react";
 import { brand, chartPalette, fontFamily } from "../theme/tokens";
 import { LoadingOverlay } from "./LoadingIndicator";

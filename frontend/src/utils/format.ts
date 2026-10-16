@@ -149,3 +149,9 @@ export const formatAccounting = (n: number): string => {
   const abs = numberFormat({ maximumFractionDigits: 2 }).format(Math.abs(n));
   return n < 0 ? `(${abs})` : abs;
 };
+
+// Rupee amount (base rupees) as crores with exactly two decimals, e.g.
+// 125_428_700_000 → "12,542.87 Cr". For headline figures that must read to the
+// paisa-of-a-crore like the Figma, where the compact formatter would round.
+export const formatCrFixed = (value: number): string =>
+  `${numberFormat({ minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value / CR)} Cr`;

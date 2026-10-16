@@ -224,6 +224,23 @@ export const debtorsColors = [
   "#A678D6", // light purple
 ] as const;
 
+// ---------------------------------------------------------------------------
+// Finance → Insurance Status — Sankey colors sampled from the Figma. Each
+// segment's node, policy-type nodes and outgoing links share one hue; the
+// insured-location column is neutral grey. Reuse donut hues where they match.
+// ---------------------------------------------------------------------------
+export const insuranceColors = {
+  segments: {
+    ICM: donutColors[0], // blue
+    Bunkering: "#F2C14E", // amber
+    "Rock Phosphate": donutColors[4], // purple
+    Sagarmala: donutColors[1], // green
+  } as Record<string, string>,
+  // Fallback for any segment not pinned above.
+  segmentFallback: brand.grey,
+  locationNode: "#8A93A6",
+} as const;
+
 // Market Share series display labels. The client's brand name is intentionally
 // confined to this single constant — the user authorized it as on-screen copy
 // for the Market Share screen only (data keys stay `own`/`nonOwn`).

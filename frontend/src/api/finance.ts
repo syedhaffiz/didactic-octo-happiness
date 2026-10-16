@@ -15,6 +15,9 @@ import type {
   ForexResponse,
   HandlingBatchDetailResponse,
   HandlingCategory,
+  InsuranceFilterOptions,
+  InsuranceStatusParams,
+  InsuranceStatusResponse,
   InventoryDaysFilters,
   InventoryDaysResponse,
   KPI,
@@ -52,6 +55,10 @@ import {
   buildDebtorsOverview,
 } from "../mocks/finance/debtors";
 import { buildInventoryDays } from "../mocks/finance/inventoryDays";
+import {
+  buildInsuranceFilterOptions,
+  buildInsuranceStatus,
+} from "../mocks/finance/insuranceStatus";
 
 // HTTP path identical to the backend so flipping USE_MOCK_DATA is the only
 // change required to switch over to the real API.
@@ -154,6 +161,10 @@ const httpFinanceApi = {
     get<DebtorsFilterOptions>("/finance/debtors/filters"),
   inventoryDays: (p: InventoryDaysFilters = {}) =>
     get<InventoryDaysResponse>("/finance/inventory-days", p),
+  insuranceStatus: (p: InsuranceStatusParams = {}) =>
+    get<InsuranceStatusResponse>("/finance/insurance-status", p),
+  insuranceFilterOptions: () =>
+    get<InsuranceFilterOptions>("/finance/insurance-status/filters"),
 };
 
 const mockFinanceApi = {
@@ -195,6 +206,8 @@ const mockFinanceApi = {
   debtorsOverview: (p: DebtorsParams = {}) => mockDelay(buildDebtorsOverview(p)),
   debtorsFilterOptions: () => mockDelay(buildDebtorsFilterOptions()),
   inventoryDays: (p: InventoryDaysFilters = {}) => mockDelay(buildInventoryDays(p)),
+  insuranceStatus: (p: InsuranceStatusParams = {}) => mockDelay(buildInsuranceStatus(p)),
+  insuranceFilterOptions: () => mockDelay(buildInsuranceFilterOptions()),
 };
 
 export const financeApi = USE_MOCK_DATA ? mockFinanceApi : httpFinanceApi;
