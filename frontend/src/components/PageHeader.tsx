@@ -20,6 +20,7 @@ const labels: Record<string, string> = {
   "approved-budget": "Approved Budget",
   "inventory-days": "Inventory Days",
   "insurance-status": "Insurance Status",
+  aging: "Aging",
   logistics: "Logistics",
   marketing: "Marketing",
   legal: "Legal",

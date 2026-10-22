@@ -18,6 +18,7 @@ const optionExtractors: {
   segments: (s) => ({ value: s.id, label: s.name }),
   zones: (z) => ({ value: z.id, label: z.name }),
   origins: (o) => ({ value: o.id, label: o.name }),
+  mines: (m) => ({ value: m.id, label: m.name }),
   grades: (g) => ({ value: g.id, label: g.name }),
   indexNames: (i) => ({ value: i.code_id, label: i.index_name }),
 };

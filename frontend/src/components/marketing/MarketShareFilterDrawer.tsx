@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Button, Drawer, Select, Space } from "antd";
+import { Select } from "antd";
 import { FilterField } from "../filters/FilterField";
+import { FilterDrawer } from "../filters/FilterDrawer";
 import {
   MS_DRAWER_FIELDS,
   type MarketShareFiltersState,
@@ -59,52 +60,33 @@ export const MarketShareFilterDrawer = ({ open, onClose, options, filters }: Pro
   };
 
   return (
-    <Drawer
-      title="Filters"
-      open={open}
-      onClose={onClose}
-      extra={
-        <a onClick={() => setDraft({})} style={{ cursor: "pointer" }}>
-          Clear all
-        </a>
-      }
-      footer={
-        <Space style={{ display: "flex", justifyContent: "flex-end" }}>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button type="primary" onClick={apply}>
-            Apply filters
-          </Button>
-        </Space>
-      }
-    >
-      <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-        {MS_DRAWER_FIELDS.map((f) => {
-          const opts = (options?.[f.optionsKey] ?? []).map((o) => ({ value: o.id, label: o.name }));
-          return (
-            <FilterField key={f.key} label={f.label}>
-              {f.multi ? (
-                <Select
-                  mode="multiple"
-                  allowClear
-                  value={draft[f.key] ?? []}
-                  onChange={(v) => setDraft((d) => ({ ...d, [f.key]: v }))}
-                  options={opts}
-                  placeholder="All"
-                  maxTagCount="responsive"
-                  style={{ width: "100%" }}
-                />
-              ) : (
-                <Select
-                  value={draft[f.key]?.[0] ?? ALL}
-                  onChange={(v) => setDraft((d) => ({ ...d, [f.key]: v === ALL ? [] : [v] }))}
-                  options={[{ value: ALL, label: "All" }, ...opts]}
-                  style={{ width: "100%" }}
-                />
-              )}
-            </FilterField>
-          );
-        })}
-      </Space>
-    </Drawer>
+    <FilterDrawer open={open} onClose={onClose} onApply={apply} onClearAll={() => setDraft({})}>
+      {MS_DRAWER_FIELDS.map((f) => {
+        const opts = (options?.[f.optionsKey] ?? []).map((o) => ({ value: o.id, label: o.name }));
+        return (
+          <FilterField key={f.key} label={f.label}>
+            {f.multi ? (
+              <Select
+                mode="multiple"
+                allowClear
+                value={draft[f.key] ?? []}
+                onChange={(v) => setDraft((d) => ({ ...d, [f.key]: v }))}
+                options={opts}
+                placeholder="All"
+                maxTagCount="responsive"
+                style={{ width: "100%" }}
+              />
+            ) : (
+              <Select
+                value={draft[f.key]?.[0] ?? ALL}
+                onChange={(v) => setDraft((d) => ({ ...d, [f.key]: v === ALL ? [] : [v] }))}
+                options={[{ value: ALL, label: "All" }, ...opts]}
+                style={{ width: "100%" }}
+              />
+            )}
+          </FilterField>
+        );
+      })}
+    </FilterDrawer>
   );
 };

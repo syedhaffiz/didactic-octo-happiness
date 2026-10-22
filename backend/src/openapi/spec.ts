@@ -696,12 +696,13 @@ export const openApiSpec = {
       },
       FiltersResponse: {
         type: "object",
-        required: ["ports", "segments", "zones", "origins", "grades", "indexNames"],
+        required: ["ports", "segments", "zones", "origins", "mines", "grades", "indexNames"],
         properties: {
           ports: { type: "array", items: { $ref: "#/components/schemas/FilterRef" } },
           segments: { type: "array", items: { $ref: "#/components/schemas/FilterRef" } },
           zones: { type: "array", items: { $ref: "#/components/schemas/FilterRef" } },
           origins: { type: "array", items: { $ref: "#/components/schemas/FilterRef" } },
+          mines: { type: "array", items: { $ref: "#/components/schemas/FilterRef" } },
           grades: { type: "array", items: { $ref: "#/components/schemas/GradeRef" } },
           indexNames: { type: "array", items: { $ref: "#/components/schemas/IndexNameRef" } },
         },

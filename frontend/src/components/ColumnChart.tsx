@@ -24,6 +24,12 @@ interface Props {
   labelItalic?: boolean;
   /** Drape the Spin overlay during data refetches. */
   loading?: boolean;
+  /** Overrides the `decimals`-based formatter for y-axis + data labels. */
+  formatValue?: (v: number) => string;
+  /** Tooltip body for a bar's raw value; defaults to "<value> <yTitle>". */
+  formatTooltip?: (v: number) => string;
+  /** Bar width in px; defaults to 14. */
+  pointWidth?: number;
 }
 
 // Reusable single-series column chart. Used for Target Port-Wise, Origin-Wise
@@ -38,6 +44,9 @@ export const ColumnChart = ({
   labelRotation = -45,
   labelItalic = true,
   loading = false,
+  formatValue,
+  formatTooltip,
+  pointWidth = 14,
 }: Props) => {
   const safeRows = useMemo(
     () => (Array.isArray(rows) ? rows : []).filter((r): r is Row => Boolean(r)),
@@ -45,7 +54,11 @@ export const ColumnChart = ({
   );
 
   const label = (v: unknown) =>
-    decimals > 0 ? Number(v ?? 0).toFixed(decimals) : fmtK(v);
+    formatValue
+      ? formatValue(Number(v ?? 0))
+      : decimals > 0
+        ? Number(v ?? 0).toFixed(decimals)
+        : fmtK(v);
 
   const options = useMemo<Highcharts.Options>(
     () => ({
@@ -67,7 +80,13 @@ export const ColumnChart = ({
       legend: legendName
         ? { enabled: true, align: "center", verticalAlign: "bottom", symbolRadius: 6 }
         : { enabled: false },
-      tooltip: { pointFormat: `<b>{point.y:,.${decimals}f} ${yTitle}</b>` },
+      tooltip: formatTooltip
+        ? {
+            pointFormatter(this: Highcharts.Point): string {
+              return `<b>${formatTooltip(this.y ?? 0)}</b>`;
+            },
+          }
+        : { pointFormat: `<b>{point.y:,.${decimals}f} ${yTitle}</b>` },
       plotOptions: {
         column: {
           pointPadding: 0.05,
@@ -85,11 +104,23 @@ export const ColumnChart = ({
           name: legendName ?? yTitle,
           data: safeRows.map((r) => (typeof r.value === "number" ? r.value : null)),
           color,
-          pointWidth: 14,
+          pointWidth,
         },
       ],
     }),
-    [safeRows, color, yTitle, height, decimals, legendName, labelRotation, labelItalic],
+    [
+      safeRows,
+      color,
+      yTitle,
+      height,
+      decimals,
+      legendName,
+      labelRotation,
+      labelItalic,
+      formatValue,
+      formatTooltip,
+      pointWidth,
+    ],
   );
 
   if (safeRows.length === 0) {

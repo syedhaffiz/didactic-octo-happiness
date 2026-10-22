@@ -20,6 +20,7 @@ export interface FiltersResponse {
   segments: FilterRef[];
   zones: FilterRef[];
   origins: FilterRef[];
+  mines: FilterRef[];
   grades: GradeRef[];
   indexNames: IndexNameRef[];
 }

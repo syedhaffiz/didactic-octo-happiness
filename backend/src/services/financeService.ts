@@ -1,5 +1,6 @@
 import { financeRepository } from "../repositories/financeRepository.js";
 import type {
+  AgingFilters,
   ApprovedBudgetFilters,
   BatchDetailSearch,
   Currency,
@@ -53,4 +54,6 @@ export const financeService = {
   debtorsFilterOptions: () => financeRepository.getDebtorsFilterOptions(),
   inventoryDays: (from: Date, to: Date, filters: InventoryDaysFilters) =>
     financeRepository.getInventoryDays(from, to, filters),
+  aging: (from: Date, to: Date, filters: AgingFilters) =>
+    financeRepository.getAging(from, to, filters),
 };

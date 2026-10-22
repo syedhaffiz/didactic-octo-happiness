@@ -517,3 +517,43 @@ export interface InventoryDaysResponse {
   segments: InventoryDaysSegmentItem[];
   portwise: InventoryDaysPortItem[];
 }
+
+// --- Aging (Finance) -------------------------------------------------------
+// Stock aging: how much cargo (volume or value) has been held for how long,
+// bucketed by age. The Volume / Value toggle picks the measure; all filters are
+// optional — an absent value (or "all") means "All".
+export type AgingMeasure = "volume" | "value";
+
+export interface AgingFilters {
+  fromDate?: string;
+  toDate?: string;
+  zone?: string;
+  port?: string;
+  origin?: string;
+  segment?: string;
+  mine?: string;
+  measure?: AgingMeasure;
+}
+
+// One Aging bar — the total across origins for a single age bucket.
+export interface AgingBucketItem {
+  /** Display label, e.g. "0 - 30 Days". */
+  bucket: string;
+  amount: number;
+}
+
+// One Origin Wise series. `amounts` is index-aligned with
+// AgingResponse.buckets, so the per-bucket sum over origins equals that
+// bucket's `amount`.
+export interface AgingOriginSeries {
+  origin: string;
+  amounts: number[];
+}
+
+export interface AgingResponse {
+  measure: AgingMeasure;
+  /** Unit of every amount: metric tonnes for volume, base rupees for value. */
+  unit: "MT" | "INR";
+  buckets: AgingBucketItem[];
+  originwise: AgingOriginSeries[];
+}

@@ -2,6 +2,8 @@ import { apiClient, unwrap } from "./client";
 import { USE_MOCK_DATA, mockDelay } from "./dataSource";
 import type { ApiEnvelope } from "../types/api";
 import type {
+  AgingFilters,
+  AgingResponse,
   ApprovedBudgetParams,
   ApprovedBudgetResponse,
   BatchDetailSearch,
@@ -55,6 +57,7 @@ import {
   buildDebtorsOverview,
 } from "../mocks/finance/debtors";
 import { buildInventoryDays } from "../mocks/finance/inventoryDays";
+import { buildAging } from "../mocks/finance/aging";
 import {
   buildInsuranceFilterOptions,
   buildInsuranceStatus,
@@ -161,6 +164,7 @@ const httpFinanceApi = {
     get<DebtorsFilterOptions>("/finance/debtors/filters"),
   inventoryDays: (p: InventoryDaysFilters = {}) =>
     get<InventoryDaysResponse>("/finance/inventory-days", p),
+  aging: (p: AgingFilters = {}) => get<AgingResponse>("/finance/aging", p),
   insuranceStatus: (p: InsuranceStatusParams = {}) =>
     get<InsuranceStatusResponse>("/finance/insurance-status", p),
   insuranceFilterOptions: () =>
@@ -206,6 +210,7 @@ const mockFinanceApi = {
   debtorsOverview: (p: DebtorsParams = {}) => mockDelay(buildDebtorsOverview(p)),
   debtorsFilterOptions: () => mockDelay(buildDebtorsFilterOptions()),
   inventoryDays: (p: InventoryDaysFilters = {}) => mockDelay(buildInventoryDays(p)),
+  aging: (p: AgingFilters = {}) => mockDelay(buildAging(p)),
   insuranceStatus: (p: InsuranceStatusParams = {}) => mockDelay(buildInsuranceStatus(p)),
   insuranceFilterOptions: () => mockDelay(buildInsuranceFilterOptions()),
 };

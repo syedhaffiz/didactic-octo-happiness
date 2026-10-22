@@ -1,4 +1,6 @@
 import type {
+  AgingFilters,
+  AgingResponse,
   ApprovedBudgetFilters,
   ApprovedBudgetResponse,
   BatchDetailSearch,
@@ -50,6 +52,7 @@ import {
   buildDebtorsOverview,
 } from "../mocks/debtors.js";
 import { buildInventoryDays } from "../mocks/inventoryDays.js";
+import { buildAging } from "../mocks/aging.js";
 
 export interface FinanceRepository {
   getKpis(from: Date, to: Date): Promise<KPI[]>;
@@ -106,6 +109,8 @@ export interface FinanceRepository {
     to: Date,
     filters: InventoryDaysFilters,
   ): Promise<InventoryDaysResponse>;
+  // --- Aging ---
+  getAging(from: Date, to: Date, filters: AgingFilters): Promise<AgingResponse>;
 }
 
 class MockFinanceRepository implements FinanceRepository {
@@ -194,6 +199,9 @@ class MockFinanceRepository implements FinanceRepository {
       filters.origin,
       filters.segment,
     );
+  }
+  async getAging(from: Date, to: Date, filters: AgingFilters) {
+    return buildAging(from, to, filters);
   }
 }
 

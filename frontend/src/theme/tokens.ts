@@ -241,6 +241,23 @@ export const insuranceColors = {
   locationNode: "#8A93A6",
 } as const;
 
+// ---------------------------------------------------------------------------
+// Finance → Aging — sampled from the Figma (Design Reference/Finance/Aging*).
+// `bucket` is the single-series Aging chart; `origins` is the Origin Wise
+// series palette, assigned by the series' position in the API response
+// (catalog order: INDO, AUS, SA, RUS, USA) and cycling if exceeded.
+// ---------------------------------------------------------------------------
+export const agingColors = {
+  bucket: "#0B72B2", // steel blue
+  origins: [
+    "#35A6CC", // teal
+    "#4696DC", // sky blue
+    "#5438C8", // violet
+    "#581C87", // deep purple
+    "#AF3C6D", // raspberry
+  ],
+} as const;
+
 // Market Share series display labels. The client's brand name is intentionally
 // confined to this single constant — the user authorized it as on-screen copy
 // for the Market Share screen only (data keys stay `own`/`nonOwn`).

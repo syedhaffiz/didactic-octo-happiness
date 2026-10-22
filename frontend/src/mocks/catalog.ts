@@ -86,6 +86,21 @@ export const ORIGIN_LIST: IdName[] = [
   { id: "usa", name: "USA" },
 ];
 
+// Coal mines (the "Mine" header filter). Each mine sits in one origin country —
+// `origin` is the ORIGIN_LIST id — so a mine selection implies its origin.
+export interface MineDetail extends IdName {
+  origin: string;
+}
+export const MINE_LIST: MineDetail[] = [
+  { id: "east-kalimantan", name: "East Kalimantan", origin: "indo" },
+  { id: "south-kalimantan", name: "South Kalimantan", origin: "indo" },
+  { id: "bowen-basin", name: "Bowen Basin", origin: "aus" },
+  { id: "hunter-valley", name: "Hunter Valley", origin: "aus" },
+  { id: "mpumalanga", name: "Mpumalanga", origin: "sa" },
+  { id: "kuzbass", name: "Kuzbass", origin: "rus" },
+  { id: "powder-river", name: "Powder River Basin", origin: "usa" },
+];
+
 // === Market Share filter catalogues ========================================
 // Reference lists that power the Market Share Filters side-panel dropdowns.
 // (Ports / Zones / Origins / Segments reuse the lists above.)

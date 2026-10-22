@@ -76,6 +76,15 @@ const inventoryDaysSchema = dateRangeSchema.extend({
   segment: z.string().optional(),
 });
 
+const agingSchema = dateRangeSchema.extend({
+  zone: z.string().optional(),
+  port: z.string().optional(),
+  origin: z.string().optional(),
+  segment: z.string().optional(),
+  mine: z.string().optional(),
+  measure: z.enum(["volume", "value"]).optional(),
+});
+
 const parse = <T>(schema: z.ZodSchema<T>, query: unknown): T => {
   const result = schema.safeParse(query);
   if (!result.success) throw result.error;
@@ -292,6 +301,29 @@ export const getInventoryDays: RequestHandler = async (req, res, next) => {
           port: q.port,
           origin: q.origin,
           segment: q.segment,
+        }),
+      ),
+    );
+  } catch (e) {
+    next(e);
+  }
+};
+
+// --- Aging ---------------------------------------------------------------
+
+export const getAging: RequestHandler = async (req, res, next) => {
+  try {
+    const q = parse(agingSchema, req.query);
+    const { from, to } = parseDateRange(q.fromDate, q.toDate);
+    res.json(
+      ok(
+        await financeService.aging(from, to, {
+          zone: q.zone,
+          port: q.port,
+          origin: q.origin,
+          segment: q.segment,
+          mine: q.mine,
+          measure: q.measure,
         }),
       ),
     );
