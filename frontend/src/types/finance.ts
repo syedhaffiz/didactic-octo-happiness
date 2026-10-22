@@ -467,9 +467,18 @@ export interface DebtorsOverviewResponse {
 
 // --- Inventory Days (Finance landing screen) ------------------------------
 // Mirror of backend/src/types/finance.ts. Kept in sync.
+// Relative look-back window for the Time Frame dropdown.
+export type TimeFrame = "7d" | "14d" | "30d" | "last-month";
+
+// Inventory days / holding value are snapshot metrics, so `timeFrame` + `month`
+// select the as-of window rather than an accumulating date range. Zone/Origin
+// nudge the figures; Port and Segment narrow the breakdowns. All optional — an
+// absent value means "All".
 export interface InventoryDaysFilters {
-  fromDate?: string;
-  toDate?: string;
+  /** Relative look-back window; defaults to "7d" (last 7 days) when absent. */
+  timeFrame?: TimeFrame;
+  /** Reference month as "YYYY-MM"; defaults are resolved by the UI. */
+  month?: string;
   zone?: string;
   port?: string;
   origin?: string;

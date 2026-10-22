@@ -104,11 +104,7 @@ export interface FinanceRepository {
   getDebtorsOverview(filters: DebtorsFilters): Promise<DebtorsOverviewResponse>;
   getDebtorsFilterOptions(): Promise<DebtorsFilterOptions>;
   // --- Inventory Days ---
-  getInventoryDays(
-    from: Date,
-    to: Date,
-    filters: InventoryDaysFilters,
-  ): Promise<InventoryDaysResponse>;
+  getInventoryDays(filters: InventoryDaysFilters): Promise<InventoryDaysResponse>;
   // --- Aging ---
   getAging(from: Date, to: Date, filters: AgingFilters): Promise<AgingResponse>;
 }
@@ -190,15 +186,8 @@ class MockFinanceRepository implements FinanceRepository {
   async getDebtorsFilterOptions() {
     return buildDebtorsFilterOptions();
   }
-  async getInventoryDays(from: Date, to: Date, filters: InventoryDaysFilters) {
-    return buildInventoryDays(
-      from,
-      to,
-      filters.zone,
-      filters.port,
-      filters.origin,
-      filters.segment,
-    );
+  async getInventoryDays(filters: InventoryDaysFilters) {
+    return buildInventoryDays(filters);
   }
   async getAging(from: Date, to: Date, filters: AgingFilters) {
     return buildAging(from, to, filters);

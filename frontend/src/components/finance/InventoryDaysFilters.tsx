@@ -5,38 +5,44 @@ import { ZoneFilter } from "../filters/ZoneFilter";
 import { PortFilter } from "../filters/PortFilter";
 import { OriginFilter } from "../filters/OriginFilter";
 import { SegmentFilter } from "../filters/SegmentFilter";
-import { DateRangeFilter } from "../DateRangeFilter";
+import { TimeFrameFilter } from "../filters/TimeFrameFilter";
+import { MonthFilter } from "../filters/MonthFilter";
+import type { TimeFrame } from "../../types/finance";
 
 interface Props {
   zone: string | undefined;
   port: string | undefined;
   origin: string | undefined;
   segment: string | undefined;
-  dateValue: [Dayjs, Dayjs];
+  timeFrame: TimeFrame;
+  month: Dayjs;
   onZoneChange: (v: string | undefined) => void;
   onPortChange: (v: string | undefined) => void;
   onOriginChange: (v: string | undefined) => void;
   onSegmentChange: (v: string | undefined) => void;
-  onDateChange: (v: [Dayjs | null, Dayjs | null] | null) => void;
+  onTimeFrameChange: (v: TimeFrame) => void;
+  onMonthChange: (v: Dayjs | null) => void;
   /** Placeholder — the Excel export is not wired up yet. */
   onExport: () => void;
   onRefresh: () => void;
 }
 
-// Inventory Days header filter row: Zone / Port / Origin / Segment / Date Range
-// dropdowns plus (placeholder) Excel export and refresh actions. Presentational
-// — all state is owned by the page.
+// Inventory Days header filter row: Zone / Port / Origin / Segment dropdowns, a
+// Time Frame look-back preset and a Month picker, plus (placeholder) Excel export
+// and refresh actions. Presentational — all state is owned by the page.
 export const InventoryDaysFilters = ({
   zone,
   port,
   origin,
   segment,
-  dateValue,
+  timeFrame,
+  month,
   onZoneChange,
   onPortChange,
   onOriginChange,
   onSegmentChange,
-  onDateChange,
+  onTimeFrameChange,
+  onMonthChange,
   onExport,
   onRefresh,
 }: Props) => (
@@ -45,7 +51,8 @@ export const InventoryDaysFilters = ({
     <PortFilter value={port} onChange={onPortChange} />
     <OriginFilter value={origin} onChange={onOriginChange} />
     <SegmentFilter value={segment} onChange={onSegmentChange} />
-    <DateRangeFilter value={dateValue} onChange={onDateChange} />
+    <TimeFrameFilter value={timeFrame} onChange={onTimeFrameChange} />
+    <MonthFilter value={month} onChange={onMonthChange} />
     <Tooltip title="Export to Excel">
       <Button icon={<UploadOutlined />} onClick={onExport} aria-label="Export to Excel" />
     </Tooltip>

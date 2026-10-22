@@ -1,4 +1,5 @@
 import type {
+  InventoryDaysFilters,
   InventoryDaysPortItem,
   InventoryDaysResponse,
   InventoryDaysSegmentItem,
@@ -10,47 +11,43 @@ import { range, round, seedFromString, seeded } from "./rand.js";
 // Slice/tile colors are owned by the UI and assigned by this order.
 const SEGMENTS_ORDER = ["SNS", "SEB"] as const;
 
-// Per-segment baseline for a ~1-month window: inventory days + holding value
-// (whole-number rupees). Pinned so the default view reads like the Figma
-// (SNS 18 days, SEB 24 days; ~170 Cr total value). The date range scales value.
+// Per-segment snapshot baseline: inventory days + holding value (whole-number
+// rupees). Pinned so the default view reads like the Figma (SNS 18 days,
+// SEB 24 days; ~170 Cr total value).
 const SEGMENT_BASELINE: Record<string, { days: number; value: number }> = {
   SNS: { days: 18, value: 970_000_000 }, // 97 Cr
   SEB: { days: 24, value: 730_000_000 }, // 73 Cr
 };
 
-const DAY_MS = 86_400_000;
-
 // Look up a segment display name from its filter id (e.g. "sns" -> "SNS").
 const segmentNameById = (id: string | undefined): string | undefined =>
   id ? SEGMENT_LIST.find((s) => s.id === id)?.name : undefined;
 
-export const buildInventoryDays = (
-  from: Date,
-  to: Date,
-  zone?: string,
-  port?: string,
-  origin?: string,
-  segment?: string,
-): InventoryDaysResponse => {
-  // Scale the monthly value baseline by the selected window (relative to 30
-  // days) so the donut responds to the date-range filter. Days are a rate, not a
-  // total, so they stay put — only the holding value scales.
-  const days = Math.max(1, Math.round((to.getTime() - from.getTime()) / DAY_MS));
-  const factor = days / 30;
-
+export const buildInventoryDays = (p: InventoryDaysFilters = {}): InventoryDaysResponse => {
+  const timeFrame = p.timeFrame ?? "7d";
   // "all" (or missing) means no narrowing — normalise it away so it can't act
   // as a concrete value.
-  const zoneKey = zone && zone !== "all" ? zone : undefined;
-  const portKey = port && port !== "all" ? port : undefined;
-  const originKey = origin && origin !== "all" ? origin : undefined;
-  const segmentName = segmentNameById(segment && segment !== "all" ? segment : undefined);
+  const zoneKey = p.zone && p.zone !== "all" ? p.zone : undefined;
+  const portKey = p.port && p.port !== "all" ? p.port : undefined;
+  const originKey = p.origin && p.origin !== "all" ? p.origin : undefined;
+  const segmentName = segmentNameById(p.segment && p.segment !== "all" ? p.segment : undefined);
+  const monthKey = p.month && /^\d{4}-\d{2}$/.test(p.month) ? p.month : "default";
 
-  // Zone/origin nudge the figures so the view visibly responds to those filters
-  // (seeded, so a given combination is stable across reloads).
+  // Inventory days and holding value are snapshot metrics, so the look-back
+  // window does NOT accumulate them (unlike the flow-based Revenue screen). The
+  // time frame / month / zone / origin instead seed a gentle variation so the
+  // view visibly responds to the filters while staying near the design baseline
+  // (~170 Cr total; SNS 18 / SEB 24 days).
   const rng = seeded(
-    seedFromString(`inventory-days:${zoneKey ?? "all"}:${originKey ?? "all"}`),
+    seedFromString(
+      `inventory-days:${timeFrame}:${monthKey}:${zoneKey ?? "all"}:${originKey ?? "all"}`,
+    ),
   );
-  const filterScale = 0.8 + rng() * 0.4; // 0.8 – 1.2
+  const valueScale = 0.85 + rng() * 0.3; // 0.85 – 1.15
+  // Days only shift once a zone/origin narrows the view; the all-up default
+  // shows the baseline figures exactly, as in the design.
+  const narrowed = Boolean(zoneKey || originKey);
+  const daysScale = narrowed ? 0.8 + rng() * 0.4 : 1;
 
   const segments: InventoryDaysSegmentItem[] = SEGMENTS_ORDER.filter(
     (s) => !segmentName || s === segmentName,
@@ -58,8 +55,8 @@ export const buildInventoryDays = (
     const base = SEGMENT_BASELINE[seg] ?? { days: 0, value: 0 };
     return {
       segment: seg,
-      days: Math.round(base.days * filterScale),
-      value: Math.round(base.value * factor * filterScale),
+      days: Math.round(base.days * daysScale),
+      value: Math.round(base.value * valueScale),
       pct: 0,
       deltaVsBudget: round(8 + rng() * 10, 0), // +8 – +18
       deltaVsLastYear: -round(4 + rng() * 8, 0), // -4 – -12
@@ -77,18 +74,19 @@ export const buildInventoryDays = (
     totalDeltaVsBudget: round(8 + rng() * 8, 0),
     totalDeltaVsLastYear: -round(4 + rng() * 7, 0),
     segments,
-    portwise: buildPortwise(portKey, filterScale),
+    portwise: buildPortwise(portKey, narrowed ? daysScale : 1),
   };
 };
 
 // Port Wise bars — inventory days per port. When a port filter is set only that
 // port is returned; otherwise every port in the catalogue. Each port's days are
-// seeded so they stay put across reloads.
+// seeded so they stay put across reloads; `scale` nudges them when a zone/origin
+// filter narrows the view.
 const buildPortwise = (
   port: string | undefined,
-  filterScale: number,
+  scale: number,
 ): InventoryDaysPortItem[] =>
   PORT_LIST.filter((p) => !port || p.id === port).map((p) => {
     const prng = seeded(seedFromString(`inventory-days:portwise:${p.id}`));
-    return { port: p.name, days: Math.round(range(prng, 8, 42) * filterScale) };
+    return { port: p.name, days: Math.round(range(prng, 8, 42) * scale) };
   });

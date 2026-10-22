@@ -69,7 +69,9 @@ const debtorsSchema = z.object({
   type: z.string().optional(),
 });
 
-const inventoryDaysSchema = dateRangeSchema.extend({
+const inventoryDaysSchema = z.object({
+  timeFrame: z.enum(["7d", "14d", "30d", "last-month"]).optional(),
+  month: z.string().optional(),
   zone: z.string().optional(),
   port: z.string().optional(),
   origin: z.string().optional(),
@@ -293,10 +295,11 @@ export const getDebtorsFilterOptions: RequestHandler = async (_req, res, next) =
 export const getInventoryDays: RequestHandler = async (req, res, next) => {
   try {
     const q = parse(inventoryDaysSchema, req.query);
-    const { from, to } = parseDateRange(q.fromDate, q.toDate);
     res.json(
       ok(
-        await financeService.inventoryDays(from, to, {
+        await financeService.inventoryDays({
+          timeFrame: q.timeFrame,
+          month: q.month,
           zone: q.zone,
           port: q.port,
           origin: q.origin,
