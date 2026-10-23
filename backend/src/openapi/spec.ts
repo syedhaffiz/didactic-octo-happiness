@@ -348,6 +348,13 @@ export const openApiSpec = {
         responses: { "200": envelopeResponse("DebtorsFilterOptions") },
       },
     },
+    "/finance/inventory-days/filters": {
+      get: {
+        tags: ["Finance"],
+        summary: "Inventory Days — Filters side-panel dropdown options (Zone, Port, Origin, Segment)",
+        responses: { "200": envelopeResponse("InventoryDaysFilterOptions") },
+      },
+    },
     "/finance/aging/filters": {
       get: {
         tags: ["Finance"],
@@ -1161,6 +1168,16 @@ export const openApiSpec = {
         properties: {
           bucket: { type: "string", example: "91-180 days" },
           value: { type: "number" },
+        },
+      },
+      InventoryDaysFilterOptions: {
+        type: "object",
+        required: ["zones", "ports", "origins", "segments"],
+        properties: {
+          zones: { type: "array", items: { $ref: "#/components/schemas/FilterRef" } },
+          ports: { type: "array", items: { $ref: "#/components/schemas/FilterRef" } },
+          origins: { type: "array", items: { $ref: "#/components/schemas/FilterRef" } },
+          segments: { type: "array", items: { $ref: "#/components/schemas/FilterRef" } },
         },
       },
       AgingFilterOptions: {

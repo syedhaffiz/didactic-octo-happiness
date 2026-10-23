@@ -1,7 +1,6 @@
-import { useMemo } from "react";
-import { Card, Col, Row, Skeleton } from "antd";
+import { useMemo, useState } from "react";
+import { Card, Col, Empty, Row, Skeleton } from "antd";
 import { BarChartOutlined, PieChartOutlined } from "@ant-design/icons";
-import dayjs, { type Dayjs } from "dayjs";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { ErrorRetry } from "../../components/ErrorRetry";
 import { PageHeader } from "../../components/PageHeader";
@@ -11,89 +10,93 @@ import { DeltaStat } from "../../components/finance/DeltaStat";
 import { InventoryDaysSegmentCard } from "../../components/finance/InventoryDaysSegmentCard";
 import { InventoryDaysPortChart } from "../../components/finance/InventoryDaysPortChart";
 import { InventoryDaysFilters } from "../../components/finance/InventoryDaysFilters";
-import { DEFAULT_TIME_FRAME, isTimeFrame } from "../../components/filters/timeFrame";
+import { RefFilterDrawer } from "../../components/filters/RefFilterDrawer";
+import { RefFilterChips } from "../../components/filters/RefFilterChips";
 import { financeApi } from "../../api/finance";
 import { useApi } from "../../api/useApi";
 import { donutColors } from "../../theme/tokens";
-import { useUrlParams } from "../../utils/useUrlParam";
-
-const FILTER_KEYS = ["zone", "port", "origin", "segment", "timeFrame", "month"] as const;
-
-const MONTH_FMT = "YYYY-MM";
-
-// Default Month: the current month once we're past the 7th, otherwise the
-// previous month (early in a month the current month's book isn't settled yet).
-const defaultMonth = (): Dayjs => {
-  const today = dayjs();
-  return today.date() > 7 ? today.startOf("month") : today.subtract(1, "month").startOf("month");
-};
+import { useBrandTokens } from "../../theme/useBrandTokens";
+import {
+  INVENTORY_DAYS_DRAWER_FIELDS,
+  useInventoryDaysFilters,
+} from "../../utils/useInventoryDaysFilters";
 
 export const InventoryDays = () => {
-  const { values, set } = useUrlParams(FILTER_KEYS);
-  const { zone, port, origin, segment } = values;
+  const t = useBrandTokens();
+  const filters = useInventoryDaysFilters();
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Time Frame + Month select the as-of snapshot window. Both fall back to the
-  // design defaults when absent / invalid in the URL.
-  const timeFrame = isTimeFrame(values.timeFrame) ? values.timeFrame : DEFAULT_TIME_FRAME;
-  const monthValue = useMemo(() => {
-    const raw = values.month;
-    // Validate the "YYYY-MM" shape before parsing, then append a day so dayjs
-    // reads it as a full ISO date (no customParseFormat plugin is registered).
-    if (raw && /^\d{4}-\d{2}$/.test(raw)) {
-      const parsed = dayjs(`${raw}-01`);
-      if (parsed.isValid()) return parsed.startOf("month");
-    }
-    return defaultMonth();
-  }, [values.month]);
-  const month = monthValue.format(MONTH_FMT);
+  const {
+    data: options,
+    isLoading: optionsLoading,
+    error: optionsError,
+    refetch: refetchOptions,
+  } = useApi(
+    ["finance", "inventory-days", "filter-options"],
+    financeApi.inventoryDaysFilterOptions,
+    { cache: true },
+  );
 
+  const params = filters.params;
   const { data, isLoading, isError, error, refetch } = useApi(
-    ["inventory-days", timeFrame, month, zone, port, origin, segment],
-    () => financeApi.inventoryDays({ timeFrame, month, zone, port, origin, segment }),
+    ["finance", "inventory-days", params],
+    () => financeApi.inventoryDays(params),
   );
 
   const loading = isLoading || !data;
+  // Guard against a malformed payload — the cards and donut only see an array.
+  const segments = useMemo(
+    () => (Array.isArray(data?.segments) ? data.segments.filter((s) => s != null) : []),
+    [data],
+  );
 
   // Slice/card colors are owned by the UI, not the API: assign from the shared
   // pool by the segment's position in the response (cycling if it ever exceeds
   // the pool) so cards and donut slices stay in lockstep.
   const colorBySegment = useMemo(() => {
     const out: Record<string, string> = {};
-    (data?.segments ?? []).forEach((it, i) => {
+    segments.forEach((it, i) => {
       out[it.segment] = donutColors[i % donutColors.length];
     });
     return out;
-  }, [data]);
+  }, [segments]);
 
   // Export to Excel — placeholder only; not wired up yet.
   const handleExport = () => {};
 
   return (
-    <>
-      <PageHeader
-        title="Inventory Days"
-        datePill={data?.periodLabel}
-        filters={
-          <InventoryDaysFilters
-            zone={zone}
-            port={port}
-            origin={origin}
-            segment={segment}
-            timeFrame={timeFrame}
-            month={monthValue}
-            onZoneChange={(v) => set("zone", v)}
-            onPortChange={(v) => set("port", v)}
-            onOriginChange={(v) => set("origin", v)}
-            onSegmentChange={(v) => set("segment", v)}
-            // Omit the default from the URL so it stays clean; any other value is
-            // written explicitly.
-            onTimeFrameChange={(v) => set("timeFrame", v === DEFAULT_TIME_FRAME ? undefined : v)}
-            onMonthChange={(d) => set("month", d ? d.format(MONTH_FMT) : undefined)}
-            onExport={handleExport}
-            onRefresh={refetch}
-          />
-        }
-      />
+    <div>
+      {/* Header + applied filters stick to the top while the page scrolls. */}
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 20,
+          background: t.pageBg,
+          margin: "-24px -24px 0",
+          padding: "24px 24px 8px",
+        }}
+      >
+        <PageHeader
+          title="Inventory Days"
+          datePill={data?.periodLabel}
+          filters={
+            <InventoryDaysFilters
+              filters={filters}
+              onOpenFilters={() => setDrawerOpen(true)}
+              onExport={handleExport}
+              onRefresh={refetch}
+            />
+          }
+        />
+        <RefFilterChips
+          fields={INVENTORY_DAYS_DRAWER_FIELDS}
+          options={options}
+          values={filters.multi}
+          onChange={filters.setMulti}
+          onClearAll={filters.clearAll}
+        />
+      </div>
 
       {isError ? (
         <ErrorRetry title="Could not load inventory days" error={error} onRetry={refetch} />
@@ -103,14 +106,21 @@ export const InventoryDays = () => {
             title={<CardTitle icon={<PieChartOutlined />}>Segment Wise</CardTitle>}
             style={{ marginBottom: 16 }}
           >
-            <ErrorBoundary level="section" label="inventory days segment wise">
+            {/* Any filter change clears a crashed section. */}
+            <ErrorBoundary
+              level="section"
+              label="inventory days segment wise"
+              resetKeys={[params]}
+            >
               {loading ? (
                 <Skeleton active paragraph={{ rows: 6 }} />
+              ) : segments.length === 0 ? (
+                <Empty description="No segment data for these filters" />
               ) : (
                 <Row gutter={[20, 20]} align="middle">
                   <Col xs={24} md={14}>
                     <Row gutter={[16, 16]}>
-                      {data.segments.map((it) => (
+                      {segments.map((it) => (
                         <Col xs={12} key={it.segment}>
                           <InventoryDaysSegmentCard
                             segment={it.segment}
@@ -127,15 +137,15 @@ export const InventoryDays = () => {
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <RevenueDonut
-                          items={data.segments}
+                          items={segments}
                           colorBySegment={colorBySegment}
-                          total={data.totalValue}
+                          total={data.totalValue ?? 0}
                           currency="INR"
                         />
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                        <DeltaStat value={data.totalDeltaVsBudget} label="vs Budget" />
-                        <DeltaStat value={data.totalDeltaVsLastYear} label="vs last year" />
+                        <DeltaStat value={data.totalDeltaVsBudget ?? 0} label="vs Budget" />
+                        <DeltaStat value={data.totalDeltaVsLastYear ?? 0} label="vs last year" />
                       </div>
                     </div>
                   </Col>
@@ -145,12 +155,24 @@ export const InventoryDays = () => {
           </Card>
 
           <Card title={<CardTitle icon={<BarChartOutlined />}>Port Wise</CardTitle>}>
-            <ErrorBoundary level="section" label="inventory days port wise" resetKeys={[port, zone]}>
+            <ErrorBoundary level="section" label="inventory days port wise" resetKeys={[params]}>
               <InventoryDaysPortChart rows={data?.portwise} loading={loading} />
             </ErrorBoundary>
           </Card>
         </>
       )}
-    </>
+
+      <RefFilterDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        fields={INVENTORY_DAYS_DRAWER_FIELDS}
+        options={options}
+        optionsLoading={optionsLoading}
+        optionsError={optionsError}
+        onRetryOptions={refetchOptions}
+        values={filters.multi}
+        onApply={filters.setMany}
+      />
+    </div>
   );
 };

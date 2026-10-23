@@ -1,10 +1,12 @@
 import type {
+  InventoryDaysFilterOptions,
   InventoryDaysFilters,
   InventoryDaysPortItem,
   InventoryDaysResponse,
   InventoryDaysSegmentItem,
 } from "../types/finance.js";
-import { PORT_LIST, SEGMENT_LIST } from "./catalog.js";
+import { ORIGIN_LIST, PORT_LIST, SEGMENT_LIST, ZONE_LIST } from "./catalog.js";
+import { csvList } from "./csv.js";
 import { range, round, seedFromString, seeded } from "./rand.js";
 
 // Segments shown on the Inventory Days screen, in Figma legend order (SNS / SEB).
@@ -19,18 +21,22 @@ const SEGMENT_BASELINE: Record<string, { days: number; value: number }> = {
   SEB: { days: 24, value: 730_000_000 }, // 73 Cr
 };
 
-// Look up a segment display name from its filter id (e.g. "sns" -> "SNS").
-const segmentNameById = (id: string | undefined): string | undefined =>
-  id ? SEGMENT_LIST.find((s) => s.id === id)?.name : undefined;
+// Segment display names for a list of filter ids (e.g. ["sns"] -> ["SNS"]).
+// Unknown ids are dropped.
+const segmentNamesByIds = (ids: string[]): string[] =>
+  SEGMENT_LIST.filter((s) => ids.includes(s.id)).map((s) => s.name);
 
 export const buildInventoryDays = (p: InventoryDaysFilters = {}): InventoryDaysResponse => {
   const timeFrame = p.timeFrame ?? "7d";
-  // "all" (or missing) means no narrowing — normalise it away so it can't act
-  // as a concrete value.
-  const zoneKey = p.zone && p.zone !== "all" ? p.zone : undefined;
-  const portKey = p.port && p.port !== "all" ? p.port : undefined;
-  const originKey = p.origin && p.origin !== "all" ? p.origin : undefined;
-  const segmentName = segmentNameById(p.segment && p.segment !== "all" ? p.segment : undefined);
+  // Multi-select filters arrive comma-joined; an empty list means "All".
+  const zones = csvList(p.zone);
+  const ports = csvList(p.port);
+  const origins = csvList(p.origin);
+  const segmentIds = csvList(p.segment);
+  const segmentNames = segmentNamesByIds(segmentIds);
+  // Sorted so "aus,sa" and "sa,aus" seed the same figures.
+  const zoneKey = zones.length ? [...zones].sort().join(",") : undefined;
+  const originKey = origins.length ? [...origins].sort().join(",") : undefined;
   const monthKey = p.month && /^\d{4}-\d{2}$/.test(p.month) ? p.month : "default";
 
   // Inventory days and holding value are snapshot metrics, so the look-back
@@ -49,8 +55,10 @@ export const buildInventoryDays = (p: InventoryDaysFilters = {}): InventoryDaysR
   const narrowed = Boolean(zoneKey || originKey);
   const daysScale = narrowed ? 0.8 + rng() * 0.4 : 1;
 
+  // A segment selection that matches none of the shown segments (unknown ids,
+  // or only segments without inventory) yields an empty list, not an error.
   const segments: InventoryDaysSegmentItem[] = SEGMENTS_ORDER.filter(
-    (s) => !segmentName || s === segmentName,
+    (s) => segmentIds.length === 0 || segmentNames.includes(s),
   ).map((seg) => {
     const base = SEGMENT_BASELINE[seg] ?? { days: 0, value: 0 };
     return {
@@ -74,19 +82,24 @@ export const buildInventoryDays = (p: InventoryDaysFilters = {}): InventoryDaysR
     totalDeltaVsBudget: round(8 + rng() * 8, 0),
     totalDeltaVsLastYear: -round(4 + rng() * 7, 0),
     segments,
-    portwise: buildPortwise(portKey, narrowed ? daysScale : 1),
+    portwise: buildPortwise(ports, narrowed ? daysScale : 1),
   };
 };
 
-// Port Wise bars — inventory days per port. When a port filter is set only that
-// port is returned; otherwise every port in the catalogue. Each port's days are
+// Port Wise bars — inventory days per port. When ports are selected only those
+// are returned; otherwise every port in the catalogue. Each port's days are
 // seeded so they stay put across reloads; `scale` nudges them when a zone/origin
 // filter narrows the view.
-const buildPortwise = (
-  port: string | undefined,
-  scale: number,
-): InventoryDaysPortItem[] =>
-  PORT_LIST.filter((p) => !port || p.id === port).map((p) => {
+const buildPortwise = (ports: string[], scale: number): InventoryDaysPortItem[] =>
+  PORT_LIST.filter((p) => ports.length === 0 || ports.includes(p.id)).map((p) => {
     const prng = seeded(seedFromString(`inventory-days:portwise:${p.id}`));
     return { port: p.name, days: Math.round(range(prng, 8, 42) * scale) };
   });
+
+// Filters side-panel options (GET /finance/inventory-days/filters).
+export const buildInventoryDaysFilterOptions = (): InventoryDaysFilterOptions => ({
+  zones: [...ZONE_LIST],
+  ports: [...PORT_LIST],
+  origins: [...ORIGIN_LIST],
+  segments: [...SEGMENT_LIST],
+});

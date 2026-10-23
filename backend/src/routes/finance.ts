@@ -9,6 +9,7 @@ import {
   getForex,
   getHandlingBatchDetail,
   getInventoryDays,
+  getInventoryDaysFilterOptions,
   getKpis,
   getNetMarginProfitability,
   getOverview,
@@ -42,6 +43,7 @@ router.get("/profitability/vessels/handling/:batchId", getHandlingBatchDetail);
 router.get("/sales", getSales);
 router.get("/approved-budget", getApprovedBudget);
 router.get("/inventory-days", getInventoryDays);
+router.get("/inventory-days/filters", getInventoryDaysFilterOptions);
 // Aging — the screen data and its Filters side-panel options.
 router.get("/aging", getAging);
 router.get("/aging/filters", getAgingFilterOptions);

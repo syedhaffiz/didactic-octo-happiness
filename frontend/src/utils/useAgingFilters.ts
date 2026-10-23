@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
 import dayjs, { type Dayjs } from "dayjs";
-import { splitCsv } from "./csv";
+import { useMultiFilterParams } from "./useMultiFilterParams";
+import type { RefFilterField } from "../components/filters/refFilterFields";
 import type { AgingFilterOptions, AgingFilters, AgingMeasure } from "../types/finance";
 
 const FMT = "YYYY-MM-DD";
@@ -12,14 +12,9 @@ export const AGING_MULTI_KEYS = ["zone", "port", "origin", "segment", "mine"] as
 export type AgingMultiKey = (typeof AGING_MULTI_KEYS)[number];
 
 // Display metadata for each Filters side-panel dropdown, shared by the drawer
-// and the applied-filter tags so the two stay in lock-step. `optionsKey` ties a
-// field to its list in the /finance/aging/filters payload.
-export interface AgingDrawerField {
-  key: AgingMultiKey;
-  label: string;
-  optionsKey: keyof AgingFilterOptions;
-}
-export const AGING_DRAWER_FIELDS: AgingDrawerField[] = [
+// and the applied-filter chips so the two stay in lock-step. `optionsKey` ties
+// a field to its list in the /finance/aging/filters payload.
+export const AGING_DRAWER_FIELDS: RefFilterField<AgingMultiKey, keyof AgingFilterOptions>[] = [
   { key: "zone", label: "Zone", optionsKey: "zones" },
   { key: "port", label: "Port", optionsKey: "ports" },
   { key: "origin", label: "Origin", optionsKey: "origins" },
@@ -35,8 +30,6 @@ const isAgingMeasure = (v: string | null | undefined): v is AgingMeasure =>
   v === "volume" || v === "value";
 
 const DATE_KEYS = ["fromDate", "toDate"];
-// `measure` is a view toggle, not a filter — `clearAll` leaves it alone.
-const FILTER_KEYS: string[] = [...AGING_MULTI_KEYS, ...DATE_KEYS];
 
 export interface AgingFiltersState {
   /** Cleaned query object for the API + a stable useApi query-key member. */
@@ -56,77 +49,36 @@ export interface AgingFiltersState {
   drawerActiveCount: number;
 }
 
-// Central Aging filter state, backed by URL search params so a selection is
-// shareable and survives reload/back-forward. Mirrors useIiaBillingFilters /
-// useMarketShareFilters.
+// Central Aging filter state, backed by URL search params (via
+// useMultiFilterParams) so a selection is shareable and survives
+// reload/back-forward. Adds the date range and the Volume / Value toggle.
 export const useAgingFilters = (): AgingFiltersState => {
-  const [params, setParams] = useSearchParams();
+  const { searchParams, multi, csv, setMulti, setMany, update, activeCount } =
+    useMultiFilterParams(AGING_MULTI_KEYS);
 
-  const multi = useMemo(() => {
-    const out = {} as Record<AgingMultiKey, string[]>;
-    for (const k of AGING_MULTI_KEYS) out[k] = splitCsv(params.get(k));
-    return out;
-  }, [params]);
-
-  const rawMeasure = params.get("measure");
+  const rawMeasure = searchParams.get("measure");
   const measure: AgingMeasure = isAgingMeasure(rawMeasure) ? rawMeasure : DEFAULT_AGING_MEASURE;
 
   // A half-set or unparsable range is treated as unset, everywhere (picker,
-  // tags and API) — never sent half-formed.
+  // chips and API) — never sent half-formed.
+  const fromRaw = searchParams.get("fromDate");
+  const toRaw = searchParams.get("toDate");
   const dateRange = useMemo<[Dayjs, Dayjs] | null>(() => {
-    const f = params.get("fromDate");
-    const t = params.get("toDate");
-    if (!f || !t) return null;
-    const fd = dayjs(f);
-    const td = dayjs(t);
+    if (!fromRaw || !toRaw) return null;
+    const fd = dayjs(fromRaw);
+    const td = dayjs(toRaw);
     return fd.isValid() && td.isValid() ? [fd, td] : null;
-  }, [params]);
+  }, [fromRaw, toRaw]);
 
-  const apiParams = useMemo<AgingFilters>(() => {
-    const out: AgingFilters = { measure };
-    for (const k of AGING_MULTI_KEYS) {
-      if (multi[k].length) out[k] = multi[k].join(",");
-    }
-    if (dateRange) {
-      out.fromDate = dateRange[0].format(FMT);
-      out.toDate = dateRange[1].format(FMT);
-    }
-    return out;
-  }, [multi, dateRange, measure]);
-
-  const update = useCallback(
-    (mutate: (out: URLSearchParams) => void) =>
-      setParams(
-        (prev) => {
-          const out = new URLSearchParams(prev);
-          mutate(out);
-          return out;
-        },
-        { replace: true },
-      ),
-    [setParams],
-  );
-
-  const setMulti = useCallback(
-    (key: AgingMultiKey, values: string[]) =>
-      update((out) => {
-        if (values.length) out.set(key, values.join(","));
-        else out.delete(key);
-      }),
-    [update],
-  );
-
-  // One updater for all keys — separate setMulti calls would each close over
-  // the render-time params and clobber one another.
-  const setMany = useCallback(
-    (entries: Partial<Record<AgingMultiKey, string[]>>) =>
-      update((out) => {
-        for (const [k, v] of Object.entries(entries)) {
-          if (v?.length) out.set(k, v.join(","));
-          else out.delete(k);
-        }
-      }),
-    [update],
+  const params = useMemo<AgingFilters>(
+    () => ({
+      ...csv,
+      measure,
+      ...(dateRange
+        ? { fromDate: dateRange[0].format(FMT), toDate: dateRange[1].format(FMT) }
+        : {}),
+    }),
+    [csv, measure, dateRange],
   );
 
   const setDateRange = useCallback(
@@ -152,18 +104,17 @@ export const useAgingFilters = (): AgingFiltersState => {
     [update],
   );
 
+  // Filters + date range; `measure` is a view toggle, not a filter, so it stays.
   const clearAll = useCallback(
     () =>
       update((out) => {
-        for (const k of FILTER_KEYS) out.delete(k);
+        for (const k of [...AGING_MULTI_KEYS, ...DATE_KEYS]) out.delete(k);
       }),
     [update],
   );
 
-  const drawerActiveCount = AGING_DRAWER_FIELDS.filter((f) => multi[f.key].length > 0).length;
-
   return {
-    params: apiParams,
+    params,
     multi,
     dateRange,
     measure,
@@ -172,6 +123,6 @@ export const useAgingFilters = (): AgingFiltersState => {
     setDateRange,
     setMeasure,
     clearAll,
-    drawerActiveCount,
+    drawerActiveCount: activeCount,
   };
 };

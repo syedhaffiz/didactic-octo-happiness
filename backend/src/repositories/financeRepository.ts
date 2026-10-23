@@ -13,6 +13,7 @@ import type {
   DebtorsResponse,
   ForexRange,
   ForexResponse,
+  InventoryDaysFilterOptions,
   InventoryDaysFilters,
   InventoryDaysResponse,
   HandlingBatchDetailResponse,
@@ -52,7 +53,10 @@ import {
   buildDebtorsFilterOptions,
   buildDebtorsOverview,
 } from "../mocks/debtors.js";
-import { buildInventoryDays } from "../mocks/inventoryDays.js";
+import {
+  buildInventoryDays,
+  buildInventoryDaysFilterOptions,
+} from "../mocks/inventoryDays.js";
 import { buildAging, buildAgingFilterOptions } from "../mocks/aging.js";
 
 export interface FinanceRepository {
@@ -106,6 +110,7 @@ export interface FinanceRepository {
   getDebtorsFilterOptions(): Promise<DebtorsFilterOptions>;
   // --- Inventory Days ---
   getInventoryDays(filters: InventoryDaysFilters): Promise<InventoryDaysResponse>;
+  getInventoryDaysFilterOptions(): Promise<InventoryDaysFilterOptions>;
   // --- Aging ---
   getAging(from: Date, to: Date, filters: AgingFilters): Promise<AgingResponse>;
   getAgingFilterOptions(): Promise<AgingFilterOptions>;
@@ -190,6 +195,9 @@ class MockFinanceRepository implements FinanceRepository {
   }
   async getInventoryDays(filters: InventoryDaysFilters) {
     return buildInventoryDays(filters);
+  }
+  async getInventoryDaysFilterOptions() {
+    return buildInventoryDaysFilterOptions();
   }
   async getAging(from: Date, to: Date, filters: AgingFilters) {
     return buildAging(from, to, filters);

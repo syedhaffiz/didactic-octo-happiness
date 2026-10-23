@@ -484,11 +484,21 @@ export type TimeFrame = "7d" | "14d" | "30d" | "last-month";
 // snapshot metrics, so `timeFrame` + `month` select the as-of window rather than
 // an accumulating date range. Zone/Origin nudge the figures; Port and Segment
 // narrow the breakdowns. All optional — an absent value means "All".
+// The Filters side-panel dropdown options (GET /finance/inventory-days/filters).
+// Each list holds { id, name } refs — the id is what the query sends.
+export interface InventoryDaysFilterOptions {
+  zones: FilterRef[];
+  ports: FilterRef[];
+  origins: FilterRef[];
+  segments: FilterRef[];
+}
+
 export interface InventoryDaysFilters {
   /** Relative look-back window; defaults to "7d" (last 7 days) when absent. */
   timeFrame?: TimeFrame;
   /** Reference month as "YYYY-MM"; defaults are resolved by the UI. */
   month?: string;
+  /** Multi-select ids, comma-joined ("zone-1,zone-2"); absent / empty ⇒ All. */
   zone?: string;
   port?: string;
   origin?: string;

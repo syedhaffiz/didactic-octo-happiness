@@ -21,6 +21,7 @@ import type {
   InsuranceFilterOptions,
   InsuranceStatusParams,
   InsuranceStatusResponse,
+  InventoryDaysFilterOptions,
   InventoryDaysFilters,
   InventoryDaysResponse,
   KPI,
@@ -57,7 +58,10 @@ import {
   buildDebtorsFilterOptions,
   buildDebtorsOverview,
 } from "../mocks/finance/debtors";
-import { buildInventoryDays } from "../mocks/finance/inventoryDays";
+import {
+  buildInventoryDays,
+  buildInventoryDaysFilterOptions,
+} from "../mocks/finance/inventoryDays";
 import { buildAging, buildAgingFilterOptions } from "../mocks/finance/aging";
 import {
   buildInsuranceFilterOptions,
@@ -165,6 +169,8 @@ const httpFinanceApi = {
     get<DebtorsFilterOptions>("/finance/debtors/filters"),
   inventoryDays: (p: InventoryDaysFilters = {}) =>
     get<InventoryDaysResponse>("/finance/inventory-days", p),
+  inventoryDaysFilterOptions: () =>
+    get<InventoryDaysFilterOptions>("/finance/inventory-days/filters"),
   aging: (p: AgingFilters = {}) => get<AgingResponse>("/finance/aging", p),
   agingFilterOptions: () => get<AgingFilterOptions>("/finance/aging/filters"),
   insuranceStatus: (p: InsuranceStatusParams = {}) =>
@@ -212,6 +218,7 @@ const mockFinanceApi = {
   debtorsOverview: (p: DebtorsParams = {}) => mockDelay(buildDebtorsOverview(p)),
   debtorsFilterOptions: () => mockDelay(buildDebtorsFilterOptions()),
   inventoryDays: (p: InventoryDaysFilters = {}) => mockDelay(buildInventoryDays(p)),
+  inventoryDaysFilterOptions: () => mockDelay(buildInventoryDaysFilterOptions()),
   aging: (p: AgingFilters = {}) => mockDelay(buildAging(p)),
   agingFilterOptions: () => mockDelay(buildAgingFilterOptions()),
   insuranceStatus: (p: InsuranceStatusParams = {}) => mockDelay(buildInsuranceStatus(p)),

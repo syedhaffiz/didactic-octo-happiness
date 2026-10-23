@@ -14,6 +14,7 @@ import {
   SEGMENT_LIST,
   ZONE_LIST,
 } from "./catalog.js";
+import { csvList } from "./csv.js";
 import { range, seedFromString, seeded } from "./rand.js";
 
 // Age buckets, oldest last — the x-axis of both Aging charts.
@@ -55,14 +56,6 @@ const DEFAULT_PRICE_PER_MT = 8_000;
 
 const DAY_MS = 86_400_000;
 const DEFAULT_WINDOW_DAYS = (DEFAULT_RANGE.to.getTime() - DEFAULT_RANGE.from.getTime()) / DAY_MS;
-
-// Multi-select filters arrive comma-joined ("zone-1,zone-2"). Blank entries and
-// "all" mean no narrowing, so they're dropped; an empty list means "All".
-const csvList = (v: string | undefined): string[] =>
-  (v ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter((s) => s && s !== "all");
 
 // Seeded share in [0.35, 0.75] for one concrete filter value, stable across
 // reloads. A multi-value selection adds its members' shares (capped at 1), so

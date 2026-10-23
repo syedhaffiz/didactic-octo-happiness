@@ -312,6 +312,14 @@ export const getInventoryDays: RequestHandler = async (req, res, next) => {
   }
 };
 
+export const getInventoryDaysFilterOptions: RequestHandler = async (_req, res, next) => {
+  try {
+    res.json(ok(await financeService.inventoryDaysFilterOptions()));
+  } catch (e) {
+    next(e);
+  }
+};
+
 // --- Aging ---------------------------------------------------------------
 
 export const getAging: RequestHandler = async (req, res, next) => {

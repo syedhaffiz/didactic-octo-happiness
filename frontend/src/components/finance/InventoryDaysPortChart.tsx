@@ -29,10 +29,14 @@ const options = (rows: InventoryDaysPortItem[]): Highcharts.Options => ({
 });
 
 export const InventoryDaysPortChart = ({ rows, loading }: Props) => {
+  // Drop malformed rows so a bad payload can't crash the chart.
+  const safeRows = (Array.isArray(rows) ? rows : []).filter(
+    (r): r is InventoryDaysPortItem => r != null && typeof r.days === "number",
+  );
   // Keep the chart mounted while loading (it draws its own overlay); only fall
   // back to Empty once a settled response has no ports.
-  if (!loading && (!rows || rows.length === 0)) {
+  if (!loading && safeRows.length === 0) {
     return <Empty description="No port data" />;
   }
-  return <Chart loading={loading} options={options(rows ?? [])} />;
+  return <Chart loading={loading} options={options(safeRows)} />;
 };

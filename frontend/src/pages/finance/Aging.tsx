@@ -6,8 +6,8 @@ import { ErrorRetry } from "../../components/ErrorRetry";
 import { PageHeader } from "../../components/PageHeader";
 import { CardTitle } from "../../components/CardTitle";
 import { AgingFilters } from "../../components/finance/aging/AgingFilters";
-import { AgingFilterDrawer } from "../../components/finance/aging/AgingFilterDrawer";
-import { AgingFilterChips } from "../../components/finance/aging/AgingFilterChips";
+import { RefFilterDrawer } from "../../components/filters/RefFilterDrawer";
+import { RefFilterChips } from "../../components/filters/RefFilterChips";
 import { AgingMeasureSegmented } from "../../components/finance/aging/AgingMeasureSegmented";
 import { AgingBucketChart } from "../../components/finance/aging/AgingBucketChart";
 import { AgingOriginChart } from "../../components/finance/aging/AgingOriginChart";
@@ -15,7 +15,7 @@ import { normalizeAging } from "../../components/finance/aging/agingFormat";
 import { financeApi } from "../../api/finance";
 import { useApi } from "../../api/useApi";
 import { useBrandTokens } from "../../theme/useBrandTokens";
-import { useAgingFilters } from "../../utils/useAgingFilters";
+import { AGING_DRAWER_FIELDS, useAgingFilters } from "../../utils/useAgingFilters";
 
 export const Aging = () => {
   const t = useBrandTokens();
@@ -69,7 +69,25 @@ export const Aging = () => {
             />
           }
         />
-        <AgingFilterChips filters={filters} options={options} />
+        <RefFilterChips
+          fields={AGING_DRAWER_FIELDS}
+          options={options}
+          values={filters.multi}
+          onChange={filters.setMulti}
+          onClearAll={filters.clearAll}
+          leadingChips={
+            filters.dateRange
+              ? [
+                  {
+                    key: "dateRange",
+                    label: "Date Range",
+                    value: `${filters.dateRange[0].format("DD MMM YY")} – ${filters.dateRange[1].format("DD MMM YY")}`,
+                    onClose: () => filters.setDateRange(null),
+                  },
+                ]
+              : []
+          }
+        />
       </div>
 
       <AgingMeasureSegmented value={filters.measure} onChange={filters.setMeasure} />
@@ -96,14 +114,16 @@ export const Aging = () => {
         </>
       )}
 
-      <AgingFilterDrawer
+      <RefFilterDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
+        fields={AGING_DRAWER_FIELDS}
         options={options}
         optionsLoading={optionsLoading}
         optionsError={optionsError}
         onRetryOptions={refetchOptions}
-        filters={filters}
+        values={filters.multi}
+        onApply={filters.setMany}
       />
     </div>
   );
