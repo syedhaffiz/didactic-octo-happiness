@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   getAging,
+  getAgingFilterOptions,
   getApprovedBudget,
   getDebtors,
   getDebtorsFilterOptions,
@@ -41,7 +42,9 @@ router.get("/profitability/vessels/handling/:batchId", getHandlingBatchDetail);
 router.get("/sales", getSales);
 router.get("/approved-budget", getApprovedBudget);
 router.get("/inventory-days", getInventoryDays);
+// Aging — the screen data and its Filters side-panel options.
 router.get("/aging", getAging);
+router.get("/aging/filters", getAgingFilterOptions);
 
 // Debtors — the overview landing screen, the outstanding-customers table, and
 // the shared Filters side-panel options.

@@ -1,4 +1,4 @@
-import { FilterTagBar, type FilterTagItem } from "../filters/FilterTagBar";
+import { FilterChips, type FilterChip } from "../FilterChips";
 import {
   MS_DRAWER_FIELDS,
   type MarketShareFiltersState,
@@ -21,7 +21,7 @@ interface Props {
 // value (never grouped) so each value can be removed on its own; single filters
 // render one pill.
 export const AppliedFilterTags = ({ filters, options }: Props) => {
-  const tags: FilterTagItem[] = [];
+  const tags: FilterChip[] = [];
 
   // One pill per selected value of a multiselect filter.
   const pushMulti = (
@@ -70,5 +70,5 @@ export const AppliedFilterTags = ({ filters, options }: Props) => {
     }
   }
 
-  return <FilterTagBar tags={tags} onClearAll={filters.clearAll} />;
+  return <FilterChips chips={tags} onClearAll={filters.clearAll} />;
 };

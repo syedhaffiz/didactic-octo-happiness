@@ -1,3 +1,5 @@
+import type { FilterRef } from "./api.js";
+
 export type IconKey =
   | "revenue"
   | "sales"
@@ -526,8 +528,9 @@ export interface InventoryDaysResponse {
 
 // --- Aging (Finance) -------------------------------------------------------
 // Stock aging: how much cargo (volume or value) has been held for how long,
-// bucketed by age. The Volume / Value toggle picks the measure; all filters are
-// optional — an absent value (or "all") means "All".
+// bucketed by age. The Volume / Value toggle picks the measure. Zone / Port /
+// Origin / Segment / Mine are multi-selects sent comma-joined ("aus,sa"); all
+// filters are optional — an absent or empty value means "All".
 export type AgingMeasure = "volume" | "value";
 
 export interface AgingFilters {
@@ -562,4 +565,14 @@ export interface AgingResponse {
   unit: "MT" | "INR";
   buckets: AgingBucketItem[];
   originwise: AgingOriginSeries[];
+}
+
+// The Filters side-panel dropdown options (GET /finance/aging/filters). Each
+// list holds { id, name } refs — the id is what the aging query sends.
+export interface AgingFilterOptions {
+  zones: FilterRef[];
+  ports: FilterRef[];
+  origins: FilterRef[];
+  segments: FilterRef[];
+  mines: FilterRef[];
 }

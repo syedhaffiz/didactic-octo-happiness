@@ -1,55 +1,53 @@
-import { useState } from "react";
-import { FilterDrawer } from "../../filters/FilterDrawer";
-import { SelectFilter } from "../../filters/SelectFilter";
-import { AGING_DRAWER_FIELDS, type AgingDrawerValues } from "./agingFilterFields";
+import { ErrorRetry } from "../../ErrorRetry";
+import { MultiSelectFilterDrawer } from "../../filters/MultiSelectFilterDrawer";
+import {
+  AGING_DRAWER_FIELDS,
+  type AgingFiltersState,
+} from "../../../utils/useAgingFilters";
+import type { AgingFilterOptions } from "../../../types/finance";
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  /** Committed (URL) values — the draft is seeded from these on each open. */
-  values: AgingDrawerValues;
-  /** Commit every drawer field at once. */
-  onApply: (next: AgingDrawerValues) => void;
+  options?: AgingFilterOptions;
+  optionsLoading: boolean;
+  /** Set when an option list failed to load — shown above the fields. */
+  optionsError: Error | null;
+  onRetryOptions: () => void;
+  filters: AgingFiltersState;
 }
 
-const EMPTY: AgingDrawerValues = {
-  zone: undefined,
-  port: undefined,
-  origin: undefined,
-  segment: undefined,
-  mine: undefined,
-};
-
-// Aging Filters side-panel: Zone / Port / Origin / Segment / Mine single-selects
-// fed by the shared /filters catalogue. Edits stay in a local draft and only
-// commit on "Apply filters"; "Cancel" discards and "Clear all" empties it.
-export const AgingFilterDrawer = ({ open, onClose, values, onApply }: Props) => {
-  const [draft, setDraft] = useState<AgingDrawerValues>(values);
-
-  // Re-sync the draft to the committed values on each open transition. Done in
-  // render (not an effect) so the panel always opens showing the live state.
-  const [prevOpen, setPrevOpen] = useState(open);
-  if (open !== prevOpen) {
-    setPrevOpen(open);
-    if (open) setDraft(values);
-  }
-
-  const apply = () => {
-    onApply(draft);
-    onClose();
-  };
-
-  return (
-    <FilterDrawer open={open} onClose={onClose} onApply={apply} onClearAll={() => setDraft(EMPTY)}>
-      {AGING_DRAWER_FIELDS.map((f) => (
-        <SelectFilter
-          key={f.key}
-          label={f.label}
-          kind={f.kind}
-          value={draft[f.key]}
-          onChange={(v) => setDraft((d) => ({ ...d, [f.key]: v }))}
+// Slide-in Filters panel (Zone, Port, Origin, Segment, Mine), each a
+// multi-select where empty means "All". Draft / Apply / Cancel / Clear all
+// behaviour comes from the shared MultiSelectFilterDrawer.
+export const AgingFilterDrawer = ({
+  open,
+  onClose,
+  options,
+  optionsLoading,
+  optionsError,
+  onRetryOptions,
+  filters,
+}: Props) => (
+  <MultiSelectFilterDrawer
+    open={open}
+    onClose={onClose}
+    fields={AGING_DRAWER_FIELDS.map((f) => ({
+      key: f.key,
+      label: f.label,
+      options: (options?.[f.optionsKey] ?? []).map((o) => ({ value: o.id, label: o.name })),
+    }))}
+    values={filters.multi}
+    onApply={filters.setMany}
+    loading={optionsLoading}
+    notice={
+      optionsError ? (
+        <ErrorRetry
+          title="Could not load filter options"
+          error={optionsError}
+          onRetry={onRetryOptions}
         />
-      ))}
-    </FilterDrawer>
-  );
-};
+      ) : null
+    }
+  />
+);

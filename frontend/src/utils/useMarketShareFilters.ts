@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
+import { splitCsv } from "./csv";
 import dayjs, { type Dayjs } from "dayjs";
 import type { MarketShareParams, MarketShareFilterOptions } from "../types/marketing";
 
@@ -71,8 +72,6 @@ export interface MarketShareFiltersState {
   /** How many side-panel (single) filters are active — for the Filters badge. */
   drawerActiveCount: number;
 }
-
-const splitCsv = (v: string | null): string[] => (v ? v.split(",").filter(Boolean) : []);
 
 // Central Market Share filter state, backed entirely by URL search params so
 // every selection is shareable and survives reload/back-forward. Multiselect

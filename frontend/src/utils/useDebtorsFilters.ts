@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
+import { splitCsv } from "./csv";
 import dayjs, { type Dayjs } from "dayjs";
 import type { Currency, DebtorsFilterOptions, DebtorsParams } from "../types/finance";
 
@@ -40,8 +41,6 @@ export const DEBTORS_DRAWER_FIELDS: DebtorsFieldMeta[] = [
 // survives reload/back-forward.
 const TOP_KEYS = ["currency", "tillDate"] as const;
 const ALL_KEYS: string[] = [...DEBTORS_DRAWER_KEYS, ...TOP_KEYS];
-
-const splitCsv = (v: string | null): string[] => (v ? v.split(",").filter(Boolean) : []);
 
 export interface DebtorsFiltersState {
   /** Cleaned query object for the API + a stable useApi query-key member.

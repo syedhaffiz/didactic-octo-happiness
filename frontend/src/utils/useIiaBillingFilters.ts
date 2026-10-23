@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
+import { splitCsv } from "./csv";
 import dayjs, { type Dayjs } from "dayjs";
 import { useUrlParam } from "./useUrlParam";
 import type { IiaBillingFilterOptions, IiaBillingParams, IiaPortType } from "../types/marketing";
@@ -53,8 +54,6 @@ export interface IiaBillingFiltersState {
   /** How many side-panel filters are active — for the Filters badge. */
   drawerActiveCount: number;
 }
-
-const splitCsv = (v: string | null): string[] => (v ? v.split(",").filter(Boolean) : []);
 
 // Central IIA Billing filter state, backed by URL search params so a selection
 // is shareable and survives reload/back-forward. Year/Quarter and the Date

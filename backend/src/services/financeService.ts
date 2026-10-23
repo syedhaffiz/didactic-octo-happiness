@@ -56,4 +56,5 @@ export const financeService = {
     financeRepository.getInventoryDays(filters),
   aging: (from: Date, to: Date, filters: AgingFilters) =>
     financeRepository.getAging(from, to, filters),
+  agingFilterOptions: () => financeRepository.getAgingFilterOptions(),
 };

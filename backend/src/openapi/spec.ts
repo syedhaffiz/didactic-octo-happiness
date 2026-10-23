@@ -348,6 +348,13 @@ export const openApiSpec = {
         responses: { "200": envelopeResponse("DebtorsFilterOptions") },
       },
     },
+    "/finance/aging/filters": {
+      get: {
+        tags: ["Finance"],
+        summary: "Aging — Filters side-panel dropdown options (Zone, Port, Origin, Segment, Mine)",
+        responses: { "200": envelopeResponse("AgingFilterOptions") },
+      },
+    },
 
     // --- Inventory --------------------------------------------------------
     "/inventory/index": {
@@ -696,13 +703,12 @@ export const openApiSpec = {
       },
       FiltersResponse: {
         type: "object",
-        required: ["ports", "segments", "zones", "origins", "mines", "grades", "indexNames"],
+        required: ["ports", "segments", "zones", "origins", "grades", "indexNames"],
         properties: {
           ports: { type: "array", items: { $ref: "#/components/schemas/FilterRef" } },
           segments: { type: "array", items: { $ref: "#/components/schemas/FilterRef" } },
           zones: { type: "array", items: { $ref: "#/components/schemas/FilterRef" } },
           origins: { type: "array", items: { $ref: "#/components/schemas/FilterRef" } },
-          mines: { type: "array", items: { $ref: "#/components/schemas/FilterRef" } },
           grades: { type: "array", items: { $ref: "#/components/schemas/GradeRef" } },
           indexNames: { type: "array", items: { $ref: "#/components/schemas/IndexNameRef" } },
         },
@@ -1155,6 +1161,17 @@ export const openApiSpec = {
         properties: {
           bucket: { type: "string", example: "91-180 days" },
           value: { type: "number" },
+        },
+      },
+      AgingFilterOptions: {
+        type: "object",
+        required: ["zones", "ports", "origins", "segments", "mines"],
+        properties: {
+          zones: { type: "array", items: { $ref: "#/components/schemas/FilterRef" } },
+          ports: { type: "array", items: { $ref: "#/components/schemas/FilterRef" } },
+          origins: { type: "array", items: { $ref: "#/components/schemas/FilterRef" } },
+          segments: { type: "array", items: { $ref: "#/components/schemas/FilterRef" } },
+          mines: { type: "array", items: { $ref: "#/components/schemas/FilterRef" } },
         },
       },
       DebtorsBreakdownItem: {

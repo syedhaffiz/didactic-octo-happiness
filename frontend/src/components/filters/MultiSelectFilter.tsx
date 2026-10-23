@@ -17,8 +17,9 @@ interface Props {
   disabled?: boolean;
 }
 
-// Multiselect dropdown (label above the control) for the Market Share Year and
-// Quarter filters. Empty selection means "All".
+// Multiselect dropdown (label above the control). Used by the top-bar Year /
+// Quarter filters and by MultiSelectFilterDrawer. Empty selection means "All";
+// typing searches the option labels.
 export const MultiSelectFilter = ({
   label,
   value,
@@ -40,6 +41,7 @@ export const MultiSelectFilter = ({
       disabled={disabled}
       placeholder={placeholder}
       maxTagCount="responsive"
+      optionFilterProp="label"
       style={{ width: "100%" }}
     />
   </FilterField>

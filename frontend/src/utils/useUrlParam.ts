@@ -36,10 +36,6 @@ export const useUrlParams = (
 ): {
   values: Record<string, string | undefined>;
   set: (key: string, next: string | undefined) => void;
-  /** Set / clear several keys in one URL update (blank or undefined clears).
-   *  Per-key `set` calls don't compose — each functional updater closes over
-   *  the render-time params, so the last call would clobber the rest. */
-  setMany: (entries: Record<string, string | undefined>) => void;
   reset: () => void;
 } => {
   const [params, setParams] = useSearchParams();
@@ -66,23 +62,6 @@ export const useUrlParams = (
     [setParams],
   );
 
-  const setMany = useCallback(
-    (entries: Record<string, string | undefined>) => {
-      setParams(
-        (prev) => {
-          const out = new URLSearchParams(prev);
-          for (const [k, v] of Object.entries(entries)) {
-            if (v === undefined || v === "") out.delete(k);
-            else out.set(k, v);
-          }
-          return out;
-        },
-        { replace: true },
-      );
-    },
-    [setParams],
-  );
-
   const reset = useCallback(() => {
     setParams(
       (prev) => {
@@ -95,7 +74,7 @@ export const useUrlParams = (
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setParams, keysSig]);
 
-  return { values, set, setMany, reset };
+  return { values, set, reset };
 };
 
 type RangeTuple = [Dayjs | null, Dayjs | null] | null;

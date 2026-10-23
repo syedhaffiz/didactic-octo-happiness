@@ -33,7 +33,7 @@ export const FilterDrawer = ({ open, onClose, onApply, onClearAll, children }: P
       </Space>
     }
   >
-    <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+    <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
       {children}
     </Space>
   </Drawer>

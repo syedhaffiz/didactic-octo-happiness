@@ -5,7 +5,6 @@ import {
   DISCHARGE_PORT_LIST,
   GRADE_LIST,
   INDEX_NAME_LIST,
-  MINE_LIST,
   ORIGIN_LIST,
   PORT_LIST,
   portsForZone,
@@ -33,7 +32,6 @@ export interface FiltersResponse {
   segments: FilterRef[];
   zones: FilterRef[];
   origins: FilterRef[];
-  mines: FilterRef[];
   grades: GradeRef[];
   indexNames: IndexNameRef[];
 }
@@ -59,7 +57,6 @@ const mockFiltersApi = {
       segments: [...SEGMENT_LIST],
       zones: [...ZONE_LIST],
       origins: [...ORIGIN_LIST],
-      mines: [...MINE_LIST],
       grades: [...GRADE_LIST],
       indexNames: [...INDEX_NAME_LIST],
     }),

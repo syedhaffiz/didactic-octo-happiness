@@ -1,11 +1,19 @@
 import type {
   AgingBucketItem,
+  AgingFilterOptions,
   AgingFilters,
   AgingMeasure,
   AgingOriginSeries,
   AgingResponse,
 } from "../types/finance.js";
-import { DEFAULT_RANGE, MINE_LIST, ORIGIN_LIST } from "./catalog.js";
+import {
+  DEFAULT_RANGE,
+  MINE_LIST,
+  ORIGIN_LIST,
+  PORT_LIST,
+  SEGMENT_LIST,
+  ZONE_LIST,
+} from "./catalog.js";
 import { range, seedFromString, seeded } from "./rand.js";
 
 // Age buckets, oldest last — the x-axis of both Aging charts.
@@ -48,15 +56,27 @@ const DEFAULT_PRICE_PER_MT = 8_000;
 const DAY_MS = 86_400_000;
 const DEFAULT_WINDOW_DAYS = (DEFAULT_RANGE.to.getTime() - DEFAULT_RANGE.from.getTime()) / DAY_MS;
 
-// "all" (or missing) means no narrowing — normalise it away so it can't act as
-// a concrete value.
-const concrete = (v: string | undefined): string | undefined =>
-  v && v !== "all" ? v : undefined;
+// Multi-select filters arrive comma-joined ("zone-1,zone-2"). Blank entries and
+// "all" mean no narrowing, so they're dropped; an empty list means "All".
+const csvList = (v: string | undefined): string[] =>
+  (v ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s && s !== "all");
 
-// Seeded share in [0.35, 0.75] for a narrowing filter, so each concrete
-// selection shrinks the totals by a stable amount across reloads.
-const narrowShare = (key: string, value: string | undefined): number =>
-  value ? range(seeded(seedFromString(`aging:${key}:${value}`)), 0.35, 0.75) : 1;
+// Seeded share in [0.35, 0.75] for one concrete filter value, stable across
+// reloads. A multi-value selection adds its members' shares (capped at 1), so
+// picking more values never shrinks the totals.
+const narrowShare = (key: string, values: string[]): number =>
+  values.length === 0
+    ? 1
+    : Math.min(
+        1,
+        values.reduce(
+          (sum, v) => sum + range(seeded(seedFromString(`aging:${key}:${v}`)), 0.35, 0.75),
+          0,
+        ),
+      );
 
 export const buildAging = (from: Date, to: Date, filters: AgingFilters = {}): AgingResponse => {
   const measure: AgingMeasure = filters.measure ?? "volume";
@@ -66,37 +86,40 @@ export const buildAging = (from: Date, to: Date, filters: AgingFilters = {}): Ag
   const windowDays = Math.max(1, (to.getTime() - from.getTime()) / DAY_MS);
   const windowFactor = Math.min(1.5, Math.max(0.05, windowDays / DEFAULT_WINDOW_DAYS));
 
-  const zone = concrete(filters.zone);
-  const port = concrete(filters.port);
-  const segment = concrete(filters.segment);
-  const origin = concrete(filters.origin);
-  const mineId = concrete(filters.mine);
+  const originIds = csvList(filters.origin);
+  const mineIds = csvList(filters.mine);
 
-  // A mine pins its origin. An unknown mine, or one outside the selected
-  // origin, matches nothing — the response comes back empty, not an error.
-  const mine = mineId ? MINE_LIST.find((m) => m.id === mineId) : undefined;
+  // Each mine pins its origin, so a mine selection limits the origins too.
+  // Unknown mine ids are ignored; if none of the picked mines is known, or
+  // none sits in a picked origin, nothing matches — the response comes back
+  // empty rather than erroring.
+  const mines = MINE_LIST.filter((m) => mineIds.includes(m.id));
   const origins = ORIGIN_LIST.map((o, idx) => ({ ...o, idx })).filter(
     (o) =>
-      (!origin || o.id === origin) &&
-      (!mineId || (mine !== undefined && mine.origin === o.id)),
+      (originIds.length === 0 || originIds.includes(o.id)) &&
+      (mineIds.length === 0 || mines.some((m) => m.origin === o.id)),
   );
 
   const scale =
     windowFactor *
-    narrowShare("zone", zone) *
-    narrowShare("port", port) *
-    narrowShare("segment", segment) *
-    narrowShare("mine", mineId);
+    narrowShare("zone", csvList(filters.zone)) *
+    narrowShare("port", csvList(filters.port)) *
+    narrowShare("segment", csvList(filters.segment));
 
   const originwise: AgingOriginSeries[] = origins.map((o) => {
     const rng = seeded(seedFromString(`aging:origin:${o.id}`));
     const price = PRICE_PER_MT[o.id] ?? DEFAULT_PRICE_PER_MT;
+    // Only the picked mines' slice of this origin's stock counts.
+    const mineShare = narrowShare(
+      "mine",
+      mines.filter((m) => m.origin === o.id).map((m) => m.id),
+    );
     const amounts = AGING_BUCKETS.map((_, b) => {
       const mix = ORIGIN_MIX[b] ?? [];
       const mixTotal = mix.reduce((s, w) => s + w, 0) || 1;
       const share = (mix[o.idx] ?? 0) / mixTotal;
       const jitter = range(rng, 0.85, 1.15);
-      const volume = (BUCKET_VOLUME_BASELINE[b] ?? 0) * share * jitter * scale;
+      const volume = (BUCKET_VOLUME_BASELINE[b] ?? 0) * share * jitter * scale * mineShare;
       return Math.round(measure === "value" ? volume * price : volume);
     });
     return { origin: o.name, amounts };
@@ -116,3 +139,13 @@ export const buildAging = (from: Date, to: Date, filters: AgingFilters = {}): Ag
     originwise,
   };
 };
+
+// Filters side-panel options. Mines drop their origin link — only id + name
+// cross the wire.
+export const buildAgingFilterOptions = (): AgingFilterOptions => ({
+  zones: [...ZONE_LIST],
+  ports: [...PORT_LIST],
+  origins: [...ORIGIN_LIST],
+  segments: [...SEGMENT_LIST],
+  mines: MINE_LIST.map(({ id, name }) => ({ id, name })),
+});

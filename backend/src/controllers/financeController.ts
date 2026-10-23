@@ -334,3 +334,11 @@ export const getAging: RequestHandler = async (req, res, next) => {
     next(e);
   }
 };
+
+export const getAgingFilterOptions: RequestHandler = async (_req, res, next) => {
+  try {
+    res.json(ok(await financeService.agingFilterOptions()));
+  } catch (e) {
+    next(e);
+  }
+};
