@@ -206,6 +206,34 @@ export const qualityColors = {
   zeroLine: brand.black,
 } as const;
 
+// Marketing → IIA Billing — one stack colour per inspection agency in the Port
+// & Vendor chart (and the matching dot in its table), sampled from the Figma.
+// Assigned by vendor position, cycling if a selection holds more vendors.
+export const iiaBillingColors = {
+  vendors: [
+    "#F6A33B", // amber
+    "#1F3B73", // navy
+    "#8E7CC3", // lavender
+    "#6CBB8F", // green
+    "#B5536B", // rose
+    "#1E6FB8", // blue
+    "#F7C948", // yellow
+    "#5BC0DE", // sky
+    "#8FA0E8", // periwinkle
+    "#7A8F3A", // olive
+    "#D9727F", // coral
+    "#7DB7F0", // light blue
+    "#8A5A44", // brown
+    "#3E9E8F", // teal
+    "#C58AD6", // orchid
+    "#A9B4C2", // slate
+    "#E07B39", // orange
+    "#4F6D7A", // steel
+    "#B7C96B", // lime
+    "#5E4B8B", // indigo
+  ],
+} as const;
+
 // ---------------------------------------------------------------------------
 // Logistics module — DP Handling Agents columns.
 // Reuse existing brand tokens where they match the sampled design colors.

@@ -320,16 +320,53 @@ export const IIA_CUSTOMER_LIST: IdName[] = [
 
 // Inspection agencies (the billing vendors). Load-port agencies sample at the
 // origin; discharge-port agencies sample on arrival in India.
+const vendor = (name: string): IdName => ({
+  id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+  name,
+});
 export const IIA_LOAD_VENDOR_LIST: IdName[] = [
-  { id: "pt-surveyor-carbon", name: "PT SURVEYOR CARBON CONSULTING INDONESIA" },
-  { id: "pt-leon-testing", name: "PT LEON TESTING AND CONSULTANCY" },
-  { id: "pt-anindya-wiraputra", name: "PT ANINDYA WIRAPUTRA KONSULT" },
-  { id: "pt-carsurin", name: "PT CARSURIN" },
-];
+  "SGS SOCIETE GENERALE DE SURVEILLANCE",
+  "SGS NORTH AMERICA INC",
+  "PT TCRC INSPECTINDO",
+  "PT SURVEYOR CARBON CONSULTING",
+  "PT OO WI INDONESIA",
+  "PT LEON TESTING AND CONSULTANCY",
+  "PT IOL INDONESIA",
+  "PT COTECNA INSPECTION INDONESIA",
+  "PT CARSURIN",
+  "PT ANINDYA WIRAPUTRA KONSULT",
+  "MITRA S K SINGAPORE PTE LTD",
+  "ALFRED H KNIGHT ENERGY SERVICES LTD",
+].map(vendor);
 export const IIA_DISCHARGE_VENDOR_LIST: IdName[] = [
-  { id: "mitra-sk", name: "MITRA S K PVT LTD" },
-  { id: "leon-inspection", name: "LEON INSPECTION AND TESTING SERVICES" },
-  { id: "geo-chem", name: "GEO-CHEM LABORATORIES PVT LTD" },
+  "TUV INDIA PVT LTD",
+  "TUV AUSTRIA INDIA PVT LTD",
+  "TIMES MARINE SERVICES PVT LTD",
+  "TCRC QUALITY CONTROLS LLP",
+  "TCRC INSPECTIONS PVT LTD",
+  "SRT LABORATORIES PVT LTD",
+  "SGS INDIA PVT LTD",
+  "RAVI ENERGIE PVT LTD",
+  "QSS INSPECTION AND TESTING PVT LTD",
+  "MITRA S K PVT LTD",
+  "LEON INSPECTION AND TESTING INDIA",
+  "INTERTEK INDIA PVT LTD",
+  "INSPECTORATE GRIFFITH INDIA PVT LTD",
+  "IMC CONTROL INDIA AND LOSS ASSAYERS",
+  "GEO CHEM LABORATORIES PVT LTD",
+  "ELEGANT SURVEYORS PVT LTD",
+  "COTECNA INSPECTION INDIA PVT LTD",
+  "BUREAU VERITAS INDIA PVT LTD",
+  "ALFRED H KNIGHT INDIA PVT LTD",
+  "ALEX STEWART INTERNATIONAL (INDIA)",
+].map(vendor);
+
+// Incoterms the cargo was traded on.
+export const TRADE_TERM_LIST: IdName[] = [
+  { id: "fob", name: "FOB" },
+  { id: "cfr", name: "CFR" },
+  { id: "cif", name: "CIF" },
+  { id: "dap", name: "DAP" },
 ];
 
 export const IIA_VESSELS = [

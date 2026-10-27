@@ -3,23 +3,23 @@ import { FilterOutlined } from "@ant-design/icons";
 import { DateRangeFilter } from "../../DateRangeFilter";
 import { MultiSelectFilter } from "../../filters/MultiSelectFilter";
 import { QUARTER_OPTIONS } from "../../filters/quarterOptions";
+import { toSelectOptions } from "../../filters/refFilterFields";
 import type { IiaBillingFiltersState } from "../../../utils/useIiaBillingFilters";
 import type { FilterRef } from "../../../types/marketing";
 
 interface Props {
   filters: IiaBillingFiltersState;
-  fiscalYearOptions: FilterRef[];
+  fiscalYearOptions?: FilterRef[];
   onOpenFilters: () => void;
 }
 
-// Top control row: multiselect Fiscal Year + Quarter, a date range, and the
-// button that opens the Filters side-panel (badged with its active count).
-// Year/Quarter and the Date Range are mutually exclusive — whichever side holds
-// a value disables the other.
+// Top control row: multiselect Fiscal Year + Quarter, a date range (fiscal
+// YTD by default), and the button that opens the Filters side-panel (badged
+// with its active count). Year/Quarter and the Date Range are mutually
+// exclusive: a period disables the picker, and a picked range disables the
+// period selects (the YTD default doesn't).
 export const IiaBillingFilters = ({ filters, fiscalYearOptions, onOpenFilters }: Props) => {
-  const periodActive =
-    filters.multi.fiscalYears.length > 0 || filters.multi.quarters.length > 0;
-  const dateActive = filters.dateRange != null;
+  const dateActive = filters.isCustomRange;
 
   return (
     <Space size="middle" align="end" wrap>
@@ -27,7 +27,7 @@ export const IiaBillingFilters = ({ filters, fiscalYearOptions, onOpenFilters }:
         label="Fiscal Year"
         value={filters.multi.fiscalYears}
         onChange={(v) => filters.setMulti("fiscalYears", v)}
-        options={fiscalYearOptions.map((o) => ({ value: o.id, label: o.name }))}
+        options={toSelectOptions(fiscalYearOptions)}
         width={180}
         disabled={dateActive}
       />
@@ -42,7 +42,7 @@ export const IiaBillingFilters = ({ filters, fiscalYearOptions, onOpenFilters }:
       <DateRangeFilter
         value={filters.dateRange}
         onChange={filters.setDateRange}
-        disabled={periodActive}
+        disabled={filters.periodActive}
       />
       <Badge count={filters.drawerActiveCount} size="small">
         <Button icon={<FilterOutlined />} onClick={onOpenFilters}>

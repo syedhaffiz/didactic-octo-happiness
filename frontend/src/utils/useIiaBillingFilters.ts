@@ -1,51 +1,60 @@
 import { useCallback, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
-import { splitCsv } from "./csv";
 import dayjs, { type Dayjs } from "dayjs";
+import { useMultiFilterParams } from "./useMultiFilterParams";
 import { useUrlParam } from "./useUrlParam";
+import { ytdRange } from "./datePresets";
+import type { RefFilterField } from "../components/filters/refFilterFields";
 import type { IiaBillingFilterOptions, IiaBillingParams, IiaPortType } from "../types/marketing";
 
 const FMT = "YYYY-MM-DD";
 
-// Every IIA Billing filter is multiselect, comma-joined in the URL. Fiscal Year
-// + Quarter live in the top bar; the rest are the Filters side-panel dropdowns.
+// Every IIA Billing filter is multiselect, comma-joined in the URL (empty ⇒
+// "All"). Fiscal Year + Quarter live in the top bar; the rest are the Filters
+// side-panel dropdowns.
 export const IIA_MULTI_KEYS = [
   "fiscalYears",
   "quarters",
   "zone",
   "port",
+  "origin",
+  "grade",
   "segment",
-  "customer",
   "vendor",
+  "tradeTerms",
+  "vessel",
 ] as const;
 export type IiaMultiKey = (typeof IIA_MULTI_KEYS)[number];
+type IiaDrawerKey = Exclude<IiaMultiKey, "fiscalYears" | "quarters">;
 
 // Display metadata for each Filters side-panel dropdown, shared by the drawer
-// and the applied-filter chips so the two stay in lock-step.
-export interface IiaDrawerField {
-  key: IiaMultiKey;
-  label: string;
-  optionsKey: keyof IiaBillingFilterOptions;
-}
-export const IIA_DRAWER_FIELDS: IiaDrawerField[] = [
+// and the applied-filter chips so the two stay in lock-step. `optionsKey` ties
+// a field to its list in the /marketing/iia-billing/filters payload.
+export const IIA_DRAWER_FIELDS: RefFilterField<IiaDrawerKey, keyof IiaBillingFilterOptions>[] = [
   { key: "zone", label: "Zone", optionsKey: "zones" },
   { key: "port", label: "Port", optionsKey: "ports" },
+  { key: "origin", label: "Origin", optionsKey: "origins" },
+  { key: "grade", label: "Grade", optionsKey: "grades" },
   { key: "segment", label: "Segment", optionsKey: "segments" },
-  { key: "customer", label: "Customer", optionsKey: "customers" },
-  { key: "vendor", label: "Vendor", optionsKey: "vendors" },
+  { key: "vendor", label: "Vendor Name", optionsKey: "vendors" },
+  { key: "tradeTerms", label: "Trade Terms", optionsKey: "tradeTerms" },
+  { key: "vessel", label: "Vessel", optionsKey: "vessels" },
 ];
 
-const PERIOD_KEYS = ["fiscalYears", "quarters"];
+const PERIOD_KEYS: IiaMultiKey[] = ["fiscalYears", "quarters"];
 const DATE_KEYS = ["fromDate", "toDate"];
-const ALL_KEYS: string[] = [...IIA_MULTI_KEYS, ...DATE_KEYS];
 
 export interface IiaBillingFiltersState {
   /** Cleaned query object for the API + as a stable useApi query-key member. */
   params: IiaBillingParams;
   /** Current values per filter (parsed from the comma-joined URL params). */
   multi: Record<IiaMultiKey, string[]>;
-  /** Current date range, or null when unset. */
+  /** Effective date range — the URL value, else fiscal YTD. Null while a
+   *  Fiscal Year / Quarter is selected (the two are mutually exclusive). */
   dateRange: [Dayjs, Dayjs] | null;
+  /** True when the user picked a range (not the YTD default). */
+  isCustomRange: boolean;
+  /** True when a Fiscal Year or Quarter is selected. */
+  periodActive: boolean;
   setMulti: (key: IiaMultiKey, values: string[]) => void;
   /** Commit many keys atomically in one URL update. Used by the Filters drawer. */
   setMany: (entries: Partial<Record<IiaMultiKey, string[]>>) => void;
@@ -55,75 +64,52 @@ export interface IiaBillingFiltersState {
   drawerActiveCount: number;
 }
 
-// Central IIA Billing filter state, backed by URL search params so a selection
-// is shareable and survives reload/back-forward. Year/Quarter and the Date
-// Range are mutually exclusive — setting one side clears the other. The active
-// tab (`?tab=`) is owned separately and is left alone by `clearAll`.
+// Central IIA Billing filter state, backed by URL search params (via
+// useMultiFilterParams) so a selection is shareable and survives
+// reload/back-forward. The Date Range defaults to fiscal YTD and stays out of
+// the URL until the user picks one. Fiscal Year / Quarter and the Date Range
+// are mutually exclusive: picking a period replaces the range, and clearing it
+// returns to YTD. The active tab (`?tab=`) is a view toggle, left alone by
+// `clearAll`.
 export const useIiaBillingFilters = (): IiaBillingFiltersState => {
-  const [params, setParams] = useSearchParams();
+  const { searchParams, multi, csv, setMany, update } = useMultiFilterParams(IIA_MULTI_KEYS);
 
-  const multi = useMemo(() => {
-    const out = {} as Record<IiaMultiKey, string[]>;
-    for (const k of IIA_MULTI_KEYS) out[k] = splitCsv(params.get(k));
-    return out;
-  }, [params]);
+  const periodActive = PERIOD_KEYS.some((k) => multi[k].length > 0);
 
-  const periodActive = PERIOD_KEYS.some((k) => params.get(k));
+  // Stable so the default doesn't drift across re-renders.
+  const defaultRange = useMemo(() => ytdRange(), []);
 
-  const dateRange = useMemo<[Dayjs, Dayjs] | null>(() => {
-    if (periodActive) return null;
-    const f = params.get("fromDate");
-    const t = params.get("toDate");
-    if (!f || !t) return null;
-    const fd = dayjs(f);
-    const td = dayjs(t);
+  // A half-set or unparsable range falls back to YTD everywhere (picker, chips
+  // and API) — never sent half-formed.
+  const fromRaw = searchParams.get("fromDate");
+  const toRaw = searchParams.get("toDate");
+  const customRange = useMemo<[Dayjs, Dayjs] | null>(() => {
+    if (!fromRaw || !toRaw) return null;
+    const fd = dayjs(fromRaw);
+    const td = dayjs(toRaw);
     return fd.isValid() && td.isValid() ? [fd, td] : null;
-  }, [params, periodActive]);
+  }, [fromRaw, toRaw]);
 
-  const apiParams = useMemo<IiaBillingParams>(() => {
-    const out: Record<string, string> = {};
-    for (const k of ALL_KEYS) {
-      const v = params.get(k);
-      if (v) out[k] = v;
+  // Year/Quarter win over any range — also guards a hand-edited URL carrying both.
+  const dateRange = periodActive ? null : customRange ?? defaultRange;
+
+  const params = useMemo<IiaBillingParams>(() => {
+    const out: IiaBillingParams = { ...csv };
+    if (dateRange) {
+      out.fromDate = dateRange[0].format(FMT);
+      out.toDate = dateRange[1].format(FMT);
     }
-    // Guards a hand-edited URL carrying both: Year/Quarter win.
-    if (periodActive) for (const k of DATE_KEYS) delete out[k];
-    return out as IiaBillingParams;
-  }, [params, periodActive]);
-
-  const update = useCallback(
-    (mutate: (out: URLSearchParams) => void) =>
-      setParams(
-        (prev) => {
-          const out = new URLSearchParams(prev);
-          mutate(out);
-          return out;
-        },
-        { replace: true },
-      ),
-    [setParams],
-  );
+    return out;
+  }, [csv, dateRange]);
 
   const setMulti = useCallback(
     (key: IiaMultiKey, values: string[]) =>
       update((out) => {
         if (values.length) out.set(key, values.join(","));
         else out.delete(key);
+        // Picking a period drops any custom range (mutually exclusive).
         if (values.length && PERIOD_KEYS.includes(key)) {
           for (const k of DATE_KEYS) out.delete(k);
-        }
-      }),
-    [update],
-  );
-
-  // One updater for all keys — separate setMulti calls would each close over
-  // the render-time params and clobber one another.
-  const setMany = useCallback(
-    (entries: Partial<Record<IiaMultiKey, string[]>>) =>
-      update((out) => {
-        for (const [k, v] of Object.entries(entries)) {
-          if (v?.length) out.set(k, v.join(","));
-          else out.delete(k);
         }
       }),
     [update],
@@ -143,10 +129,11 @@ export const useIiaBillingFilters = (): IiaBillingFiltersState => {
     [update],
   );
 
+  // Filters + date range (back to YTD); the tab stays.
   const clearAll = useCallback(
     () =>
       update((out) => {
-        for (const k of ALL_KEYS) out.delete(k);
+        for (const k of [...IIA_MULTI_KEYS, ...DATE_KEYS]) out.delete(k);
       }),
     [update],
   );
@@ -154,9 +141,11 @@ export const useIiaBillingFilters = (): IiaBillingFiltersState => {
   const drawerActiveCount = IIA_DRAWER_FIELDS.filter((f) => multi[f.key].length > 0).length;
 
   return {
-    params: apiParams,
+    params,
     multi,
     dateRange,
+    isCustomRange: !periodActive && customRange !== null,
+    periodActive,
     setMulti,
     setMany,
     setDateRange,

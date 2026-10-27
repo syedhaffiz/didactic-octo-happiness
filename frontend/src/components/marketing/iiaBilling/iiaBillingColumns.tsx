@@ -5,27 +5,35 @@ import type { IiaBillingRow, IiaPortType } from "../../../types/marketing";
 type TextKey = "date" | "customer" | "vessel" | "port" | "segment" | "vendor" | "tcNumber";
 type NumKey = "amount" | "qty" | "plannedQuality";
 
-const byText = (k: TextKey) => (a: IiaBillingRow, b: IiaBillingRow) => a[k].localeCompare(b[k]);
-const byNum = (k: NumKey) => (a: IiaBillingRow, b: IiaBillingRow) => a[k] - b[k];
+// Null-tolerant: a missing value sorts as "" / 0 rather than throwing.
+const byText = (k: TextKey) => (a: IiaBillingRow, b: IiaBillingRow) =>
+  String(a[k] ?? "").localeCompare(String(b[k] ?? ""));
+const byNum = (k: NumKey) => (a: IiaBillingRow, b: IiaBillingRow) =>
+  (Number(a[k]) || 0) - (Number(b[k]) || 0);
 
 // Port quality mixes GCV figures with grade labels: numbers sort numerically,
 // and labels sort after them alphabetically.
 const byQuality = (a: IiaBillingRow, b: IiaBillingRow) => {
-  const na = Number(a.portQuality);
-  const nb = Number(b.portQuality);
+  const qa = String(a.portQuality ?? "");
+  const qb = String(b.portQuality ?? "");
+  const na = qa === "" ? NaN : Number(qa);
+  const nb = qb === "" ? NaN : Number(qb);
   const aNum = Number.isFinite(na);
   const bNum = Number.isFinite(nb);
   if (aNum && bNum) return na - nb;
   if (aNum !== bNum) return aNum ? -1 : 1;
-  return a.portQuality.localeCompare(b.portQuality);
+  return qa.localeCompare(qb);
 };
 
 // Long names truncate with the full text on hover.
-const truncated = (v: string) => (
-  <Tooltip title={v} placement="topLeft">
-    {v}
-  </Tooltip>
-);
+const truncated = (v: string | null | undefined) =>
+  v ? (
+    <Tooltip title={v} placement="topLeft">
+      {v}
+    </Tooltip>
+  ) : (
+    "—"
+  );
 
 // IIA Billing table columns. Every column sorts client-side; values render raw
 // (as the design shows). The quality column is labelled per tab — LP (load

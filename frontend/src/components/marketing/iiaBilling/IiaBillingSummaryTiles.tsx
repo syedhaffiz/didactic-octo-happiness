@@ -4,7 +4,14 @@ import { StatTile } from "../../StatTile";
 import { formatCrLakh, formatInr } from "../../../utils/format";
 import type { IiaBillingResponse } from "../../../types/marketing";
 
-const fmtDate = (iso: string | null) => (iso ? dayjs(iso).format("DD-MMM-YY") : "—");
+// Placeholders rather than "NaN" / "Invalid Date" when the API omits a figure.
+const fmtDate = (iso: string | null | undefined) => {
+  const d = iso ? dayjs(iso) : null;
+  return d?.isValid() ? d.format("DD-MMM-YY") : "—";
+};
+const isAmount = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
+const fmtAmount = (v: unknown) => (isAmount(v) ? formatCrLakh(v) : "—");
+const fmtAmountFull = (v: unknown) => (isAmount(v) ? formatInr(v) : undefined);
 
 interface Props {
   data?: IiaBillingResponse;
@@ -21,9 +28,9 @@ export const IiaBillingSummaryTiles = ({ data, loading }: Props) => {
       <div style={{ flex: "0 1 240px" }}>
         <StatTile
           label="Yesterday Billing"
-          value={data ? formatCrLakh(data.yesterdayBilling) : null}
-          tooltip={data ? formatInr(data.yesterdayBilling) : undefined}
-          caption={`Dated: ${fmtDate(data?.yesterdayDate ?? null)}`}
+          value={fmtAmount(data?.yesterdayBilling)}
+          tooltip={fmtAmountFull(data?.yesterdayBilling)}
+          caption={`Dated: ${fmtDate(data?.yesterdayDate)}`}
           info="Billing on the most recent billing date in the current selection."
           loading={busy}
         />
@@ -31,9 +38,9 @@ export const IiaBillingSummaryTiles = ({ data, loading }: Props) => {
       <div style={{ flex: "0 1 240px" }}>
         <StatTile
           label="Total Billing"
-          value={data ? formatCrLakh(data.totalBilling) : null}
-          tooltip={data ? formatInr(data.totalBilling) : undefined}
-          caption={`Last Updated: ${fmtDate(data?.lastUpdated ?? null)}`}
+          value={fmtAmount(data?.totalBilling)}
+          tooltip={fmtAmountFull(data?.totalBilling)}
+          caption={`Last Updated: ${fmtDate(data?.lastUpdated)}`}
           info="Total billing across all rows in the current selection."
           loading={busy}
         />

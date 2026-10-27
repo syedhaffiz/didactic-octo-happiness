@@ -176,6 +176,14 @@ export interface IiaBillingRow {
   tcNumber: string;
 }
 
+// Billing summed per (port, vendor) over the selection — the flat GROUP BY
+// behind the "IIA Billing by Port & Vendor" chart and table.
+export interface IiaPortVendorAmount {
+  port: string;
+  vendor: string;
+  amount: number; // INR
+}
+
 export interface IiaBillingResponse {
   portType: IiaPortType;
   // Billing on the latest billing date in the selection, and that date.
@@ -183,6 +191,7 @@ export interface IiaBillingResponse {
   yesterdayDate: string | null; // YYYY-MM-DD
   totalBilling: number; // INR
   lastUpdated: string | null; // YYYY-MM-DD
+  portVendor: IiaPortVendorAmount[];
   items: IiaBillingRow[];
 }
 
@@ -192,13 +201,16 @@ export interface IiaBillingFilterOptions {
   fiscalYears: FilterRef[];
   zones: FilterRef[];
   ports: FilterRef[];
+  origins: FilterRef[];
+  grades: FilterRef[];
   segments: FilterRef[];
-  customers: FilterRef[];
   vendors: FilterRef[];
+  tradeTerms: FilterRef[];
+  vessels: FilterRef[];
 }
 
 // Every filter is multiselect, sent comma-joined. Year/Quarter and the date
-// range are mutually exclusive.
+// range are mutually exclusive (the range defaults to fiscal YTD).
 export interface IiaBillingParams {
   fiscalYears?: string;
   quarters?: string;
@@ -206,9 +218,12 @@ export interface IiaBillingParams {
   toDate?: string;
   zone?: string;
   port?: string;
+  origin?: string;
+  grade?: string;
   segment?: string;
-  customer?: string;
   vendor?: string;
+  tradeTerms?: string;
+  vessel?: string;
 }
 
 // --- Quality ---------------------------------------------------------------

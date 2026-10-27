@@ -18,6 +18,7 @@ import {
   SEGMENT_LIST,
   SHARE_LIST,
   SHIPPER_NAME_LIST,
+  TRADE_TERM_LIST,
   VESSELS,
   ZONE_LIST,
   ZONE_PORT_IDS,
@@ -47,6 +48,7 @@ import type {
   IiaBillingParams,
   IiaBillingResponse,
   IiaBillingRow,
+  IiaPortVendorAmount,
   IiaPortType,
   QualityFilterOptions,
   QualityParams,
@@ -383,50 +385,91 @@ export const buildTarget = (f: TargetParams = {}): TargetResponse => {
 
 // --- IIA Billing -----------------------------------------------------------
 
-// Billing history spans Oct 2024 → Feb 2026 so both FY 2024-25 and FY 2025-26
-// return rows.
+// Billing runs from Oct 2024 through today, so the screen's fiscal-YTD default
+// range always has data. Earlier days are stable (same seeded sequence) and the
+// history simply grows by a day at a time. "Today" uses the local calendar date
+// to match the YTD picker.
 const IIA_FIRST_DAY = Date.UTC(2024, 9, 1);
-const IIA_LAST_DAY = Date.UTC(2026, 1, 28);
 const DAY_MS = 86_400_000;
+const localToday = () => {
+  const now = new Date();
+  return Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+};
 
 // Ports and segments the shipments are drawn from. Segment ids repeat so SNS
 // dominates, matching the figma sample.
-const IIA_PORT_IDS = ["dahej", "hazira", "navlakhi", "krishnapatnam", "mundra", "gangavaram"];
+const IIA_PORT_IDS = [
+  "dahej",
+  "dhamra",
+  "gangavaram",
+  "hazira",
+  "krishnapatnam",
+  "mundra",
+  "navlakhi",
+  "tuna",
+];
 const IIA_SEGMENT_IDS = ["sns", "sns", "sns", "sns", "seb", "tph", "domestic"];
-const PLANNED_GCV = [3000, 3400, 3800, 4000, 4200, 4600, 4800];
 const LOAD_GRADE_LABELS = ["A Grade", "B Grade"];
 // Discharge results take a few weeks to land; newer lines show "0" (pending).
 const DP_PENDING_DAYS = 40;
 
 const isoDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 const nameIn = (list: IdName[], id: string) => list.find((o) => o.id === id)?.name ?? id;
+const slug = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+// Planned GCV from the grade label ("INDO-4200 GAR" → 4200).
+const plannedGcv = (gradeName: string) => Number(/(\d{4})/.exec(gradeName)?.[1] ?? 4200);
+
+const IIA_VESSEL_LIST: IdName[] = IIA_VESSELS.map((v) => ({ id: slug(v), name: v }));
 
 // A vessel call: one cargo for one customer, sampled once at the load port
-// and again at the discharge port.
+// and again at the discharge port. The grade's group doubles as its origin.
 interface Shipment {
   loadDay: number;
   dischargeDay: number;
-  vessel: string;
+  vesselId: string;
   portId: string;
   segmentId: string;
   customerId: string;
+  gradeId: string;
+  originId: string;
+  tradeTermId: string;
   plannedQuality: number;
   qty: number; // MMT
 }
 
-const buildShipments = (): Shipment[] => {
+// A billing line plus the ids the filters match on (the row carries names).
+interface IiaRecord {
+  row: IiaBillingRow;
+  portId: string;
+  originId: string;
+  gradeId: string;
+  segmentId: string;
+  vendorId: string;
+  tradeTermId: string;
+  vesselId: string;
+}
+
+const buildShipments = (lastDay: number): Shipment[] => {
   const rng = seeded(seedFromString("mkt-iia-shipments"));
   const out: Shipment[] = [];
-  for (let day = IIA_FIRST_DAY; day <= IIA_LAST_DAY; day += DAY_MS) {
+  for (let day = IIA_FIRST_DAY; day <= lastDay; day += DAY_MS) {
     if (rng() > 0.5) continue;
+    const grade = pick(rng, GRADE_LIST);
     out.push({
       loadDay: day,
       dischargeDay: day + intRange(rng, 12, 22) * DAY_MS,
-      vessel: pick(rng, IIA_VESSELS),
+      vesselId: pick(rng, IIA_VESSEL_LIST).id,
       portId: pick(rng, IIA_PORT_IDS),
       segmentId: pick(rng, IIA_SEGMENT_IDS),
       customerId: pick(rng, IIA_CUSTOMER_LIST).id,
-      plannedQuality: pick(rng, PLANNED_GCV),
+      gradeId: grade.id,
+      originId: grade.group_name.toLowerCase(),
+      tradeTermId: pick(rng, TRADE_TERM_LIST).id,
+      plannedQuality: plannedGcv(grade.name),
       qty: round(range(rng, 0.015, 0.075), 4),
     });
   }
@@ -436,17 +479,21 @@ const buildShipments = (): Shipment[] => {
 // Billing lines for one side of every shipment. Each shipment is billed by 1–4
 // agency lines (split quantities), and roughly one line in eight is followed by
 // a credit note against the same TC number.
-const buildIiaRows = (portType: IiaPortType, shipments: Shipment[]): IiaBillingRow[] => {
+const buildIiaRecords = (
+  portType: IiaPortType,
+  shipments: Shipment[],
+  lastDay: number,
+): IiaRecord[] => {
   const rng = seeded(seedFromString(`mkt-iia-rows-${portType}`));
   const vendors = portType === "load" ? IIA_LOAD_VENDOR_LIST : IIA_DISCHARGE_VENDOR_LIST;
   let tc = portType === "load" ? 8310056000 : 8310057000;
-  const rows: IiaBillingRow[] = [];
+  const out: IiaRecord[] = [];
 
   for (const s of shipments) {
     const day = portType === "load" ? s.loadDay : s.dischargeDay;
-    if (day > IIA_LAST_DAY) continue;
+    if (day > lastDay) continue;
     const date = isoDay(day);
-    const pending = portType === "discharge" && IIA_LAST_DAY - day < DP_PENDING_DAYS * DAY_MS;
+    const pending = portType === "discharge" && lastDay - day < DP_PENDING_DAYS * DAY_MS;
     const lines = intRange(rng, 1, 4);
 
     for (let i = 0; i < lines; i++) {
@@ -460,46 +507,67 @@ const buildIiaRows = (portType: IiaPortType, shipments: Shipment[]): IiaBillingR
         : portType === "load" && rng() < 0.08
           ? pick(rng, LOAD_GRADE_LABELS)
           : String(Math.round(s.plannedQuality + range(rng, -700, 700)));
+      const vendor = pick(rng, vendors);
+      const ids = {
+        portId: s.portId,
+        originId: s.originId,
+        gradeId: s.gradeId,
+        segmentId: s.segmentId,
+        vendorId: vendor.id,
+        tradeTermId: s.tradeTermId,
+        vesselId: s.vesselId,
+      };
       const base = {
         date,
         customer: nameIn(IIA_CUSTOMER_LIST, s.customerId),
-        vessel: s.vessel,
+        vessel: nameIn(IIA_VESSEL_LIST, s.vesselId),
         port: nameIn(PORT_LIST, s.portId).toUpperCase(),
         segment: nameIn(SEGMENT_LIST, s.segmentId),
-        vendor: pick(rng, vendors).name,
+        vendor: vendor.name,
         plannedQuality: s.plannedQuality,
         portQuality,
         tcNumber: String(tc),
       };
-      rows.push({ ...base, id: `${portType}-${tc}`, amount, qty });
+      out.push({ ...ids, row: { ...base, id: `${portType}-${tc}`, amount, qty } });
 
       if (rng() < 0.12) {
         // Credit note: the load side adjusts a slice of the line, the
         // discharge side reverses it in full.
         const share = portType === "load" ? range(rng, 0.01, 0.05) : 1;
-        rows.push({
-          ...base,
-          id: `${portType}-${tc}-cn`,
-          amount: -round(amount * share, 2),
-          qty: round(qty * share, 6),
+        out.push({
+          ...ids,
+          row: {
+            ...base,
+            id: `${portType}-${tc}-cn`,
+            amount: -round(amount * share, 2),
+            qty: round(qty * share, 6),
+          },
         });
       }
     }
   }
-  return rows.sort((a, b) => b.date.localeCompare(a.date) || a.tcNumber.localeCompare(b.tcNumber));
+  return out.sort(
+    (a, b) =>
+      b.row.date.localeCompare(a.row.date) || a.row.tcNumber.localeCompare(b.row.tcNumber),
+  );
 };
 
-// Built once on first use — the generator is deterministic.
-let iiaRowsCache: Record<IiaPortType, IiaBillingRow[]> | null = null;
-const iiaRows = (portType: IiaPortType): IiaBillingRow[] => {
-  if (!iiaRowsCache) {
-    const shipments = buildShipments();
-    iiaRowsCache = {
-      load: buildIiaRows("load", shipments),
-      discharge: buildIiaRows("discharge", shipments),
+// Built once per calendar day — the generator is deterministic, and a new day
+// extends the history.
+let iiaCache: { day: number; records: Record<IiaPortType, IiaRecord[]> } | null = null;
+const iiaRecords = (portType: IiaPortType): IiaRecord[] => {
+  const lastDay = localToday();
+  if (!iiaCache || iiaCache.day !== lastDay) {
+    const shipments = buildShipments(lastDay);
+    iiaCache = {
+      day: lastDay,
+      records: {
+        load: buildIiaRecords("load", shipments, lastDay),
+        discharge: buildIiaRecords("discharge", shipments, lastDay),
+      },
     };
   }
-  return iiaRowsCache[portType];
+  return iiaCache.records[portType];
 };
 
 const csv = (v: string | undefined): string[] => (v ? v.split(",").filter(Boolean) : []);
@@ -516,6 +584,18 @@ const fiscalQuarter = (iso: string) =>
 // "fy25-26" → 2025.
 const fyStartYear = (id: string) => 2000 + Number(id.slice(2, 4));
 
+// One option per fiscal year between two days, in the catalog's id / name
+// format — the span can run past the shared FISCAL_YEAR_LIST (e.g. FY 2026-27).
+const fiscalYearOptions = (firstDay: number, lastDay: number): IdName[] => {
+  const firstFy = fiscalStartYear(isoDay(firstDay));
+  const lastFy = fiscalStartYear(isoDay(lastDay));
+  const yy = (y: number) => String(y % 100).padStart(2, "0");
+  return Array.from({ length: Math.max(0, lastFy - firstFy + 1) }, (_, i) => {
+    const y = firstFy + i;
+    return { id: `fy${yy(y)}-${yy(y + 1)}`, name: `FY ${y}-${yy(y + 1)}` };
+  });
+};
+
 // Zones narrow the port set; an explicit Port selection narrows it further.
 // `on` is false when neither is set (every port allowed).
 const resolvePortFilter = (zone: string | undefined, port: string | undefined) => {
@@ -530,40 +610,55 @@ const resolvePortFilter = (zone: string | undefined, port: string | undefined) =
   return { on: zones.length > 0 || portIds.length > 0, ids };
 };
 
-// Selected ids → the display names the rows carry.
-const namesFor = (list: IdName[], ids: string[], upper = false) =>
-  new Set(ids.map((id) => (upper ? nameIn(list, id).toUpperCase() : nameIn(list, id))));
+// Empty selection = "All"; otherwise the id must be one of the picks.
+const allows = (picked: string[], id: string) => picked.length === 0 || picked.includes(id);
+
+// Sum per (port, vendor), ports and vendors in first-seen order.
+const groupByPortVendor = (rows: IiaBillingRow[]): IiaPortVendorAmount[] => {
+  const sums = new Map<string, IiaPortVendorAmount>();
+  for (const r of rows) {
+    const key = `${r.port}\u0000${r.vendor}`;
+    const cur = sums.get(key);
+    if (cur) cur.amount += r.amount;
+    else sums.set(key, { port: r.port, vendor: r.vendor, amount: r.amount });
+  }
+  return [...sums.values()].map((c) => ({ ...c, amount: round(c.amount, 2) }));
+};
 
 export const buildIiaBilling = (
   portType: IiaPortType,
   f: IiaBillingParams = {},
 ): IiaBillingResponse => {
-  const all = iiaRows(portType);
+  const all = iiaRecords(portType);
   const years = csv(f.fiscalYears).map(fyStartYear);
   const quarters = csv(f.quarters);
   // Year/Quarter take precedence over the date range.
   const useDates = years.length === 0 && quarters.length === 0;
 
-  const { on: portFilterOn, ids: allowedPortIds } = resolvePortFilter(f.zone, f.port);
-  const ports = namesFor(PORT_LIST, allowedPortIds, true);
-  const segments = namesFor(SEGMENT_LIST, csv(f.segment));
-  const customers = namesFor(IIA_CUSTOMER_LIST, csv(f.customer));
-  const vendors = namesFor(
-    [...IIA_LOAD_VENDOR_LIST, ...IIA_DISCHARGE_VENDOR_LIST],
-    csv(f.vendor),
-  );
+  const { on: portFilterOn, ids: portIds } = resolvePortFilter(f.zone, f.port);
+  const origins = csv(f.origin);
+  const grades = csv(f.grade);
+  const segments = csv(f.segment);
+  const vendors = csv(f.vendor);
+  const tradeTerms = csv(f.tradeTerms);
+  const vessels = csv(f.vessel);
 
-  const items = all.filter(
-    (r) =>
-      (years.length === 0 || years.includes(fiscalStartYear(r.date))) &&
-      (quarters.length === 0 || quarters.includes(fiscalQuarter(r.date))) &&
-      (!useDates || !f.fromDate || r.date >= f.fromDate) &&
-      (!useDates || !f.toDate || r.date <= f.toDate) &&
-      (!portFilterOn || ports.has(r.port)) &&
-      (segments.size === 0 || segments.has(r.segment)) &&
-      (customers.size === 0 || customers.has(r.customer)) &&
-      (vendors.size === 0 || vendors.has(r.vendor)),
-  );
+  const items = all
+    .filter(
+      (r) =>
+        (years.length === 0 || years.includes(fiscalStartYear(r.row.date))) &&
+        (quarters.length === 0 || quarters.includes(fiscalQuarter(r.row.date))) &&
+        (!useDates || !f.fromDate || r.row.date >= f.fromDate) &&
+        (!useDates || !f.toDate || r.row.date <= f.toDate) &&
+        (!portFilterOn || portIds.includes(r.portId)) &&
+        allows(origins, r.originId) &&
+        allows(grades, r.gradeId) &&
+        allows(segments, r.segmentId) &&
+        allows(vendors, r.vendorId) &&
+        allows(tradeTerms, r.tradeTermId) &&
+        allows(vessels, r.vesselId),
+    )
+    .map((r) => r.row);
 
   // Rows are newest-first, so the head is the latest billing date in scope.
   const yesterdayDate = items[0]?.date ?? null;
@@ -574,19 +669,28 @@ export const buildIiaBilling = (
     yesterdayBilling: sum(items.filter((r) => r.date === yesterdayDate)),
     yesterdayDate,
     totalBilling: sum(items),
-    lastUpdated: all[0]?.date ?? null,
+    lastUpdated: all[0]?.row.date ?? null,
+    portVendor: groupByPortVendor(items),
     items,
   };
 };
 
-export const buildIiaBillingFilterOptions = (): IiaBillingFilterOptions => ({
-  fiscalYears: [...FISCAL_YEAR_LIST],
-  zones: [...ZONE_LIST],
-  ports: PORT_LIST.filter((p) => IIA_PORT_IDS.includes(p.id)),
-  segments: [...SEGMENT_LIST],
-  customers: [...IIA_CUSTOMER_LIST],
-  vendors: [...IIA_LOAD_VENDOR_LIST, ...IIA_DISCHARGE_VENDOR_LIST],
-});
+export const buildIiaBillingFilterOptions = (): IiaBillingFilterOptions => {
+  const originIds = new Set(GRADE_LIST.map((g) => g.group_name.toLowerCase()));
+  return {
+    fiscalYears: fiscalYearOptions(IIA_FIRST_DAY, localToday()),
+    zones: ZONE_LIST.filter((z) =>
+      (ZONE_PORT_IDS[z.id] ?? []).some((p) => IIA_PORT_IDS.includes(p)),
+    ),
+    ports: PORT_LIST.filter((p) => IIA_PORT_IDS.includes(p.id)),
+    origins: ORIGIN_LIST.filter((o) => originIds.has(o.id)),
+    grades: GRADE_LIST.map(({ id, name }) => ({ id, name })),
+    segments: SEGMENT_LIST.filter((s) => IIA_SEGMENT_IDS.includes(s.id)),
+    vendors: [...IIA_LOAD_VENDOR_LIST, ...IIA_DISCHARGE_VENDOR_LIST],
+    tradeTerms: [...TRADE_TERM_LIST],
+    vessels: [...IIA_VESSEL_LIST],
+  };
+};
 
 // --- Quality ---------------------------------------------------------------
 
@@ -595,10 +699,7 @@ export const buildIiaBillingFilterOptions = (): IiaBillingFilterOptions => ({
 // the same seeded sequence — and the series simply grows by a day at a time.
 // "Today" uses the local calendar date to match the YTD picker.
 const QUALITY_FIRST_DAY = Date.UTC(2024, 9, 1);
-const qualityLastDay = () => {
-  const now = new Date();
-  return Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
-};
+const qualityLastDay = localToday;
 
 const QUALITY_PORT_IDS = ["mundra", "hazira", "dahej", "krishnapatnam", "gangavaram", "dhamra"];
 // Sales cargoes repeat SNS so it dominates, as on the other Marketing screens.
@@ -606,15 +707,7 @@ const QUALITY_SEGMENT_IDS = ["sns", "sns", "sns", "seb", "tph", "domestic"];
 // Rolling window (in days with readings) behind the Aggregate Variance Trend.
 const TREND_WINDOW = 7;
 
-const slug = (s: string) =>
-  s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
 const QUALITY_VESSEL_LIST: IdName[] = VESSELS.map((v) => ({ id: slug(v), name: v }));
-
-// Planned GCV from the grade label ("INDO-4200 GAR" → 4200).
-const plannedGcv = (gradeName: string) => Number(/(\d{4})/.exec(gradeName)?.[1] ?? 4200);
 
 // One cargo, sampled at the load port and again at the dispatch port. The
 // grade's group doubles as its origin ("INDO" → "indo").
@@ -751,11 +844,6 @@ export const buildQuality = (
 
 // One payload for both tabs; the Purchase side panel simply omits Segment.
 export const buildQualityFilterOptions = (): QualityFilterOptions => {
-  const firstFy = fiscalStartYear(isoDay(QUALITY_FIRST_DAY));
-  const lastFy = fiscalStartYear(isoDay(qualityLastDay()));
-  // One option per fiscal year with readings, in the catalog's id / name
-  // format — the span runs past the shared FISCAL_YEAR_LIST (e.g. FY 2026-27).
-  const yy = (y: number) => String(y % 100).padStart(2, "0");
   const originIds = new Set(GRADE_LIST.map((g) => g.group_name.toLowerCase()));
   return {
     zones: ZONE_LIST.filter((z) =>
@@ -766,9 +854,6 @@ export const buildQualityFilterOptions = (): QualityFilterOptions => {
     segments: SEGMENT_LIST.filter((s) => QUALITY_SEGMENT_IDS.includes(s.id)),
     grades: GRADE_LIST.map(({ id, name }) => ({ id, name })),
     vessels: [...QUALITY_VESSEL_LIST],
-    fiscalYears: Array.from({ length: lastFy - firstFy + 1 }, (_, i) => {
-      const y = firstFy + i;
-      return { id: `fy${yy(y)}-${yy(y + 1)}`, name: `FY ${y}-${yy(y + 1)}` };
-    }),
+    fiscalYears: fiscalYearOptions(QUALITY_FIRST_DAY, qualityLastDay()),
   };
 };
