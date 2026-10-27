@@ -81,6 +81,7 @@ export const navSections: NavSection[] = [
       { label: "Ocean Freight", path: "/marketing/ocean-freight" },
       { label: "Target above 2%", path: "/marketing/target" },
       { label: "IIA Billing", path: "/marketing/iia-billing" },
+      { label: "Quality", path: "/marketing/quality" },
     ],
   },
   {

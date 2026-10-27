@@ -68,6 +68,9 @@ const MarketingTarget = lazy(() =>
 const MarketingIiaBilling = lazy(() =>
   import("./pages/marketing/IiaBillingPage").then((m) => ({ default: m.IiaBillingPage })),
 );
+const MarketingQuality = lazy(() =>
+  import("./pages/marketing/QualityPage").then((m) => ({ default: m.QualityPage })),
+);
 const LegalPage = lazy(() =>
   import("./pages/legal/LegalPage").then((m) => ({ default: m.LegalPage })),
 );
@@ -119,6 +122,7 @@ export const createAppRouter = (basename: string = "/") =>
           { path: "marketing/ocean-freight", element: <MarketingOceanFreight /> },
           { path: "marketing/target", element: <MarketingTarget /> },
           { path: "marketing/iia-billing", element: <MarketingIiaBilling /> },
+          { path: "marketing/quality", element: <MarketingQuality /> },
           { path: "legal", element: <LegalPage /> },
           { path: "planning", element: <Placeholder title="Planning" /> },
           { path: "sourcing", element: <Placeholder title="Sourcing" /> },

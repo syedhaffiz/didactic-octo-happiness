@@ -6,6 +6,7 @@ import {
   ADDRESSABLE_LIST,
   CATEGORY_LIST,
   FISCAL_YEAR_LIST,
+  GRADE_LIST,
   IIA_CUSTOMER_LIST,
   IIA_DISCHARGE_VENDOR_LIST,
   IIA_LOAD_VENDOR_LIST,
@@ -17,6 +18,7 @@ import {
   SEGMENT_LIST,
   SHARE_LIST,
   SHIPPER_NAME_LIST,
+  VESSELS,
   ZONE_LIST,
   ZONE_PORT_IDS,
   type IdName,
@@ -46,6 +48,11 @@ import type {
   IiaBillingResponse,
   IiaBillingRow,
   IiaPortType,
+  QualityFilterOptions,
+  QualityParams,
+  QualityPoint,
+  QualityResponse,
+  QualityTradeType,
 } from "../types/marketing";
 
 // Anchor pinned to end-May 2026 so the dates read the same as the figma.
@@ -509,6 +516,20 @@ const fiscalQuarter = (iso: string) =>
 // "fy25-26" → 2025.
 const fyStartYear = (id: string) => 2000 + Number(id.slice(2, 4));
 
+// Zones narrow the port set; an explicit Port selection narrows it further.
+// `on` is false when neither is set (every port allowed).
+const resolvePortFilter = (zone: string | undefined, port: string | undefined) => {
+  const zones = csv(zone);
+  const zonePortIds = zones.flatMap((z) => ZONE_PORT_IDS[z] ?? []);
+  const portIds = csv(port);
+  const ids = !zones.length
+    ? portIds
+    : !portIds.length
+      ? zonePortIds
+      : portIds.filter((p) => zonePortIds.includes(p));
+  return { on: zones.length > 0 || portIds.length > 0, ids };
+};
+
 // Selected ids → the display names the rows carry.
 const namesFor = (list: IdName[], ids: string[], upper = false) =>
   new Set(ids.map((id) => (upper ? nameIn(list, id).toUpperCase() : nameIn(list, id))));
@@ -523,16 +544,7 @@ export const buildIiaBilling = (
   // Year/Quarter take precedence over the date range.
   const useDates = years.length === 0 && quarters.length === 0;
 
-  // Zones narrow the port set; an explicit Port selection narrows it further.
-  const zones = csv(f.zone);
-  const zonePortIds = zones.flatMap((z) => ZONE_PORT_IDS[z] ?? []);
-  const portIds = csv(f.port);
-  const allowedPortIds = !zones.length
-    ? portIds
-    : !portIds.length
-      ? zonePortIds
-      : portIds.filter((p) => zonePortIds.includes(p));
-  const portFilterOn = zones.length > 0 || portIds.length > 0;
+  const { on: portFilterOn, ids: allowedPortIds } = resolvePortFilter(f.zone, f.port);
   const ports = namesFor(PORT_LIST, allowedPortIds, true);
   const segments = namesFor(SEGMENT_LIST, csv(f.segment));
   const customers = namesFor(IIA_CUSTOMER_LIST, csv(f.customer));
@@ -575,3 +587,188 @@ export const buildIiaBillingFilterOptions = (): IiaBillingFilterOptions => ({
   customers: [...IIA_CUSTOMER_LIST],
   vendors: [...IIA_LOAD_VENDOR_LIST, ...IIA_DISCHARGE_VENDOR_LIST],
 });
+
+// --- Quality ---------------------------------------------------------------
+
+// Readings run from Oct 2024 through today, so the screen's fiscal-YTD default
+// range always has data. Earlier days are stable — each day's values come from
+// the same seeded sequence — and the series simply grows by a day at a time.
+// "Today" uses the local calendar date to match the YTD picker.
+const QUALITY_FIRST_DAY = Date.UTC(2024, 9, 1);
+const qualityLastDay = () => {
+  const now = new Date();
+  return Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+};
+
+const QUALITY_PORT_IDS = ["mundra", "hazira", "dahej", "krishnapatnam", "gangavaram", "dhamra"];
+// Sales cargoes repeat SNS so it dominates, as on the other Marketing screens.
+const QUALITY_SEGMENT_IDS = ["sns", "sns", "sns", "seb", "tph", "domestic"];
+// Rolling window (in days with readings) behind the Aggregate Variance Trend.
+const TREND_WINDOW = 7;
+
+const slug = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+const QUALITY_VESSEL_LIST: IdName[] = VESSELS.map((v) => ({ id: slug(v), name: v }));
+
+// Planned GCV from the grade label ("INDO-4200 GAR" → 4200).
+const plannedGcv = (gradeName: string) => Number(/(\d{4})/.exec(gradeName)?.[1] ?? 4200);
+
+// One cargo, sampled at the load port and again at the dispatch port. The
+// grade's group doubles as its origin ("INDO" → "indo").
+interface QualityReading {
+  date: string; // YYYY-MM-DD
+  portId: string;
+  originId: string;
+  segmentId: string | null; // sales only
+  gradeId: string;
+  vesselId: string;
+  planned: number;
+  lp: number;
+  dp: number;
+}
+
+const buildQualityReadings = (tradeType: QualityTradeType): QualityReading[] => {
+  const rng = seeded(seedFromString(`mkt-quality-${tradeType}`));
+  const out: QualityReading[] = [];
+  let i = 0;
+  const lastDay = qualityLastDay();
+  for (let day = QUALITY_FIRST_DAY; day <= lastDay; day += DAY_MS, i++) {
+    if (rng() > 0.65) continue;
+    // A slow seasonal drift gives the variance lines some shape over time.
+    const drift = 70 * Math.sin(i / 23) + 40 * Math.sin(i / 7);
+    const cargoes = intRange(rng, 1, 2);
+    for (let c = 0; c < cargoes; c++) {
+      const grade = pick(rng, GRADE_LIST);
+      const planned = plannedGcv(grade.name);
+      const lp = Math.round(planned + (rng() < 0.6 ? 0 : range(rng, -90, 90)) - drift * 0.4);
+      const dp = Math.round(lp + range(rng, -120, 80) - drift * 0.6);
+      out.push({
+        date: isoDay(day),
+        portId: pick(rng, QUALITY_PORT_IDS),
+        originId: grade.group_name.toLowerCase(),
+        segmentId: tradeType === "sales" ? pick(rng, QUALITY_SEGMENT_IDS) : null,
+        gradeId: grade.id,
+        vesselId: pick(rng, QUALITY_VESSEL_LIST).id,
+        planned,
+        lp,
+        dp,
+      });
+    }
+  }
+  return out;
+};
+
+// Built once on first use — the generator is deterministic.
+let qualityCache: Record<QualityTradeType, QualityReading[]> | null = null;
+const qualityReadings = (tradeType: QualityTradeType): QualityReading[] => {
+  if (!qualityCache) {
+    qualityCache = {
+      purchase: buildQualityReadings("purchase"),
+      sales: buildQualityReadings("sales"),
+    };
+  }
+  return qualityCache[tradeType];
+};
+
+const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+
+// 100 − mean |planned − measured| / planned, as a percentage.
+const matchPct = (rows: QualityReading[], side: "lp" | "dp"): number | null =>
+  rows.length
+    ? round(100 - mean(rows.map((r) => (Math.abs(r.planned - r[side]) / r.planned) * 100)), 2)
+    : null;
+
+// Readings averaged per day, oldest first, with a rolling trend of the
+// combined LP + DP variance.
+const toDailyPoints = (rows: QualityReading[]): QualityPoint[] => {
+  const byDay = new Map<string, QualityReading[]>();
+  for (const r of rows) byDay.set(r.date, [...(byDay.get(r.date) ?? []), r]);
+
+  const combined: number[] = [];
+  return [...byDay.keys()].sort().map((date) => {
+    const day = byDay.get(date) ?? [];
+    const plannedValue = Math.round(mean(day.map((r) => r.planned)));
+    const loadPortValue = Math.round(mean(day.map((r) => r.lp)));
+    const dischargePortValue = Math.round(mean(day.map((r) => r.dp)));
+    const lpVariance = plannedValue - loadPortValue;
+    const dpVariance = plannedValue - dischargePortValue;
+    combined.push((lpVariance + dpVariance) / 2);
+    return {
+      date,
+      plannedValue,
+      loadPortValue,
+      dischargePortValue,
+      lpVariance,
+      dpVariance,
+      aggregateVariance: Math.round(mean(combined.slice(-TREND_WINDOW))),
+    };
+  });
+};
+
+// `currency` is accepted for parity with the header toggle but has no effect:
+// quality is measured in kcal/kg, not money.
+export const buildQuality = (
+  tradeType: QualityTradeType,
+  f: QualityParams = {},
+): QualityResponse => {
+  const all = qualityReadings(tradeType);
+  const quarters = csv(f.quarters);
+  const years = csv(f.fiscalYears).map(fyStartYear);
+
+  const { on: portFilterOn, ids: portIds } = resolvePortFilter(f.zone, f.port);
+  const origins = csv(f.origin);
+  // Segment only exists on the sales side; ignore a stray value on purchase.
+  const segments = tradeType === "sales" ? csv(f.segment) : [];
+  const grades = csv(f.grade);
+  const vessels = csv(f.vessel);
+
+  // Quarter and the date range are independent: a reading must fall inside
+  // both (e.g. Q1 within a YTD range → Apr–Jun of the current fiscal year).
+  const rows = all.filter(
+    (r) =>
+      (years.length === 0 || years.includes(fiscalStartYear(r.date))) &&
+      (quarters.length === 0 || quarters.includes(fiscalQuarter(r.date))) &&
+      (!f.fromDate || r.date >= f.fromDate) &&
+      (!f.toDate || r.date <= f.toDate) &&
+      (!portFilterOn || portIds.includes(r.portId)) &&
+      (origins.length === 0 || origins.includes(r.originId)) &&
+      (segments.length === 0 || (r.segmentId != null && segments.includes(r.segmentId))) &&
+      (grades.length === 0 || grades.includes(r.gradeId)) &&
+      (vessels.length === 0 || vessels.includes(r.vesselId)),
+  );
+
+  return {
+    tradeType,
+    avgVarianceLp: matchPct(rows, "lp"),
+    avgVarianceDp: matchPct(rows, "dp"),
+    lastUpdated: all.length ? all[all.length - 1].date : null,
+    points: toDailyPoints(rows),
+  };
+};
+
+// One payload for both tabs; the Purchase side panel simply omits Segment.
+export const buildQualityFilterOptions = (): QualityFilterOptions => {
+  const firstFy = fiscalStartYear(isoDay(QUALITY_FIRST_DAY));
+  const lastFy = fiscalStartYear(isoDay(qualityLastDay()));
+  // One option per fiscal year with readings, in the catalog's id / name
+  // format — the span runs past the shared FISCAL_YEAR_LIST (e.g. FY 2026-27).
+  const yy = (y: number) => String(y % 100).padStart(2, "0");
+  const originIds = new Set(GRADE_LIST.map((g) => g.group_name.toLowerCase()));
+  return {
+    zones: ZONE_LIST.filter((z) =>
+      (ZONE_PORT_IDS[z.id] ?? []).some((p) => QUALITY_PORT_IDS.includes(p)),
+    ),
+    ports: PORT_LIST.filter((p) => QUALITY_PORT_IDS.includes(p.id)),
+    origins: ORIGIN_LIST.filter((o) => originIds.has(o.id)),
+    segments: SEGMENT_LIST.filter((s) => QUALITY_SEGMENT_IDS.includes(s.id)),
+    grades: GRADE_LIST.map(({ id, name }) => ({ id, name })),
+    vessels: [...QUALITY_VESSEL_LIST],
+    fiscalYears: Array.from({ length: lastFy - firstFy + 1 }, (_, i) => {
+      const y = firstFy + i;
+      return { id: `fy${yy(y)}-${yy(y + 1)}`, name: `FY ${y}-${yy(y + 1)}` };
+    }),
+  };
+};

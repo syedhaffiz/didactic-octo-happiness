@@ -18,6 +18,10 @@ import type {
   IiaBillingParams,
   IiaBillingResponse,
   IiaPortType,
+  QualityFilterOptions,
+  QualityParams,
+  QualityResponse,
+  QualityTradeType,
 } from "../types/marketing";
 import {
   buildIndexMovement,
@@ -34,6 +38,8 @@ import {
   buildTarget,
   buildIiaBilling,
   buildIiaBillingFilterOptions,
+  buildQuality,
+  buildQualityFilterOptions,
 } from "../mocks/marketing";
 
 // HTTP path identical to the backend so flipping `USE_MOCK_DATA` is the only
@@ -83,6 +89,10 @@ const httpMarketingApi = {
     get<IiaBillingResponse>("/marketing/iia-billing", { portType, ...p }),
   iiaBillingFilterOptions: () =>
     get<IiaBillingFilterOptions>("/marketing/iia-billing/filters"),
+  // Quality — one chart per tab (purchase / sales), shared filters.
+  quality: (tradeType: QualityTradeType, p: QualityParams = {}) =>
+    get<QualityResponse>("/marketing/quality", { tradeType, ...p }),
+  qualityFilterOptions: () => get<QualityFilterOptions>("/marketing/quality/filters"),
 };
 
 const mockMarketingApi = {
@@ -107,6 +117,9 @@ const mockMarketingApi = {
   iiaBilling: (portType: IiaPortType, p: IiaBillingParams = {}) =>
     mockDelay(buildIiaBilling(portType, p)),
   iiaBillingFilterOptions: () => mockDelay(buildIiaBillingFilterOptions()),
+  quality: (tradeType: QualityTradeType, p: QualityParams = {}) =>
+    mockDelay(buildQuality(tradeType, p)),
+  qualityFilterOptions: () => mockDelay(buildQualityFilterOptions()),
 };
 
 export const marketingApi = USE_MOCK_DATA ? mockMarketingApi : httpMarketingApi;

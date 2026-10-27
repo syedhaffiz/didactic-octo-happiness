@@ -1,5 +1,7 @@
 // Mirror of backend/src/types/marketing.ts. Kept manually in sync.
 
+import type { Currency } from "./finance";
+
 export type IndexRange = "1" | "2";
 export type IndexCadence = "daily" | "weekly";
 
@@ -207,4 +209,62 @@ export interface IiaBillingParams {
   segment?: string;
   customer?: string;
   vendor?: string;
+}
+
+// --- Quality ---------------------------------------------------------------
+// Planned vs measured coal quality (GCV, kcal/kg) at the load port (LP) and the
+// dispatch port (DP), one point per day. The Purchase / Sales tabs share the
+// filter query and differ only by `tradeType`.
+
+export type QualityTradeType = "purchase" | "sales";
+
+export interface QualityPoint {
+  date: string; // YYYY-MM-DD
+  plannedValue: number; // GCV, kcal/kg — average across the day's cargoes
+  loadPortValue: number; // measured at the load port
+  dischargePortValue: number; // measured at the dispatch port
+  // Variances are planned − measured, so a negative figure means the cargo
+  // came in above plan.
+  lpVariance: number;
+  dpVariance: number;
+  // Smoothed trend of the combined LP + DP variance.
+  aggregateVariance: number;
+}
+
+export interface QualityResponse {
+  tradeType: QualityTradeType;
+  // How closely the measured quality matched plan, as a percentage
+  // (100 − mean |variance| / planned). Null when the selection is empty.
+  avgVarianceLp: number | null;
+  avgVarianceDp: number | null;
+  lastUpdated: string | null; // YYYY-MM-DD
+  points: QualityPoint[];
+}
+
+// Dropdown option lists for the Filters side-panel. Quarter is a fixed
+// frontend list; Segment applies to the Sales tab only.
+export interface QualityFilterOptions {
+  zones: FilterRef[];
+  ports: FilterRef[];
+  origins: FilterRef[];
+  segments: FilterRef[];
+  grades: FilterRef[];
+  vessels: FilterRef[];
+  fiscalYears: FilterRef[];
+}
+
+// Every filter is multiselect, sent comma-joined. Quarter and the date range
+// are mutually exclusive.
+export interface QualityParams {
+  quarters?: string;
+  fromDate?: string;
+  toDate?: string;
+  currency?: Currency;
+  zone?: string;
+  port?: string;
+  origin?: string;
+  segment?: string;
+  grade?: string;
+  vessel?: string;
+  fiscalYears?: string;
 }

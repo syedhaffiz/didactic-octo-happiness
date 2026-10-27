@@ -197,6 +197,15 @@ export const marketingColors = {
   segmentActual: "#083A91",
 } as const;
 
+// Marketing → Quality — variance lines sampled from the Figma. LP reuses the
+// Index Movement blue and the trend reuses the brand green.
+export const qualityColors = {
+  lpVariance: marketingColors.lineSeries[0], // blue
+  dpVariance: "#7F56D9", // violet
+  aggregateTrend: brand.green, // dashed green
+  zeroLine: brand.black,
+} as const;
+
 // ---------------------------------------------------------------------------
 // Logistics module — DP Handling Agents columns.
 // Reuse existing brand tokens where they match the sampled design colors.
