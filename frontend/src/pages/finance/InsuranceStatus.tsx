@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Card } from "antd";
 import { LineChartOutlined } from "@ant-design/icons";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
@@ -36,6 +37,9 @@ export const InsuranceStatus = () => {
   );
 
   const loading = isLoading || !data;
+
+  // Stable identity so the chart only rebuilds when the segment list changes.
+  const segmentNames = useMemo(() => data?.segments.map((s) => s.segment), [data]);
 
   // Export to Excel — placeholder only; not wired up yet.
   const handleExport = () => {};
@@ -80,7 +84,12 @@ export const InsuranceStatus = () => {
               label="active insurance analysis"
               resetKeys={[zone, port, policyType, fromDate, toDate]}
             >
-              <InsuranceSankey policies={data?.policies} loading={loading} />
+              <InsuranceSankey
+                policies={data?.policies}
+                segments={segmentNames}
+                policyTypes={options?.policyTypes}
+                loading={loading}
+              />
             </ErrorBoundary>
           </Card>
         </>

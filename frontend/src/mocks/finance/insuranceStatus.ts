@@ -11,7 +11,7 @@ import type {
   InsuranceStatusParams,
   InsuranceStatusResponse,
 } from "../../types/finance";
-import { ZONE_PORT_IDS } from "../catalog";
+import { PORT_LIST, ZONE_PORT_IDS } from "../catalog";
 
 const CR = 10_000_000;
 
@@ -30,40 +30,70 @@ const SEGMENT_TOTALS: Record<string, { sumInsuredCr: number; stockValueCr: numbe
 interface Seed {
   segment: string;
   policyType: string;
-  location: string;
-  /** Catalogue port id the insured location rolls up to (drives Zone / Port filters). */
+  /** Catalogue port id (PORT_LIST) — the Sankey's third column. */
   port: string;
   /** Relative share of the segment's totals. */
   weight: number;
-  periodStart: string;
-  periodEnd: string;
-  status: InsuranceStatus;
+  /** Defaults to the current fiscal year when omitted. */
+  periodStart?: string;
+  periodEnd?: string;
+  status?: InsuranceStatus;
 }
 
 const FY_START = "2026-04-01";
 const FY_END = "2027-03-31";
 
-// Insured risks, in Sankey order. Weights split each segment's pinned totals.
+const MARINE = "Marine Policy";
+const CUSTOMS = "Customs Duty";
+const FIRE = "Fire Policy";
+const FIRE_NON_FLOATER = "Fire Policy Non Floater";
+const MARINE_FOR = "Marine Cargo FOR sales";
+const STOCK_THROUGHPUT = "Stock Throughput Policy";
+const MACHINERY = "Machinery Breakdown";
+
+// Insured risks across seven policy types. The book is deliberately
+// many-to-many so the Sankey shows merging flows: Marine Policy is held by all
+// four segments, Stock Throughput and Machinery Breakdown by three, Customs
+// Duty and Fire Policy by two each; Mundra, Hazira, Paradip, Krishnapatnam, Gangavaram
+// and Dahej are each covered by more than one policy type. Weights split each
+// segment's pinned totals.
 const SEEDS: Seed[] = [
   // ICM
-  { segment: "ICM", policyType: "Fire Policy Non Floater", location: "Krishnapatnam", port: "krishnapatnam", weight: 22, periodStart: FY_START, periodEnd: FY_END, status: "Active" },
-  { segment: "ICM", policyType: "Fire Policy Non Floater", location: "Tuna", port: "tuna", weight: 16, periodStart: FY_START, periodEnd: FY_END, status: "Active" },
-  { segment: "ICM", policyType: "Fire Policy Non Floater", location: "Mundra (ICM)", port: "mundra", weight: 24, periodStart: FY_START, periodEnd: FY_END, status: "Active" },
-  { segment: "ICM", policyType: "Fire Policy Non Floater", location: "Dhamra", port: "dhamra", weight: 14, periodStart: FY_START, periodEnd: FY_END, status: "Active" },
-  { segment: "ICM", policyType: "Marine Cargo FOR sales", location: "FOR Sales", port: "gangavaram", weight: 14, periodStart: "2026-06-01", periodEnd: "2027-05-31", status: "Active" },
-  { segment: "ICM", policyType: "Marine Cargo FOR sales", location: "Port Stock List", port: "paradip", weight: 10, periodStart: "2026-06-01", periodEnd: "2027-05-31", status: "Active" },
-  // Bunkering — the NSEZ cover lapses this month, so the segment reads as at-risk.
-  { segment: "Bunkering", policyType: "Marine Policy", location: "Marine Cargo-SEZ", port: "mundra", weight: 55, periodStart: FY_START, periodEnd: FY_END, status: "Active" },
-  { segment: "Bunkering", policyType: "Marine Policy", location: "Marine Cargo-NSEZ", port: "mundra", weight: 45, periodStart: "2025-11-01", periodEnd: "2026-10-31", status: "Expiring Soon" },
+  { segment: "ICM", policyType: FIRE_NON_FLOATER, port: "krishnapatnam", weight: 22 },
+  { segment: "ICM", policyType: FIRE_NON_FLOATER, port: "tuna", weight: 14 },
+  { segment: "ICM", policyType: FIRE_NON_FLOATER, port: "mundra", weight: 20 },
+  { segment: "ICM", policyType: FIRE_NON_FLOATER, port: "dhamra", weight: 12 },
+  { segment: "ICM", policyType: MARINE_FOR, port: "gangavaram", weight: 10, periodStart: "2026-06-01", periodEnd: "2027-05-31" },
+  { segment: "ICM", policyType: MARINE_FOR, port: "paradip", weight: 8, periodStart: "2026-06-01", periodEnd: "2027-05-31" },
+  { segment: "ICM", policyType: MARINE, port: "mundra", weight: 8 },
+  { segment: "ICM", policyType: MARINE, port: "hazira", weight: 6 },
+  { segment: "ICM", policyType: STOCK_THROUGHPUT, port: "gangavaram", weight: 7 },
+  { segment: "ICM", policyType: MACHINERY, port: "dhamra", weight: 5 },
+  // Bunkering — the Hazira marine cover lapses this month, so the segment reads
+  // as at-risk.
+  { segment: "Bunkering", policyType: MARINE, port: "mundra", weight: 40 },
+  { segment: "Bunkering", policyType: MARINE, port: "hazira", weight: 20, periodStart: "2025-12-01", periodEnd: "2026-11-30", status: "Expiring Soon" },
+  { segment: "Bunkering", policyType: CUSTOMS, port: "mundra", weight: 25, periodStart: "2026-01-01", periodEnd: "2026-12-31" },
+  { segment: "Bunkering", policyType: CUSTOMS, port: "dahej", weight: 15, periodStart: "2026-01-01", periodEnd: "2026-12-31" },
+  { segment: "Bunkering", policyType: STOCK_THROUGHPUT, port: "dahej", weight: 12, periodStart: "2026-05-01", periodEnd: "2027-04-30" },
   // Rock Phosphate
-  { segment: "Rock Phosphate", policyType: "Fire Policy", location: "Goa", port: "karaikal", weight: 60, periodStart: "2026-07-01", periodEnd: "2027-06-30", status: "Active" },
-  { segment: "Rock Phosphate", policyType: "Fire Policy", location: "Bedi", port: "navlakhi", weight: 40, periodStart: "2026-07-01", periodEnd: "2027-06-30", status: "Active" },
+  { segment: "Rock Phosphate", policyType: FIRE, port: "navlakhi", weight: 30, periodStart: "2026-07-01", periodEnd: "2027-06-30" },
+  { segment: "Rock Phosphate", policyType: FIRE, port: "gopalpur", weight: 20, periodStart: "2026-07-01", periodEnd: "2027-06-30" },
+  { segment: "Rock Phosphate", policyType: FIRE, port: "krishnapatnam", weight: 15, periodStart: "2026-07-01", periodEnd: "2027-06-30" },
+  { segment: "Rock Phosphate", policyType: MARINE, port: "paradip", weight: 35 },
+  { segment: "Rock Phosphate", policyType: MACHINERY, port: "navlakhi", weight: 15 },
   // Sagarmala
-  { segment: "Sagarmala", policyType: "Customs Duty", location: "Mundra-Tank 107 HSFO_NSEZ", port: "mundra", weight: 45, periodStart: "2026-01-01", periodEnd: "2026-12-31", status: "Active" },
-  { segment: "Sagarmala", policyType: "Marine Policy", location: "Hazira", port: "hazira", weight: 22, periodStart: "2026-03-23", periodEnd: "2027-03-22", status: "Active" },
-  { segment: "Sagarmala", policyType: "Marine Policy", location: "Gangavaram", port: "gangavaram", weight: 18, periodStart: "2026-03-23", periodEnd: "2027-03-22", status: "Active" },
-  { segment: "Sagarmala", policyType: "Marine Policy", location: "Haldia", port: "paradip", weight: 15, periodStart: "2026-03-23", periodEnd: "2027-03-22", status: "Active" },
+  { segment: "Sagarmala", policyType: CUSTOMS, port: "mundra", weight: 30, periodStart: "2026-01-01", periodEnd: "2026-12-31" },
+  { segment: "Sagarmala", policyType: CUSTOMS, port: "karaikal", weight: 10, periodStart: "2026-01-01", periodEnd: "2026-12-31" },
+  { segment: "Sagarmala", policyType: MARINE, port: "hazira", weight: 20, periodStart: "2026-03-23", periodEnd: "2027-03-22" },
+  { segment: "Sagarmala", policyType: MARINE, port: "gangavaram", weight: 15, periodStart: "2026-03-23", periodEnd: "2027-03-22" },
+  { segment: "Sagarmala", policyType: MARINE, port: "paradip", weight: 10, periodStart: "2026-03-23", periodEnd: "2027-03-22" },
+  { segment: "Sagarmala", policyType: FIRE, port: "dahej", weight: 15 },
+  { segment: "Sagarmala", policyType: STOCK_THROUGHPUT, port: "mundra", weight: 12, periodStart: "2026-05-01", periodEnd: "2027-04-30" },
+  { segment: "Sagarmala", policyType: MACHINERY, port: "karaikal", weight: 8 },
 ];
+
+const portName = (id: string) => PORT_LIST.find((p) => p.id === id)?.name ?? id;
 
 // Split `total` (whole rupees) across `weights` exactly — the last share takes
 // the rounding remainder so the parts always sum back to the pinned total.
@@ -78,26 +108,27 @@ const allocate = (total: number, weights: number[]): number[] => {
   });
 };
 
-// Materialise the full (unfiltered) policy book once — it's static.
-// Each row is paired with its catalogue port, which only drives the filters.
-const BOOK: { port: string; row: InsurancePolicyRow }[] = SEGMENT_ORDER.flatMap((segment) => {
+// Materialise the full (unfiltered) policy book once — it's static. Each row's
+// `location` is the port display name; the catalogue port id is kept alongside
+// (not on the row) since it only drives the Zone / Port filters.
+const BOOK: { portId: string; row: InsurancePolicyRow }[] = SEGMENT_ORDER.flatMap((segment) => {
   const seeds = SEEDS.filter((s) => s.segment === segment);
   const totals = SEGMENT_TOTALS[segment];
   const weights = seeds.map((s) => s.weight);
   const sums = allocate(Math.round(totals.sumInsuredCr * CR), weights);
   const stocks = allocate(Math.round(totals.stockValueCr * CR), weights);
   return seeds.map((s, i) => ({
-    port: s.port,
+    portId: s.port,
     row: {
-      id: `${segment}:${s.policyType}:${s.location}`,
+      id: `${segment}:${s.policyType}:${s.port}`,
       segment,
       policyType: s.policyType,
-      location: s.location,
+      location: portName(s.port),
       sumInsured: sums[i],
       stockValue: stocks[i],
-      periodStart: s.periodStart,
-      periodEnd: s.periodEnd,
-      status: s.status,
+      periodStart: s.periodStart ?? FY_START,
+      periodEnd: s.periodEnd ?? FY_END,
+      status: s.status ?? "Active",
     },
   }));
 });
@@ -118,9 +149,9 @@ export const buildInsuranceStatus = (p: InsuranceStatusParams = {}): InsuranceSt
   // ISO "YYYY-MM-DD" strings compare correctly as plain strings. A policy is in
   // range when its period overlaps the selected window.
   const rows = BOOK.filter(
-    ({ port: rowPort, row: r }) =>
-      (!zonePorts || zonePorts.includes(rowPort)) &&
-      (!port || rowPort === port) &&
+    ({ portId, row: r }) =>
+      (!zonePorts || zonePorts.includes(portId)) &&
+      (!port || portId === port) &&
       (!policyType || r.policyType === policyType) &&
       (!p.fromDate || r.periodEnd >= p.fromDate) &&
       (!p.toDate || r.periodStart <= p.toDate),

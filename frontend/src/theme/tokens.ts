@@ -262,20 +262,35 @@ export const debtorsColors = [
 ] as const;
 
 // ---------------------------------------------------------------------------
-// Finance → Insurance Status — Sankey colors sampled from the Figma. Each
-// segment's node, policy-type nodes and outgoing links share one hue; the
-// insured-location column is neutral grey. Reuse donut hues where they match.
+// Finance → Insurance Status — Sankey palettes. Segments and policy types
+// are whatever the API returns, so colors are assigned by position in the
+// API-provided lists (cycling if exceeded) — never keyed by name. The policy
+// palette avoids the segment hues so the middle column reads distinctly.
 // ---------------------------------------------------------------------------
 export const insuranceColors = {
-  segments: {
-    ICM: donutColors[0], // blue
-    Bunkering: "#F2C14E", // amber
-    "Rock Phosphate": donutColors[4], // purple
-    Sagarmala: donutColors[1], // green
-  } as Record<string, string>,
-  // Fallback for any segment not pinned above.
-  segmentFallback: brand.grey,
-  locationNode: "#8A93A6",
+  segments: [
+    donutColors[0], // blue
+    "#F2C14E", // amber
+    donutColors[4], // purple
+    donutColors[1], // green
+    "#07B4D9", // cyan
+    "#F7836E", // coral
+  ],
+  policyTypes: [
+    "#E4572E", // vermilion
+    "#0BA0C1", // teal-cyan
+    "#264165", // navy
+    "#8B5E3C", // brown
+    "#7A8C2E", // olive
+    "#C2477E", // magenta
+    "#2A7A68", // dark teal
+    "#D4A017", // mustard
+    "#5C6BC0", // indigo
+    "#AD5D8F", // mauve
+  ],
+  portNode: "#8A93A6", // grey
+  // Fill for ports laid out but not yet revealed (collapsed port column).
+  hidden: "transparent",
 } as const;
 
 // ---------------------------------------------------------------------------
