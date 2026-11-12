@@ -16,16 +16,19 @@ interface Props {
   /** Full policy-type list from the API (filter options). Fixes each policy
    *  type's color so it doesn't shift with filters. */
   policyTypes?: string[];
+  /** Full port list (shared port catalogue). Fixes each port's color so it
+   *  doesn't shift with filters; ports missing from it are appended. */
+  ports?: string[];
   loading?: boolean;
-  /** Upper bound on chart height; the chart shrinks when few ports remain. */
+  /** Upper bound on chart height; the chart shrinks when few nodes remain. */
   maxHeight?: number;
 }
 
-// Roll-up shown in a hover card — for a node (segment / policy type / port)
-// or a link between two of them.
+// Roll-up shown in a hover card — for a node (segment / policy type / port /
+// insured party) or a link between two of them.
 interface Agg {
   title: string;
-  /** Laid out but not shown (collapsed port column) — no tooltip. */
+  /** Laid out but not shown (collapsed branch) — no tooltip, not clickable. */
   hidden?: boolean;
   sumInsured: number;
   stockValue: number;
@@ -64,12 +67,14 @@ const mergeAgg = (prev: Agg | undefined, title: string, r: InsurancePolicyRow): 
         status: r.status,
       };
 
-// Node ids are namespaced per column. Policy-type and port nodes are shared:
-// several segments can hold the same policy type, and several policy types can
-// cover the same port, so flows merge at those columns.
+// Node ids are namespaced per column. Policy-type, port and insured-party
+// nodes are shared: several segments can hold the same policy type, several
+// policy types can cover the same port, and a party can be insured at several
+// ports — so flows merge at those columns.
 const segId = (r: InsurancePolicyRow) => `seg:${r.segment}`;
 const polId = (r: InsurancePolicyRow) => `pol:${r.policyType}`;
 const locId = (r: InsurancePolicyRow) => `loc:${r.location}`;
+const ptyId = (r: InsurancePolicyRow) => `pty:${r.insuredParty}`;
 
 // Index of each key's first appearance in `rows` — used to stack a column's
 // nodes in the order their inbound flows arrive, which keeps crossings low.
@@ -79,16 +84,36 @@ const firstSeen = (rows: InsurancePolicyRow[], key: (r: InsurancePolicyRow) => s
   return order;
 };
 
-// Builds the full three-column layout every time. Ports are always laid out
-// but stay hidden (transparent, unlabelled, no tooltip) unless they hang off
-// the `expanded` policy type — so expanding or collapsing never moves a node.
+const sortBy = (rows: InsurancePolicyRow[], rank: (r: InsurancePolicyRow) => number) =>
+  [...rows].sort((a, b) => rank(a) - rank(b));
+
+/** Drill-down path: a policy type, then optionally one of its ports. */
+interface Expansion {
+  policyType?: string;
+  location?: string;
+}
+
+interface Link {
+  from: string;
+  to: string;
+  color: string;
+  agg: Agg;
+  /** Whether this band is revealed under a given expansion. */
+  shown: (e: Expansion) => boolean;
+}
+
+// Builds the full four-column layout every time. Ports and insured parties are
+// always laid out but stay hidden (transparent, unlabelled, no tooltip) until
+// their branch is expanded — so expanding or collapsing never moves a node.
+//   policy type clicked → its ports appear;
+//   one of those ports clicked → that policy's insured parties at the port appear.
 const buildSeries = (
   policies: InsurancePolicyRow[],
   segments: string[],
   policyTypes: string[],
-  expanded: string | undefined,
+  ports: string[],
+  expansion: Expansion,
 ) => {
-  const expandedId = expanded ? `pol:${expanded}` : undefined;
   const segmentColors = colorMap(
     segments,
     policies.map((r) => r.segment),
@@ -99,92 +124,118 @@ const buildSeries = (
     policies.map((r) => r.policyType),
     insuranceColors.policyTypes,
   );
+  const portColors = colorMap(
+    ports,
+    policies.map((r) => r.location),
+    insuranceColors.ports,
+  );
   // Segment column follows the API's segment order (colorMap keys preserve it).
   const segmentRank = new Map([...segmentColors.keys()].map((k, i) => [k, i]));
 
   const nodeAgg = new Map<string, Agg>();
-  const linkAgg = new Map<string, { from: string; to: string; color: string; agg: Agg }>();
-
-  const addLink = (from: string, to: string, color: string, title: string, r: InsurancePolicyRow, key: string) => {
-    linkAgg.set(key, { from, to, color, agg: mergeAgg(linkAgg.get(key)?.agg, title, r) });
+  const links = new Map<string, Link>();
+  const addLink = (
+    key: string,
+    from: string,
+    to: string,
+    color: string,
+    title: string,
+    r: InsurancePolicyRow,
+    shown: Link["shown"],
+  ) => {
+    links.set(key, { from, to, color, shown, agg: mergeAgg(links.get(key)?.agg, title, r) });
   };
 
-  // Column order: segments by the API order; policy types by the first
-  // segment that holds them; ports by the first policy type that covers them.
-  const bySegment = [...policies].sort(
-    (a, b) => (segmentRank.get(a.segment) ?? 0) - (segmentRank.get(b.segment) ?? 0),
-  );
+  // Column order: segments by the API order; each later column by the first
+  // node in the previous column that feeds it.
+  const bySegment = sortBy(policies, (r) => segmentRank.get(r.segment) ?? 0);
   const polOrder = firstSeen(bySegment, polId);
-  const byPolicy = [...bySegment].sort(
-    (a, b) => (polOrder.get(polId(a)) ?? 0) - (polOrder.get(polId(b)) ?? 0),
-  );
-  const portOrder = firstSeen(byPolicy, locId);
+  const byPolicy = sortBy(bySegment, (r) => polOrder.get(polId(r)) ?? 0);
+  const locOrder = firstSeen(byPolicy, locId);
+  const byLocation = sortBy(byPolicy, (r) => locOrder.get(locId(r)) ?? 0);
+  const ptyOrder = firstSeen(byLocation, ptyId);
 
-  for (const r of byPolicy) {
-    const color = segmentColors.get(r.segment) ?? brand.grey;
+  for (const r of policies) {
     nodeAgg.set(segId(r), mergeAgg(nodeAgg.get(segId(r)), r.segment, r));
     nodeAgg.set(polId(r), mergeAgg(nodeAgg.get(polId(r)), r.policyType, r));
     nodeAgg.set(locId(r), mergeAgg(nodeAgg.get(locId(r)), r.location, r));
+    nodeAgg.set(ptyId(r), mergeAgg(nodeAgg.get(ptyId(r)), r.insuredParty, r));
+  }
 
-    addLink(segId(r), polId(r), color, `${r.segment} → ${r.policyType}`, r, `${segId(r)}|${polId(r)}`);
-    // Policy → port links stay split per segment (one band each, in the
-    // segment's color) so a flow can be traced through the shared nodes.
+  // Highcharts stacks each column's nodes in the order their links first
+  // appear, so emit one level at a time, each in its own sorted row order.
+  // Bands after the first column stay split per segment (one band each, in the
+  // segment's color) and per policy type, so a flow can be traced through the
+  // shared nodes and revealed for just the expanded branch.
+  const colorOf = (r: InsurancePolicyRow) => segmentColors.get(r.segment) ?? brand.grey;
+  for (const r of bySegment) {
+    const [seg, pol] = [segId(r), polId(r)];
+    addLink(`${seg}|${pol}`, seg, pol, colorOf(r), `${r.segment} → ${r.policyType}`, r, () => true);
+  }
+  for (const r of byPolicy) {
+    const [seg, pol, loc] = [segId(r), polId(r), locId(r)];
     addLink(
-      polId(r),
-      locId(r),
-      color,
+      `${seg}|${pol}|${loc}`,
+      pol,
+      loc,
+      colorOf(r),
       `${r.segment}: ${r.policyType} → ${r.location}`,
       r,
-      `${segId(r)}|${polId(r)}|${locId(r)}`,
+      (e) => e.policyType === r.policyType,
+    );
+  }
+  for (const r of byLocation) {
+    const [seg, pol, loc, pty] = [segId(r), polId(r), locId(r), ptyId(r)];
+    addLink(
+      `${seg}|${pol}|${loc}|${pty}`,
+      loc,
+      pty,
+      colorOf(r),
+      `${r.segment}: ${r.policyType} · ${r.location} → ${r.insuredParty}`,
+      r,
+      (e) => e.policyType === r.policyType && e.location === r.location,
     );
   }
 
-  const segNodes = [...new Set(bySegment.map((r) => r.segment))].map((segment) => ({
-    id: `seg:${segment}`,
-    name: segment,
-    color: segmentColors.get(segment) ?? brand.grey,
-    column: 0,
-  }));
-  const polNodes = [...polOrder.keys()].map((id) => {
-    const name = nodeAgg.get(id)?.title ?? id;
-    return { id, name, color: policyColors.get(name) ?? brand.grey, column: 1 };
-  });
-  // Ports fed by the expanded policy type.
-  const shownPorts = new Set(
-    [...linkAgg.values()].filter((l) => l.from === expandedId).map((l) => l.to),
-  );
-  const portNodes = [...portOrder.keys()].map((id) => {
-    const shown = shownPorts.has(id);
+  const linkList = [...links.values()].map((l) => ({ ...l, visible: l.shown(expansion) }));
+  // A node in a revealable column shows only when a visible band reaches it.
+  const reached = new Set(linkList.filter((l) => l.visible).map((l) => l.to));
+
+  const node = (id: string, column: number, color: string, alwaysShown: boolean) => {
+    const shown = alwaysShown || reached.has(id);
+    const agg = nodeAgg.get(id);
     return {
       id,
-      name: nodeAgg.get(id)?.title ?? id,
-      color: shown ? insuranceColors.portNode : insuranceColors.hidden,
-      column: 2,
-      dataLabels: { enabled: shown },
-      hidden: !shown,
+      name: agg?.title ?? id,
+      column,
+      color: shown ? color : insuranceColors.hidden,
+      ...(shown ? {} : { dataLabels: { enabled: false } }),
+      custom: agg && { ...agg, hidden: !shown },
     };
-  });
+  };
 
+  const segOrder = firstSeen(bySegment, segId);
   return {
     nodes: [
-      ...segNodes.map((n) => ({ ...n, hidden: false })),
-      ...polNodes.map((n) => ({ ...n, hidden: false })),
-      ...portNodes,
-    ].map(({ hidden, ...n }) => {
-      const agg = nodeAgg.get(n.id);
-      return { ...n, custom: agg && { ...agg, hidden } };
-    }),
-    data: [...linkAgg.values()].map(({ from, to, color, agg }) => {
-      // Segment → policy links always show; policy → port only when expanded.
-      const hidden = from.startsWith("pol:") && from !== expandedId;
-      return {
-        from,
-        to,
-        color: hidden ? insuranceColors.hidden : color,
-        weight: agg.sumInsured,
-        custom: { ...agg, hidden },
-      };
-    }),
+      ...[...segOrder.keys()].map((id) =>
+        node(id, 0, segmentColors.get(nodeAgg.get(id)?.title ?? "") ?? brand.grey, true),
+      ),
+      ...[...polOrder.keys()].map((id) =>
+        node(id, 1, policyColors.get(nodeAgg.get(id)?.title ?? "") ?? brand.grey, true),
+      ),
+      ...[...locOrder.keys()].map((id) =>
+        node(id, 2, portColors.get(nodeAgg.get(id)?.title ?? "") ?? brand.grey, false),
+      ),
+      ...[...ptyOrder.keys()].map((id) => node(id, 3, insuranceColors.partyNode, false)),
+    ],
+    data: linkList.map(({ from, to, color, agg, visible }) => ({
+      from,
+      to,
+      color: visible ? color : insuranceColors.hidden,
+      weight: agg.sumInsured,
+      custom: { ...agg, hidden: !visible },
+    })),
+    columnSizes: [segOrder.size, polOrder.size, locOrder.size, ptyOrder.size],
   };
 };
 
@@ -211,39 +262,68 @@ const tooltipHtml = (agg: Agg, color: string) => {
   );
 };
 
+// One line describing the current drill-down, so the user knows what the next
+// click does.
+const hintFor = (e: Expansion) => {
+  if (e.policyType && e.location)
+    return `Showing insured parties for ${e.policyType} at ${e.location} — click ${e.location} again to collapse.`;
+  if (e.policyType)
+    return `Showing ports for ${e.policyType} — click a port to see its insured parties, or click ${e.policyType} again to collapse.`;
+  return "Click a policy type to see its ports.";
+};
+
 // "Active Insurance Analysis" Sankey: segment → policy type, with link widths
 // proportional to sum insured. Clicking a policy type branches it out to its
-// ports (clicking it again, or another policy type, collapses / switches).
-// Hovering any visible node or link shows its sum insured, stock value, policy
-// period and status.
+// ports; clicking one of those ports branches out to its insured parties.
+// Clicking an expanded node again collapses it; clicking another policy type
+// switches branches. Hovering any visible node or link shows its sum insured,
+// stock value, policy period and status.
 export const InsuranceSankey = ({
   policies,
   segments = [],
   policyTypes = [],
+  ports = [],
   loading = false,
   maxHeight = 640,
 }: Props) => {
   const { text: labelColor, textSecondary } = useBrandTokens();
-  const [expanded, setExpanded] = useState<string | undefined>();
+  const [expansion, setExpansion] = useState<Expansion>({});
   // Only the first render animates in. Toggling rebuilds the chart, and
   // replaying the entry animation then would read as the layout jumping.
   const [interacted, setInteracted] = useState(false);
 
-  // A policy type that a filter removed can't stay expanded.
-  const activeExpanded =
-    expanded && (policies ?? []).some((r) => r.policyType === expanded) ? expanded : undefined;
+  // Drop any part of the drill-down that a filter has removed from the data.
+  const active = useMemo<Expansion>(() => {
+    const rows = policies ?? [];
+    const policyType = rows.some((r) => r.policyType === expansion.policyType)
+      ? expansion.policyType
+      : undefined;
+    const location =
+      policyType &&
+      rows.some((r) => r.policyType === policyType && r.location === expansion.location)
+        ? expansion.location
+        : undefined;
+    return { policyType, location };
+  }, [policies, expansion]);
 
   const options = useMemo<Highcharts.Options>(() => {
-    const { nodes, data } = buildSeries(policies ?? [], segments, policyTypes, activeExpanded);
-    // Size to the busiest column (ports) so a narrowed filter doesn't stretch
-    // two or three bands across the full canvas.
-    const ports = nodes.filter((n) => n.column === 2).length;
-    const height = Math.min(maxHeight, Math.max(320, ports * 48 + 80));
+    const { nodes, data, columnSizes } = buildSeries(
+      policies ?? [],
+      segments,
+      policyTypes,
+      ports,
+      active,
+    );
+    // Size to the busiest column so a narrowed filter doesn't stretch two or
+    // three bands across the full canvas. Every column is always laid out, so
+    // this never changes on expand / collapse.
+    const busiest = Math.max(...columnSizes);
+    const height = Math.min(maxHeight, Math.max(320, busiest * 44 + 80));
     return {
       chart: {
         height,
         marginLeft: 140,
-        marginRight: 160,
+        marginRight: 200,
         marginTop: 30,
         animation: interacted ? false : undefined,
       },
@@ -264,7 +344,7 @@ export const InsuranceSankey = ({
       plotOptions: {
         sankey: {
           nodeWidth: 12,
-          nodePadding: 34,
+          nodePadding: 30,
           minLinkWidth: 3,
           linkOpacity: 0.22,
           borderWidth: 0,
@@ -274,12 +354,26 @@ export const InsuranceSankey = ({
           point: {
             events: {
               click: function () {
-                // Policy-type nodes are the only ids namespaced "pol:".
-                const p = this as unknown as { isNode?: boolean; id?: string; name?: string };
-                if (!p.isNode || !p.id?.startsWith("pol:") || !p.name) return;
+                const p = this as unknown as {
+                  isNode?: boolean;
+                  id?: string;
+                  name?: string;
+                  options: { custom?: Agg };
+                };
+                // Hidden nodes are still laid out (and hit-testable) — ignore them.
+                if (!p.isNode || !p.id || !p.name || p.options.custom?.hidden) return;
                 const name = p.name;
-                setInteracted(true);
-                setExpanded((cur) => (cur === name ? undefined : name));
+                if (p.id.startsWith("pol:")) {
+                  setInteracted(true);
+                  setExpansion((cur) => (cur.policyType === name ? {} : { policyType: name }));
+                } else if (p.id.startsWith("loc:")) {
+                  setInteracted(true);
+                  setExpansion((cur) =>
+                    cur.location === name
+                      ? { policyType: cur.policyType }
+                      : { policyType: cur.policyType, location: name },
+                  );
+                }
               },
             },
           },
@@ -306,16 +400,18 @@ export const InsuranceSankey = ({
           nodes,
           data,
           // Per-column label placement: segments to the left of their bar,
-          // policy types above theirs, ports to the right.
+          // policy types and ports above theirs (bands leave both sides),
+          // insured parties to the right.
           levels: [
             { level: 0, dataLabels: { align: "right", x: -20, verticalAlign: "middle" } },
-            { level: 1, dataLabels: { align: "center", verticalAlign: "top", y: -24 } },
-            { level: 2, dataLabels: { align: "left", x: 20, verticalAlign: "middle" } },
+            { level: 1, dataLabels: { align: "center", verticalAlign: "top", y: -22 } },
+            { level: 2, dataLabels: { align: "center", verticalAlign: "top", y: -22 } },
+            { level: 3, dataLabels: { align: "left", x: 20, verticalAlign: "middle" } },
           ],
         },
       ],
     };
-  }, [policies, segments, policyTypes, activeExpanded, interacted, maxHeight, labelColor]);
+  }, [policies, segments, policyTypes, ports, active, interacted, maxHeight, labelColor]);
 
   if (!loading && (policies ?? []).length === 0) {
     return <Empty description="No policies match the selected filters" style={{ padding: 48 }} />;
@@ -323,14 +419,12 @@ export const InsuranceSankey = ({
 
   return (
     <>
-      {/* Single fixed-height line in both states so the hint never shifts the chart. */}
+      {/* Single fixed-height line in every state so the hint never shifts the chart. */}
       <Typography.Text
         ellipsis
         style={{ display: "block", fontSize: 12, color: textSecondary, lineHeight: "20px" }}
       >
-        {activeExpanded
-          ? `Showing ports for ${activeExpanded} — click it again to collapse, or click another policy type.`
-          : "Click a policy type to see its ports."}
+        {hintFor(active)}
       </Typography.Text>
       <Chart options={options} loading={loading} />
     </>

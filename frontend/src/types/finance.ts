@@ -542,6 +542,8 @@ export interface InsurancePolicyRow {
   segment: string;
   policyType: string;
   location: string;
+  /** Party the policy insures at this location — the Sankey's last level. */
+  insuredParty: string;
   /** Sum insured, base rupees. */
   sumInsured: number;
   /** Insured stock value, base rupees. */
@@ -569,8 +571,6 @@ export interface InsuranceStatusResponse {
 }
 
 export interface InsuranceStatusParams {
-  fromDate?: string;
-  toDate?: string;
   zone?: string;
   port?: string;
   policyType?: string;

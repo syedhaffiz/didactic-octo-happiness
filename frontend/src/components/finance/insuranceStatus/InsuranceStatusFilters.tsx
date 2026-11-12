@@ -1,10 +1,8 @@
 import { Button, Select, Space, Tooltip } from "antd";
 import { ReloadOutlined, UploadOutlined } from "@ant-design/icons";
-import type { Dayjs } from "dayjs";
 import { ZoneFilter } from "../../filters/ZoneFilter";
 import { PortFilter } from "../../filters/PortFilter";
 import { FilterField } from "../../filters/FilterField";
-import { DateRangeFilter } from "../../DateRangeFilter";
 
 const ALL = "__all__";
 
@@ -14,18 +12,15 @@ interface Props {
   policyType: string | undefined;
   /** Policy-type dropdown options (from the insurance filter-options endpoint). */
   policyTypes: string[];
-  /** `null` = no range picked (shows the Start / End placeholders). */
-  dateValue: [Dayjs | null, Dayjs | null] | null;
   onZoneChange: (v: string | undefined) => void;
   onPortChange: (v: string | undefined) => void;
   onPolicyTypeChange: (v: string | undefined) => void;
-  onDateChange: (v: [Dayjs | null, Dayjs | null] | null) => void;
   /** Placeholder — the Excel export is not wired up yet. */
   onExport: () => void;
   onRefresh: () => void;
 }
 
-// Insurance Status header filter row: Zone / Port / Policy Type / Date Range
+// Insurance Status header filter row: Zone / Port / Policy Type
 // plus (placeholder) Excel export and refresh actions. Presentational — all
 // state is owned by the page.
 export const InsuranceStatusFilters = ({
@@ -33,11 +28,9 @@ export const InsuranceStatusFilters = ({
   port,
   policyType,
   policyTypes,
-  dateValue,
   onZoneChange,
   onPortChange,
   onPolicyTypeChange,
-  onDateChange,
   onExport,
   onRefresh,
 }: Props) => (
@@ -55,7 +48,6 @@ export const InsuranceStatusFilters = ({
         style={{ width: "100%" }}
       />
     </FilterField>
-    <DateRangeFilter value={dateValue} onChange={onDateChange} />
     <Tooltip title="Export to Excel">
       <Button icon={<UploadOutlined />} onClick={onExport} aria-label="Export to Excel" />
     </Tooltip>

@@ -288,8 +288,25 @@ export const insuranceColors = {
     "#5C6BC0", // indigo
     "#AD5D8F", // mauve
   ],
-  portNode: "#8A93A6", // grey
-  // Fill for ports laid out but not yet revealed (collapsed port column).
+  // One hue per port, assigned by the port's position in the shared port
+  // catalogue (cycling only past 12 ports). Distinct from one another so each
+  // revealed port reads as its own node.
+  ports: [
+    "#1F77B4", // blue
+    "#FF7F0E", // orange
+    "#2CA02C", // green
+    "#D62728", // red
+    "#9467BD", // violet
+    "#8C564B", // brown
+    "#E377C2", // pink
+    "#17BECF", // cyan
+    "#BCBD22", // olive
+    "#393B79", // indigo
+    "#AD494A", // brick
+    "#637939", // moss
+  ],
+  partyNode: brand.textSubtle, // slate
+  // Fill for nodes / links laid out but not yet revealed (collapsed branch).
   hidden: "transparent",
 } as const;
 

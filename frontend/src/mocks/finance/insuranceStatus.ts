@@ -108,22 +108,56 @@ const allocate = (total: number, weights: number[]): number[] => {
   });
 };
 
+// Insured parties (mock display names). A pool smaller than the number of
+// risks, handed out round-robin, so each party is insured at several ports and
+// under several policy types — the Sankey's last column merges too.
+const INSURED_PARTIES = [
+  "Coastal Power Generation Ltd",
+  "Deccan Fertilisers Ltd",
+  "Eastern Steel Works Ltd",
+  "Western Cement Corp",
+  "Bay Terminals Pvt Ltd",
+  "Konkan Traders",
+  "Gulf Marine Logistics",
+  "Southern Refineries Ltd",
+] as const;
+
+// Each seed's share is split across one or two insured parties (every other
+// risk is shared 60 / 40). Deterministic, so the book never reshuffles.
+interface PartyShare {
+  seed: Seed;
+  insuredParty: string;
+  weight: number;
+}
+const PARTY_SHARES: PartyShare[] = SEEDS.flatMap((seed, i) => {
+  const first = INSURED_PARTIES[i % INSURED_PARTIES.length];
+  if (i % 2 === 1) return [{ seed, insuredParty: first, weight: seed.weight * 5 }];
+  const second = INSURED_PARTIES[(i * 3 + 1) % INSURED_PARTIES.length];
+  return second === first
+    ? [{ seed, insuredParty: first, weight: seed.weight * 5 }]
+    : [
+        { seed, insuredParty: first, weight: seed.weight * 3 },
+        { seed, insuredParty: second, weight: seed.weight * 2 },
+      ];
+});
+
 // Materialise the full (unfiltered) policy book once — it's static. Each row's
 // `location` is the port display name; the catalogue port id is kept alongside
 // (not on the row) since it only drives the Zone / Port filters.
 const BOOK: { portId: string; row: InsurancePolicyRow }[] = SEGMENT_ORDER.flatMap((segment) => {
-  const seeds = SEEDS.filter((s) => s.segment === segment);
+  const shares = PARTY_SHARES.filter((sh) => sh.seed.segment === segment);
   const totals = SEGMENT_TOTALS[segment];
-  const weights = seeds.map((s) => s.weight);
+  const weights = shares.map((sh) => sh.weight);
   const sums = allocate(Math.round(totals.sumInsuredCr * CR), weights);
   const stocks = allocate(Math.round(totals.stockValueCr * CR), weights);
-  return seeds.map((s, i) => ({
+  return shares.map(({ seed: s, insuredParty }, i) => ({
     portId: s.port,
     row: {
-      id: `${segment}:${s.policyType}:${s.port}`,
+      id: `${segment}:${s.policyType}:${s.port}:${insuredParty}`,
       segment,
       policyType: s.policyType,
       location: portName(s.port),
+      insuredParty,
       sumInsured: sums[i],
       stockValue: stocks[i],
       periodStart: s.periodStart ?? FY_START,
@@ -146,15 +180,11 @@ export const buildInsuranceStatus = (p: InsuranceStatusParams = {}): InsuranceSt
   const policyType = p.policyType && p.policyType !== "all" ? p.policyType : undefined;
   const zonePorts = zone ? ZONE_PORT_IDS[zone] ?? [] : undefined;
 
-  // ISO "YYYY-MM-DD" strings compare correctly as plain strings. A policy is in
-  // range when its period overlaps the selected window.
   const rows = BOOK.filter(
     ({ portId, row: r }) =>
       (!zonePorts || zonePorts.includes(portId)) &&
       (!port || portId === port) &&
-      (!policyType || r.policyType === policyType) &&
-      (!p.fromDate || r.periodEnd >= p.fromDate) &&
-      (!p.toDate || r.periodStart <= p.toDate),
+      (!policyType || r.policyType === policyType),
   ).map((b) => b.row);
 
   const segments: InsuranceSegmentSummary[] = SEGMENT_ORDER.map((segment) => {
