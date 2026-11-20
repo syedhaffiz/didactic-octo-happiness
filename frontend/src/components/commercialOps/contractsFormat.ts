@@ -44,6 +44,33 @@ export const formatRupees = (v: number | null | undefined): string =>
       }).format(v)
     : DASH;
 
+/** Rupees to the paisa, e.g. "₹6,820,166.01" / "−₹8,644.98". */
+export const formatRupeesExact = (v: number | null | undefined): string =>
+  isNum(v)
+    ? `${v < 0 ? "-" : ""}₹${Math.abs(v).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`
+    : DASH;
+
+/** Compact rupees for chart labels / axes, e.g. "₹68.2 L", "₹1.5 Cr", "-₹8.64K". */
+export const formatRupeesCompact = (v: number | null | undefined): string => {
+  if (!isNum(v)) return DASH;
+  const compact = new Intl.NumberFormat("en-IN", {
+    notation: "compact",
+    compactDisplay: "short",
+    maximumFractionDigits: 2,
+  }).format(Math.abs(v));
+  return `${v < 0 ? "-" : ""}₹${compact}`;
+};
+
+/** "14-04-26" from "YYYY-MM-DD" (the Plot Rent table's date style). */
+export const formatShortDate = (iso: string | null | undefined): string => {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return DASH;
+  const [y, m, d] = iso.split("-");
+  return `${d}-${m}-${y.slice(2)}`;
+};
+
 /** "18 Apr 2026" from "YYYY-MM-DD"; em dash for missing / invalid input. */
 export const formatPostingDate = (iso: string | null | undefined): string => {
   if (!iso) return DASH;

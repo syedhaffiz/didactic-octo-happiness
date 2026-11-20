@@ -357,6 +357,9 @@ export const commercialOpsColors = {
   ],
   emdAmount: "#2EA7EC", // column — sky blue
   emdAging: "#5B45C8", // line — indigo violet
+  // Plot Rent by Port — sampled from Design Reference/CommercialOps/Plot Rent.png
+  plotRentPositive: "#0E6278", // deep teal column
+  plotRentNegative: "#E5532D", // vermilion column / negative amount
 } as const;
 
 // Market Share series display labels. The client's brand name is intentionally

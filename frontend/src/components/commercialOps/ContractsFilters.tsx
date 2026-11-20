@@ -21,7 +21,8 @@ interface Props {
   onPortChange?: (v: string | undefined) => void;
   onSegmentChange?: (v: string | undefined) => void;
   onDateChange: (v: [Dayjs | null, Dayjs | null] | null) => void;
-  onExport: () => void;
+  /** Omit to hide the download button (e.g. Plot Rent). */
+  onExport?: () => void;
   exportDisabled?: boolean;
 }
 
@@ -108,14 +109,16 @@ export const ContractsFilters = ({
         />
       ) : null}
       <DateRangeFilter value={dateValue} onChange={onDateChange} />
-      <Tooltip title="Download">
-        <Button
-          icon={<DownloadOutlined />}
-          onClick={onExport}
-          disabled={exportDisabled}
-          aria-label="Download"
-        />
-      </Tooltip>
+      {onExport ? (
+        <Tooltip title="Download">
+          <Button
+            icon={<DownloadOutlined />}
+            onClick={onExport}
+            disabled={exportDisabled}
+            aria-label="Download"
+          />
+        </Tooltip>
+      ) : null}
     </Space>
   );
 };
