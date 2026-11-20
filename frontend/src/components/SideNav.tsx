@@ -10,6 +10,7 @@ import {
   DeploymentUnitOutlined,
   SearchOutlined,
   SafetyOutlined,
+  FileProtectOutlined,
   BankOutlined,
   SettingOutlined,
 } from "@ant-design/icons";
@@ -114,6 +115,16 @@ export const navSections: NavSection[] = [
     basePath: "/customs",
     path: "/customs",
     muted: true,
+  },
+  {
+    key: "commercial-ops",
+    icon: <FileProtectOutlined />,
+    label: "Commercial OPS",
+    basePath: "/commercial-ops",
+    children: [
+      { label: "Contracts", path: "/commercial-ops/contracts" },
+      { label: "Plot rent", path: "/commercial-ops/plot-rent" },
+    ],
   },
   {
     key: "commercial",

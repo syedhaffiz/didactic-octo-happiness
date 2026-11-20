@@ -77,6 +77,12 @@ const LegalPage = lazy(() =>
 const LogisticsPage = lazy(() =>
   import("./pages/logistics/LogisticsPage").then((m) => ({ default: m.LogisticsPage })),
 );
+const ContractsOverview = lazy(() =>
+  import("./pages/commercialOps/ContractsOverview").then((m) => ({ default: m.ContractsOverview })),
+);
+const ContractDetails = lazy(() =>
+  import("./pages/commercialOps/ContractDetails").then((m) => ({ default: m.ContractDetails })),
+);
 const Placeholder = lazy(() =>
   import("./pages/Placeholder").then((m) => ({ default: m.Placeholder })),
 );
@@ -127,6 +133,10 @@ export const createAppRouter = (basename: string = "/") =>
           { path: "planning", element: <Placeholder title="Planning" /> },
           { path: "sourcing", element: <Placeholder title="Sourcing" /> },
           { path: "customs", element: <Placeholder title="Customs" /> },
+          { path: "commercial-ops", element: <Navigate to="/commercial-ops/contracts" replace /> },
+          { path: "commercial-ops/contracts", element: <ContractsOverview /> },
+          { path: "commercial-ops/contracts/details", element: <ContractDetails /> },
+          { path: "commercial-ops/plot-rent", element: <Placeholder title="Plot Rent" /> },
           { path: "commercial", element: <Placeholder title="Commercial" /> },
           { path: "settings", element: <Placeholder title="Settings" /> },
           { path: "*", element: <Placeholder title="Not found" /> },

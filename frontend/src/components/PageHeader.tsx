@@ -28,6 +28,9 @@ const labels: Record<string, string> = {
   sourcing: "Sourcing",
   customs: "Customs",
   commercial: "Commercial",
+  "commercial-ops": "Commercial OPS",
+  contracts: "Contracts",
+  "plot-rent": "Plot Rent",
 };
 
 const pretty = (seg: string) => labels[seg] ?? seg;

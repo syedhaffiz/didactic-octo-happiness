@@ -327,6 +327,38 @@ export const agingColors = {
   ],
 } as const;
 
+// ---------------------------------------------------------------------------
+// Commercial Ops → Contracts — sampled from the Figma
+// (Design Reference/CommercialOps/Contracts overview*). Status and port hues are
+// assigned by the item's position in the API response (cycling if exceeded),
+// never keyed by name.
+// ---------------------------------------------------------------------------
+export const commercialOpsColors = {
+  statuses: [
+    "#2E9BE6", // ADI — sky blue
+    "#6A4BD1", // Dispute — violet
+    "#22B573", // Legal — green
+    "#F36C2A", // NFA Under Approval — orange
+    "#5B6FB5", // Payment Pending — slate blue
+    "#A35BD6", // QC Settlement Pending — orchid
+    "#3BB3A6", // Quality Issues — teal
+    "#EF5350", // Running — coral red
+    "#F7B04B", // Submitted to finance — amber
+    "#1E7BD8", // No Remarks — blue
+    "#9EDFDC", // Under Closure — pale teal
+  ],
+  ports: [
+    "#2EA7EC", // sky blue
+    "#5B45C8", // indigo violet
+    "#12C38A", // green
+    "#FF7A35", // orange
+    "#C2477E", // magenta
+    "#37A089", // teal
+  ],
+  emdAmount: "#2EA7EC", // column — sky blue
+  emdAging: "#5B45C8", // line — indigo violet
+} as const;
+
 // Market Share series display labels. The client's brand name is intentionally
 // confined to this single constant — the user authorized it as on-screen copy
 // for the Market Share screen only (data keys stay `own`/`nonOwn`).
